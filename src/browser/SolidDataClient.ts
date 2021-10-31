@@ -20,8 +20,8 @@ export class SolidDataClient extends SolidDataService {
             session.login({
                 oidcIssuer: this.options.defaultOidcIssuer,
                 clientName: this.options.clientName,
-                redirectUrl: this.options.redirectUrl,
-                handleRedirect: this.onRedirect.bind(this, session)
+                redirectUrl: this.options.redirectUrl ? this.options.redirectUrl : window.location.href,
+                handleRedirect: this.options.redirectUrl ? this.onRedirect.bind(this, session) : undefined
             }).then(resolve).catch(reject);
         });
     }

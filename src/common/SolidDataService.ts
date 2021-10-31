@@ -97,7 +97,13 @@ export abstract class SolidDataService extends KeyValueDataService implements IS
 }
 
 export interface SolidDataServiceOptions {
+    /**
+     * Client name displayed to the user
+     */
     clientName?: string;
+    /**
+     * Redirect URL
+     */
     redirectUrl?: string;
     defaultOidcIssuer?: string;
     dataServiceDriver?: DataServiceDriver<string, string>;

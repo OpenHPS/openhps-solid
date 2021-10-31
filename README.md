@@ -25,17 +25,27 @@
 
 In a normal positioning system the developer is meant to store the position to a database. This database allows persisting a users location for tracking purposes or aiding the positioning system with historical information. With such a set-up the user is not aware how they are being tracked and what information is stored.
 
-![Conventional positioning database](./docs/media/images/centralized.svg "Conventional positioning database")
+<p align="center">
+    <img src="./docs/media/images/centralized.svg" alt="Conventional positioning database">
+</p>
 
 Solid is a specification that lets people store their data securely in decentralized data stores called Pods. Pods are like secure personal web servers for your data. OpenHPS leverages Solid to store ```DataObject```s and ```DataFrame``s that contain private position information and other sensor data. Any data objects belonging to a certain person will be stored in the decentralized Pod owned by that user.
 
-![Decentralized over a single positioning system](./docs/media/images/decentralized1.svg "Decentralized over a single positioning system")
+<p align="center">
+    <img src="./docs/media/images/decentralized1.svg" alt="Decentralized over a single positioning system">
+</p>
 
 On top of this, Solid supports linked data to offer a semantic storage of the data. OpenHPS can output data that can not only be used by OpenHPS - but also other positioning systems who know the vocabulary.
 
-![Decentralized over multiple positioning system](./docs/media/images/decentralized2.svg "Decentralized over multiple positioning system")
+<p align="center">
+    <img src="./docs/media/images/decentralized2.svg" alt="Decentralized over multiple positioning system">
+</p>
 
-These two features combined not only offer more awareness for users on how they are being tracked, but it also enables hybrid positioning between multiple (different) positioning systems.
+These two features combined not only offer more awareness for users on how they are being tracked, but it also enables hybrid positioning between multiple (different) positioning systems. Users will be able to deauthenticate themselves from a positioning system through their Pod's access settings. This will revoke any access that the positioning system has over tracking that particular user.
+
+<p align="center">
+    <img src="./docs/media/images/decentralized3.svg" alt="Decentralized over single positioning system after revoke">
+</p>
 
 ## Getting Started
 If you have [npm installed](https://www.npmjs.com/get-npm), start using @openhps/solid with the following command.
@@ -67,9 +77,11 @@ frame.webId = "https://maximvdw.solidweb.org/profile/card#me";
 ```
 
 ### Authentication
+Regardless if you are implementing the positioning system on a client or server, the system will be a client for whatever Pod server a user is using. Before information can be modified or created, the user needs to be authenticated.
 
-### Client
-Regardless if you are implementing the positioning system on a client or server, the system will be a client for whatever Pod server a user is using.
+- **Browser to Browser Authentication**: The user authenticates through the front-end application. After log in the redirect is handled by the front-end application through the ```window.location.href``` URL. The session remains stored on the browser and no server is involved.
+- **Browser to Server Authentication**: The user authenticates through the front-end application but the response is captured by a server instead of the front-end application. This allows the server to store multiple sessions.
+- **Server Authentication**: The user authenticates by going to a specific path on the server. They will be prompted to log in after which the server continues the authentication and captures the response from the Pod Issuer.
 
 #### Node.js
 ```typescript
@@ -78,13 +90,16 @@ ModelBuilder.create()
         loginPath: "/login",
         redirectPath: "/redirect",
         redirectUrl: "http://localhost:3030/redirect",
+        authServer: {
+            port: 3030
+        },
         loginSuccessCallback: (req: express.Request, res: express.Response, sessionInfo: any) => {
             res.send("OK " + JSON.stringify(sessionInfo));
         },
         loginErrorCallback: (req: express.Request, res: express.Response, sessionInfo: any, reason: any) => {
             res.send("error: " + reason);
         }
-    }).createServer(3030))
+    }))
     .from()
     .to()
     .build();

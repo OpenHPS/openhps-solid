@@ -5,36 +5,36 @@ import { SolidDataService, SolidDataServiceOptions, } from "../common/SolidDataS
 
 export class SolidDataClient extends SolidDataService {
     protected options: SolidDataClientOptions;
+    protected express: express.Express;
 
     constructor(options?: SolidDataClientOptions) {
         super(options);
-
+        
         this.once('build', this._onBuild.bind(this));
     }
 
-    private _onBuild(): void {
-        this.options.express.get(this.options.loginPath, this.onLogin.bind(this));
-        this.options.express.get(this.options.redirectPath, this.onRedirect.bind(this));
-    }
+    private _onBuild(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            if (!Object.keys(this.options.authServer).includes("port")) {
+                this.express = this.options.authServer as express.Express;
+            } else {
+                const authOptions = this.options.authServer as SolidAuthServerOptions;
+                this.express = express();
+                this.express.use(
+                    cookieSession({
+                        name: "session",
+                        keys: authOptions.cookies ? authOptions.cookies.keys : [],
+                        maxAge: authOptions.cookies ? authOptions.cookies.maxAge : 24 * 60 * 60 * 1000,
+                    })
+                );
+                this.express.listen(authOptions.port, () => {
 
-    createServer(port: number): this {
-        this.options.express = express();
-        this.options.express.use(
-            cookieSession({
-                name: "session",
-                // These keys are required by cookie-session to sign the cookies.
-                keys: [
-                    "Required, but value not relevant for this demo - key1",
-                    "Required, but value not relevant for this demo - key2",
-                ],
-                maxAge: 24 * 60 * 60 * 1000, // 24 hours
-            })
-        );
-
-        this.options.express.listen(port, () => {
-            console.log("Listening on http://localhost:3030 ...");
+                });
+            }
+            this.express.get(this.options.loginPath, this.onLogin.bind(this));
+            this.express.get(this.options.redirectPath, this.onRedirect.bind(this));
+            resolve();
         });
-        return this;
     }
 
     protected onLogin(req: express.Request, res: express.Response): void {
@@ -75,13 +75,17 @@ export class SolidDataClient extends SolidDataService {
 
 export interface SolidDataClientOptions extends SolidDataServiceOptions {
     loginPath?: string;
-    redirectPath?: string;
-    authServer?: SolidAuthServerOptions;
-    express?: express.Express;
+    redirectPath: string;
+    redirectUrl: string;
+    authServer?: SolidAuthServerOptions | express.Express;
     loginSuccessCallback?: (req: express.Request, res: express.Response, sessionInfo: ISessionInfo) => void;
     loginErrorCallback?: (req: express.Request, res: express.Response, sessionInfo: ISessionInfo, reason: any) => void;
 }
 
 export interface SolidAuthServerOptions {
-
+    port: number;
+    cookies?: {
+        keys: string[];
+        maxAge: number;
+    },
 }
