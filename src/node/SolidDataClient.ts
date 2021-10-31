@@ -1,5 +1,5 @@
 import * as express from 'express';
-import cookieSession = require('cookie-session');
+const cookieSession = require('cookie-session');
 import { Session, ISessionInfo, getSessionFromStorage } from "@inrupt/solid-client-authn-node";
 import { SolidDataService, SolidDataServiceOptions, } from "../common/SolidDataService";
 

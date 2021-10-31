@@ -5,6 +5,7 @@
         "moduleResolution": "node",
         "noImplicitAny": true,
         "removeComments": true,
+        "skipLibCheck": true,
         "preserveConstEnums": true,
         "sourceMap": true,
         "outDir": "./dist/cjs",

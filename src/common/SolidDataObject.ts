@@ -14,7 +14,7 @@ export class SolidDataObject extends DataObject {
     constructor(webId?: string) {
         super(webId);
     }
-    
+
     get webId(): string {
         return this.uid;
     }
@@ -37,4 +37,4 @@ export class SolidDataObject extends DataObject {
 
 /* Add the WebID attribute to the DataObject prototype, and allow serialization */
 DataObject.prototype.webId = undefined;
-SerializableMember(String)(DataObject, "webID");
+SerializableMember(String)(DataObject.prototype, "webId");
