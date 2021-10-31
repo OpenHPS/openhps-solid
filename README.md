@@ -23,11 +23,19 @@
 
 <br />
 
-Solid is a specification that lets people store their data securely in decentralized data stores called Pods. Pods are like secure personal web servers for your data. OpenHPS leverages Solid to store ```DataObjects```. The idea is that ```DataObjects``` belonging to a certain person will be stored in the decentralized pod owned by that user. Not only does this provide more awareness of what positioning models are tracking you - it also offers a common interface for handing over a position to other positioning systems.
+In a normal positioning system the developer is meant to store the position to a database. This database allows persisting a users location for tracking purposes or aiding the positioning system with historical information. With such a set-up the user is not aware how they are being tracked and what information is stored.
 
-## Scenario
-*The trajectory of a user is tracked outdoors using Google Maps that stores information in the Pod of the user (instead of the current Google Timeline). When
-a user enters a building that uses an indoor positioning system, the Pod can be accessed and updated with a more accuracte position.*
+![Conventional positioning database](./docs/media/images/centralized.svg "Conventional positioning database")
+
+Solid is a specification that lets people store their data securely in decentralized data stores called Pods. Pods are like secure personal web servers for your data. OpenHPS leverages Solid to store ```DataObject```s and ```DataFrame``s that contain private position information and other sensor data. Any data objects belonging to a certain person will be stored in the decentralized Pod owned by that user.
+
+![Decentralized over a single positioning system](./docs/media/images/decentralized1.svg "Decentralized over a single positioning system")
+
+On top of this, Solid supports linked data to offer a semantic storage of the data. OpenHPS can output data that can not only be used by OpenHPS - but also other positioning systems who know the vocabulary.
+
+![Decentralized over multiple positioning system](./docs/media/images/decentralized2.svg "Decentralized over multiple positioning system")
+
+These two features combined not only offer more awareness for users on how they are being tracked, but it also enables hybrid positioning between multiple (different) positioning systems.
 
 ## Getting Started
 If you have [npm installed](https://www.npmjs.com/get-npm), start using @openhps/solid with the following command.
@@ -37,33 +45,65 @@ npm install @openhps/solid --save
 
 ## Usage
 
-### Logging in
-Users are expected to log in on the client (browser) on their Pod provider.
+### WebID
+@openhps/solid adds a new typed parameter to ```DataObject```s and ```DataFrame```s for the [WebID](https://solidproject.org/faqs#what-is-a-webid) of a user.
 
-### Creating a Solid ```DataObject```
-
+**```DataObject```**
 ```typescript
-import { SolidDataObject } from '@openhps/solid';
+import { DataObject } from '@openhps/core';
 
-const user = new SolidDataObject("");
+const phone = new DataObject("myphone");
+phone.webId = "https://maximvdw.solidweb.org/profile/card#me";
 ```
 
-In most cases a user might own a set of devices that are represented as ```DataObject```s in OpenHPS. This can easily be specified by setting
-the parent of those objects to the UID of the ```SolidDataObject``` created for a user. Any object that is hierarchically connected
-to a ```SolidDataObject``` will be stored in a Pod beloning to the user.
+The WebID identifies that this object or data frame is owned by a particular user or organization and should be stored in their Pod.
+
+**```Dataframe```**
+```typescript
+import { DataFrame } from '@openhps/core';
+
+const frame = new DataFrame();
+frame.webId = "https://maximvdw.solidweb.org/profile/card#me";
+```
+
+### Authentication
+
+### Client
+Regardless if you are implementing the positioning system on a client or server, the system will be a client for whatever Pod server a user is using.
+
+#### Node.js
+```typescript
+ModelBuilder.create()
+    .addService(new SolidDataClient({
+        loginPath: "/login",
+        redirectPath: "/redirect",
+        redirectUrl: "http://localhost:3030/redirect",
+        loginSuccessCallback: (req: express.Request, res: express.Response, sessionInfo: any) => {
+            res.send("OK " + JSON.stringify(sessionInfo));
+        },
+        loginErrorCallback: (req: express.Request, res: express.Response, sessionInfo: any, reason: any) => {
+            res.send("error: " + reason);
+        }
+    }).createServer(3030))
+    .from()
+    .to()
+    .build();
+```
+
+### Storage
+Data objects and data frames of generic or specific types can be stored using the ```SolidDataDriver```. This driver uses the
+```SolidDataClient```.
 
 ```typescript
-import { CameraObject } from '@openhps/video';
-import { DataObject } from '@openhps/core';
-import { SolidDataObject } from '@openhps/solid';
-
-const user = new SolidDataObject("");
-
-// Hierarchical connected data objects
-const phone = new DataObject();             // Phone with random UID
-phone.parentUID = user.uid;
-const camera = new CameraObject();          // Camera with random UID
-camera.parentUID = phone.uid;
+ModelBuilder.create()
+    .addService(new SolidDataClient({
+        /* ... */
+    }))
+    .addService(new DataObjectService(new SolidDataDriver(DataObject)))
+    .addService(new DataFrameService(new SolidDataDriver(DataFrame)))
+    .from()
+    .to()
+    .build();
 ```
 
 ## Contributors
