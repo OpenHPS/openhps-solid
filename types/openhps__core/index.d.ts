@@ -1,8 +1,8 @@
 import { DataObject, DataFrame } from '@openhps/core';
 
-declare module '@openhps/core/lib/types/data/object/DataObject' {
+declare module '@openhps/core/dist/types/data/object/DataObject' {
 
-    interface DataObject {
+    export interface DataObject {
         /**
          * Solid Web Identifier
          *
@@ -13,9 +13,9 @@ declare module '@openhps/core/lib/types/data/object/DataObject' {
 
 }
 
-declare module '@openhps/core/lib/types/data/DataFrame' {
+declare module '@openhps/core/dist/types/data/DataFrame' {
 
-    interface DataFrame {
+    export interface DataFrame {
         /**
          * Solid Web Identifier
          *

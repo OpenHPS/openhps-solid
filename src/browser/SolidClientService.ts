@@ -2,9 +2,9 @@ import {
     getClientAuthenticationWithDependencies,
     Session,
 } from "@inrupt/solid-client-authn-browser";
-import { SolidDataService, SolidDataServiceOptions } from "../common/SolidDataService";
+import { SolidService, SolidDataServiceOptions } from "../common/SolidService";
 
-export class SolidDataClient extends SolidDataService {
+export class SolidClientService extends SolidService {
 
     constructor(options?: SolidDataServiceOptions) {
         super(options);

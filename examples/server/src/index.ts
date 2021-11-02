@@ -1,9 +1,9 @@
 import express from "express";
 import { DataObject, DataObjectService, ModelBuilder } from '@openhps/core';
-import { SolidDataClient, SolidDataDriver } from '@openhps/solid';
+import { SolidClientService, SolidDataDriver } from '@openhps/solid';
 
 ModelBuilder.create()
-  .addService(new SolidDataClient({
+  .addService(new SolidClientService({
     loginPath: "/login",
     redirectPath: "/redirect",
     defaultOidcIssuer: "https://solidweb.org/",

@@ -1,20 +1,28 @@
 import { DataObject, SerializableMember, SerializableObject } from '@openhps/core';
+import '@openhps/rdf';
 
 @SerializableObject()
-export class SolidDataObject extends DataObject {
+export class SolidProfileObject extends DataObject {
+    /**
+     * OpenID Issuer
+     */
     @SerializableMember()
     oidcIssuer: string;
 
+    /**
+     * Session Identifier
+     */
     @SerializableMember()
     sessionId: string;
 
-    @SerializableMember()
-    refreshToken: string;
-
     constructor(webId?: string) {
         super(webId);
+        this.toThing();
     }
 
+    /**
+     * Unique WebID
+     */
     get webId(): string {
         return this.uid;
     }

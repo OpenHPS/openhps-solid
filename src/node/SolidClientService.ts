@@ -1,9 +1,10 @@
 import * as express from 'express';
 const cookieSession = require('cookie-session');
 import { Session, ISessionInfo, getSessionFromStorage } from "@inrupt/solid-client-authn-node";
-import { SolidDataService, SolidDataServiceOptions, } from "../common/SolidDataService";
+import { SolidDataServiceOptions, SolidService, } from "../common/SolidService";
+import { SolidProfileObject } from '../common';
 
-export class SolidDataClient extends SolidDataService {
+export class SolidClientService extends SolidService {
     protected options: SolidDataClientOptions;
     protected express: express.Express;
 
@@ -23,7 +24,7 @@ export class SolidDataClient extends SolidDataService {
                 this.express.use(
                     cookieSession({
                         name: "session",
-                        keys: authOptions.cookies ? authOptions.cookies.keys : [],
+                        keys: authOptions.cookies ? authOptions.cookies.keys : ["test", "test2"],
                         maxAge: authOptions.cookies ? authOptions.cookies.maxAge : 24 * 60 * 60 * 1000,
                     })
                 );
@@ -57,6 +58,10 @@ export class SolidDataClient extends SolidDataService {
         this.findSessionById(req.session!.sessionId).then(session => {
             return session.handleIncomingRedirect(req.protocol + "://" + req.get("host") + req.originalUrl);
         }).then(info => {
+            const object = new SolidProfileObject(info.webId);
+            object.sessionId = info.sessionId;
+            return Promise.all([info, this.storeProfile(object)]);
+        }).then(([info, object]) => {
             if (info.isLoggedIn) {
                 this.options.loginSuccessCallback(req, res, info);
             } else {

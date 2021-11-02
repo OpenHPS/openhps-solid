@@ -1,5 +1,5 @@
 import { DataFrame, DataObject, DataServiceDriver, DataServiceOptions, Model } from "@openhps/core";
-import { SolidDataService, SolidSession } from "./SolidDataService";
+import { SolidService, SolidSession } from "./SolidService";
 import {
     getSolidDataset,
     getThing,
@@ -11,11 +11,12 @@ import {
 
 export class SolidDataDriver<T extends DataObject | DataFrame> extends DataServiceDriver<string, T> {
     public model: Model;
-    protected service: SolidDataService;
+    protected service: SolidService;
     protected options: SolidDataDriverOptions<T>;
 
     constructor(dataType: new (...args: any[]) => T, options?: SolidDataDriverOptions<T>) {
         super(dataType, options);
+        this.options.uriPrefix = this.options.uriPrefix || "/openhps";
         this.options.serialize = this.options.serialize || defaultThingSerializer;
         this.options.deserialize = this.options.deserialize || defaultThingDeserializer;
 
@@ -24,7 +25,7 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends DataServi
 
     private async _initService(): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.service = this.model.findDataService(SolidDataService);
+            this.service = this.model.findService(SolidService);
             if (!this.service) {
                 return reject(new Error(`Unable to find SolidDataService!`));
             }
@@ -35,16 +36,16 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends DataServi
     findByUID(id: string): Promise<T> {
         return new Promise((resolve, reject) => {
             this.service.findSessionByObjectUID(this.dataType, id).then((session: SolidSession) => {
-                if (!session) {
-                    reject(new Error(`Unable to find solid session for ${this.dataType.name} with id '${id}'!`));
-                    return;
-                }
-                return getSolidDataset("", {
+                const profileDocumentUrl = new URL(session.info.webId);
+                profileDocumentUrl.hash = "";
+                return Promise.all([profileDocumentUrl, getSolidDataset(profileDocumentUrl.href, session ? {
                     fetch: session.fetch,
-                });
+                } : undefined)]);
             })
-            .then(dataset => {
-                const thing = getThing(dataset, "");
+            .then(([profileDocumentUrl, dataset]) => {
+                const thing = getThing(
+                    dataset, 
+                    new URL(`/${this.options.uriPrefix}/${id}`, profileDocumentUrl.toString()).href);
                 const deserialized = this.options.deserialize(thing);
                 resolve(deserialized);
             })
@@ -76,13 +77,17 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends DataServi
                 }
                 // Link the object
                 this.service.linkSession(object, session.info.sessionId);
+                const profileDocumentUrl = new URL(object.webId);
+                profileDocumentUrl.hash = "";
                 // Insert into Pod
-                return getSolidDataset("", {
+                return Promise.all([profileDocumentUrl, getSolidDataset(profileDocumentUrl.href, {
                     fetch: session.fetch,
-                });
-            }).then(dataset => {
-                dataset = setThing(dataset, this.options.serialize(object));
-                return saveSolidDatasetAt("", dataset);
+                })]);
+            }).then(([profileDocumentUrl, dataset]) => {
+                const item: Thing = this.options.serialize(object);
+                // item.url = new URL(`/${this.options.uriPrefix}/${id}`, profileDocumentUrl.toString()).href;
+                dataset = setThing(dataset, item);
+                return saveSolidDatasetAt(profileDocumentUrl.href, dataset);
             }).then(() => resolve(object)).catch(reject);
         });
     }
@@ -114,8 +119,20 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends DataServi
 }
 
 export interface SolidDataDriverOptions<T> extends DataServiceOptions {
+    /**
+     * Serialize the object to an RDF thing
+     */
     serialize?: (obj: T) => Thing;
+    /**
+     * Deserialize the RDF thing to instance
+     */
     deserialize?: (obj: Thing) => T;
+    /**
+     * URI prefix
+     *
+     * @default /openhps
+     */
+    uriPrefix?: string;
 }
 
 export function defaultThingSerializer<T extends DataObject | DataFrame>(object: T): Thing {

@@ -86,7 +86,7 @@ Regardless if you are implementing the positioning system on a client or server,
 #### Node.js
 ```typescript
 ModelBuilder.create()
-    .addService(new SolidDataClient({
+    .addService(new SolidClientService({
         loginPath: "/login",
         redirectPath: "/redirect",
         redirectUrl: "http://localhost:3030/redirect",
@@ -111,7 +111,7 @@ Data objects and data frames of generic or specific types can be stored using th
 
 ```typescript
 ModelBuilder.create()
-    .addService(new SolidDataClient({
+    .addService(new SolidClientService({
         /* ... */
     }))
     .addService(new DataObjectService(new SolidDataDriver(DataObject)))

@@ -1,1 +1,1 @@
-export * from './SolidDataClient';
+export * from './SolidClientService';

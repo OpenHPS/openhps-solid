@@ -1,3 +1,3 @@
-export * from './SolidDataService';
-export * from './SolidDataObject';
+export * from './SolidService';
+export * from './SolidProfileObject';
 export * from './SolidDataDriver';
