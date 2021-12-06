@@ -1,7 +1,12 @@
-import { DataObject, SerializableMember, SerializableObject } from '@openhps/core';
 import '@openhps/rdf';
+import { DataFrame, DataObject, SerializableMember, SerializableObject } from '@openhps/core';
+import { foaf } from '@openhps/rdf';
 
-@SerializableObject()
+@SerializableObject({
+    rdf: {
+        type: foaf.Person,
+    }
+})
 export class SolidProfileObject extends DataObject {
     /**
      * OpenID Issuer
@@ -17,7 +22,6 @@ export class SolidProfileObject extends DataObject {
 
     constructor(webId?: string) {
         super(webId);
-        this.toThing();
     }
 
     /**
@@ -46,3 +50,7 @@ export class SolidProfileObject extends DataObject {
 /* Add the WebID attribute to the DataObject prototype, and allow serialization */
 DataObject.prototype.webId = undefined;
 SerializableMember(String)(DataObject.prototype, "webId");
+
+/* Add the WebID attribute to the DataFrame prototype, and allow serialization */
+DataFrame.prototype.webId = undefined;
+SerializableMember(String)(DataFrame.prototype, "webId");

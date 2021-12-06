@@ -65,19 +65,20 @@
     "@inrupt/solid-client-authn-node": "^1.11.2",
     "@inrupt/solid-client-notifications": "^0.1.0",
     "@inrupt/vocab-common-rdf": "^1.0.3",
-    "@openhps/rdf": "^0.1.1",
     "cookie-session": "^1.4.0",
     "express": "^4.17.1",
     "solid-file-client": "^2.1.0"
   },
   "peerDependencies": {
     "@openhps/core": ">=0.3.2",
+    "@openhps/rdf": ">=0.1.7",
     "reflect-metadata": ">=0.1.13"
   },
   "devDependencies": {
     "@commitlint/cli": "^13.2.1",
     "@commitlint/config-conventional": "^13.2.0",
-    "@openhps/core": "^0.3.2",
+    "@openhps/core": "^0.3.7-alpha.6",
+    "@openhps/rdf": "^0.1.7",
     "@types/chai": "^4.2.22",
     "@types/cookie-session": "^2.0.43",
     "@types/express": "^4.17.13",

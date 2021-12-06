@@ -8,6 +8,7 @@ import {
     saveSolidDatasetAt,
     Thing
 } from "@inrupt/solid-client";
+import { RDFSerializer } from "@openhps/rdf";
 
 export class SolidDataDriver<T extends DataObject | DataFrame> extends DataServiceDriver<string, T> {
     public model: Model;
@@ -136,11 +137,9 @@ export interface SolidDataDriverOptions<T> extends DataServiceOptions {
 }
 
 export function defaultThingSerializer<T extends DataObject | DataFrame>(object: T): Thing {
-    return {
-        url: "",
-        type: "Subject",
-        predicates: undefined 
-    };
+    const rdfThing = RDFSerializer.serialize(object);
+    
+    return undefined;
 }
 
 export function defaultThingDeserializer<T extends DataObject | DataFrame>(thing: Thing): T {

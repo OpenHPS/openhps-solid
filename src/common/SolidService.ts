@@ -1,4 +1,4 @@
-import { DataFrame, DataObject, DataServiceDriver, KeyValueDataService, MemoryDataService, Model, Constructor, RemoteService, PullOptions, PushOptions } from "@openhps/core";
+import { DataFrame, DataObject, DataServiceDriver, MemoryDataService, Model, Constructor, RemoteService, PullOptions, PushOptions } from "@openhps/core";
 import type { Session as BrowserSession } from '@inrupt/solid-client-authn-browser';
 import type { Session as NodeSession } from '@inrupt/solid-client-authn-node';
 import type { IStorage } from '@inrupt/solid-client-authn-core';
