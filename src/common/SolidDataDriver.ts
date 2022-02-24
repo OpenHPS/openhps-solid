@@ -1,4 +1,11 @@
-import { DataFrame, DataObject, DataServiceDriver, DataServiceOptions, Model } from "@openhps/core";
+import { 
+    DataFrame, 
+    DataObject, 
+    DataServiceDriver,
+    DataServiceOptions, 
+    Model,
+    Constructor
+} from "@openhps/core";
 import { SolidService, SolidSession } from "./SolidService";
 import {
     getSolidDataset,
@@ -15,7 +22,7 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends DataServi
     protected service: SolidService;
     protected options: SolidDataDriverOptions<T>;
 
-    constructor(dataType: new (...args: any[]) => T, options?: SolidDataDriverOptions<T>) {
+    constructor(dataType: Constructor<T>, options?: SolidDataDriverOptions<T>) {
         super(dataType, options);
         this.options.uriPrefix = this.options.uriPrefix || "/openhps";
         this.options.serialize = this.options.serialize || defaultThingSerializer;
