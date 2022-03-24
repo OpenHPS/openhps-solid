@@ -20,6 +20,7 @@ import {
     saveSolidDatasetAt,
     setStringNoLocale,
     setThing,
+    SolidDataset,
     Thing,
     ThingPersisted,
 } from '@inrupt/solid-client';
@@ -41,18 +42,27 @@ export abstract class SolidService extends RemoteService implements IStorage {
         this.options.defaultOidcIssuer = this.options.defaultOidcIssuer || 'https://broker.pod.inrupt.com/';
     }
 
+    private _getDocumentURL(session: SolidSession, path?: string): URL {
+        const documentURL = new URL(session.info.webId);
+        if (path) {
+            const pathURL = new URL(path, "http://localhost");
+            documentURL.pathname = pathURL.pathname;
+            documentURL.hash = pathURL.hash;
+        }
+        return documentURL;
+    }
+
     /**
-     * Get a thing from a session Pod
+     * Get a Solid dataset
      *
      * @param {SolidSession} session Solid session to get a thing from
-     * @param {string} uri URI of the thing in the Solid Pod
-     * @returns {Promise<ThingPersisted>} Persisted thing
+     * @param {string} [path] Path URI of the thing in the Solid Pod
+     * @returns {Promise<SolidDataset>} Promise of a solid dataset
      */
-    getThing(session: SolidSession, uri: string): Promise<ThingPersisted> {
+    getDataset(session: SolidSession, path?: string): Promise<SolidDataset> {
         return new Promise((resolve, reject) => {
-            const documentURL = new URL(session.info.webId);
+            const documentURL = this._getDocumentURL(session, path);
             documentURL.hash = '';
-            documentURL.pathname = uri;
             getSolidDataset(
                 documentURL.href,
                 session
@@ -60,13 +70,54 @@ export abstract class SolidService extends RemoteService implements IStorage {
                           fetch: session.fetch,
                       }
                     : undefined,
-            )
-                .then((dataset) => {
-                    console.log(dataset);
-                    const thing = getThing(dataset, documentURL.href);
-                    resolve(thing);
-                })
-                .catch(reject);
+            ).then((dataset) => {
+                resolve(dataset);
+            })
+            .catch(reject);
+        });
+    }
+    
+    /**
+     * Save a Solid dataset
+     *
+     * @param {SolidSession} session Solid session to get a thing from
+     * @param {string} [path] Path URI of the thing in the Solid Pod
+     * @returns {Promise<SolidDataset>} Promise of a solid dataset
+     */
+    saveDataset(session: SolidSession, dataset: SolidDataset, path?: string): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const documentURL = this._getDocumentURL(session, path);
+            documentURL.hash = '';
+            saveSolidDatasetAt(
+                documentURL.href,
+                dataset,
+                session
+                    ? {
+                          fetch: session.fetch,
+                      }
+                    : undefined,
+            ).then(() => {
+                resolve();
+            })
+            .catch(reject);
+        });
+    }
+
+    /**
+     * Get a thing from a session Pod
+     *
+     * @param {SolidSession} session Solid session to get a thing from
+     * @param {string} [path] Path URI of the thing in the Solid Pod
+     * @returns {Promise<ThingPersisted>} Persisted thing
+     */
+    getThing(session: SolidSession, path?: string): Promise<ThingPersisted> {
+        return new Promise((resolve, reject) => {
+            const documentURL = this._getDocumentURL(session, path);
+            this.getDataset(session, path).then((dataset) => {
+                const thing = getThing(dataset, documentURL.href);
+                resolve(thing);
+            })
+            .catch(reject);
         });
     }
 
@@ -74,26 +125,16 @@ export abstract class SolidService extends RemoteService implements IStorage {
      * Set a thing in a session Pod
      *
      * @param {SolidSession} session Solid session to set a thing to
-     * @param {string} uri URI of the thing in the Solid Pod
      * @param {Thing} thing Non-persisted thing to store in the Pod
+     * @param {string} path Path URI of the thing in the Solid Pod
      * @returns {Promise<void>} Promise if stored
      */
-    setThing(session: SolidSession, uri: string, thing: Thing): Promise<void> {
+    setThing(session: SolidSession, thing: Thing, path?: string): Promise<void> {
         return new Promise((resolve, reject) => {
-            const documentURL = new URL(session.info.webId);
-            documentURL.hash = '';
-            documentURL.pathname = uri;
-            getSolidDataset(
-                documentURL.href,
-                session
-                    ? {
-                          fetch: session.fetch,
-                      }
-                    : undefined,
-            )
+            this.getDataset(session, path)
                 .then((dataset) => {
                     dataset = setThing(dataset, thing);
-                    return saveSolidDatasetAt(documentURL.href, dataset);
+                    return this.saveDataset(session, dataset, path);
                 })
                 .then(() => resolve())
                 .catch(reject);

@@ -14,7 +14,7 @@ ModelBuilder.create()
     loginSuccessCallback: function(req: express.Request, res: express.Response, sessionInfo: any) {
       this.findSessionByWebId(sessionInfo.webId)
         .then((session: SolidSession) => {
-          return this.getThing(session, "/public/detaillocation.ttl");
+          return this.getThing(session, "/public/detaillocation.ttl#1635772335497556887608196329");
         }).then(console.log).catch(console.error);
       res.send("OK " + JSON.stringify(sessionInfo));
     },
