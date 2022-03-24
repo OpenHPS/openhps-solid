@@ -70,14 +70,14 @@
     "solid-file-client": "^2.1.0"
   },
   "peerDependencies": {
-    "@openhps/core": ">=0.3.2",
+    "@openhps/core": ">=0.3.14",
     "@openhps/rdf": ">=0.1.7",
     "reflect-metadata": ">=0.1.13"
   },
   "devDependencies": {
     "@commitlint/cli": "^13.2.1",
     "@commitlint/config-conventional": "^13.2.0",
-    "@openhps/core": "^0.3.7-alpha.6",
+    "@openhps/core": "^0.3.14",
     "@openhps/rdf": "^0.1.7",
     "@types/chai": "^4.2.22",
     "@types/cookie-session": "^2.0.43",

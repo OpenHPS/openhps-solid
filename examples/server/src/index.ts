@@ -1,6 +1,6 @@
 import express from "express";
 import { DataObject, DataObjectService, ModelBuilder } from '@openhps/core';
-import { SolidClientService, SolidDataDriver } from '@openhps/solid';
+import { SolidClientService, SolidDataDriver, SolidSession } from '@openhps/solid';
 
 ModelBuilder.create()
   .addService(new SolidClientService({
@@ -11,7 +11,11 @@ ModelBuilder.create()
     authServer: {
       port: 3030
     },
-    loginSuccessCallback: (req: express.Request, res: express.Response, sessionInfo: any) => {
+    loginSuccessCallback: function(req: express.Request, res: express.Response, sessionInfo: any) {
+      this.findSessionByWebId(sessionInfo.webId)
+        .then((session: SolidSession) => {
+          return this.getThing(session, "/public/detaillocation.ttl");
+        }).then(console.log).catch(console.error);
       res.send("OK " + JSON.stringify(sessionInfo));
     },
     loginErrorCallback: (req: express.Request, res: express.Response, sessionInfo: any, reason: any) => {

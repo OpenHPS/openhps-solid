@@ -1,21 +1,7 @@
-import { 
-    DataFrame, 
-    DataObject, 
-    DataServiceDriver,
-    DataServiceOptions, 
-    Model,
-    Constructor
-} from "@openhps/core";
-import { SolidService, SolidSession } from "./SolidService";
-import {
-    getSolidDataset,
-    getThing,
-    setThing,
-    removeThing,
-    saveSolidDatasetAt,
-    Thing
-} from "@inrupt/solid-client";
-import { RDFSerializer } from "@openhps/rdf";
+import { DataFrame, DataObject, DataServiceDriver, DataServiceOptions, Model, Constructor } from '@openhps/core';
+import { SolidService, SolidSession } from './SolidService';
+import { getSolidDataset, removeThing, saveSolidDatasetAt, Thing } from '@inrupt/solid-client';
+import { RDFSerializer } from '@openhps/rdf';
 
 export class SolidDataDriver<T extends DataObject | DataFrame> extends DataServiceDriver<string, T> {
     public model: Model;
@@ -24,7 +10,7 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends DataServi
 
     constructor(dataType: Constructor<T>, options?: SolidDataDriverOptions<T>) {
         super(dataType, options);
-        this.options.uriPrefix = this.options.uriPrefix || "/openhps";
+        this.options.uriPrefix = this.options.uriPrefix || '/openhps';
         this.options.serialize = this.options.serialize || defaultThingSerializer;
         this.options.deserialize = this.options.deserialize || defaultThingDeserializer;
 
@@ -43,21 +29,16 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends DataServi
 
     findByUID(id: string): Promise<T> {
         return new Promise((resolve, reject) => {
-            this.service.findSessionByObjectUID(this.dataType, id).then((session: SolidSession) => {
-                const profileDocumentUrl = new URL(session.info.webId);
-                profileDocumentUrl.hash = "";
-                return Promise.all([profileDocumentUrl, getSolidDataset(profileDocumentUrl.href, session ? {
-                    fetch: session.fetch,
-                } : undefined)]);
-            })
-            .then(([profileDocumentUrl, dataset]) => {
-                const thing = getThing(
-                    dataset, 
-                    new URL(`/${this.options.uriPrefix}/${id}`, profileDocumentUrl.toString()).href);
-                const deserialized = this.options.deserialize(thing);
-                resolve(deserialized);
-            })
-            .catch(reject);
+            this.service
+                .findSessionByObjectUID(this.dataType, id)
+                .then((session: SolidSession) => {
+                    return this.service.getThing(session, `/${this.options.uriPrefix}/${id}`);
+                })
+                .then((thing) => {
+                    const deserialized = this.options.deserialize(thing);
+                    resolve(deserialized);
+                })
+                .catch(reject);
         });
     }
 
@@ -78,52 +59,53 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends DataServi
             if (!object.webId) {
                 return reject(new Error(`Unable to store data object or frame without WebID!`));
             }
-            this.service.findSessionByWebId(object.webId).then(session => {
-                if (!session) {
-                    reject(new Error(`Unable to find solid session for ${this.dataType.name} with id '${id}'!`));
-                    return;
-                }
-                // Link the object
-                this.service.linkSession(object, session.info.sessionId);
-                const profileDocumentUrl = new URL(object.webId);
-                profileDocumentUrl.hash = "";
-                // Insert into Pod
-                return Promise.all([profileDocumentUrl, getSolidDataset(profileDocumentUrl.href, {
-                    fetch: session.fetch,
-                })]);
-            }).then(([profileDocumentUrl, dataset]) => {
-                const item: Thing = this.options.serialize(object);
-                // item.url = new URL(`/${this.options.uriPrefix}/${id}`, profileDocumentUrl.toString()).href;
-                dataset = setThing(dataset, item);
-                return saveSolidDatasetAt(profileDocumentUrl.href, dataset);
-            }).then(() => resolve(object)).catch(reject);
+            this.service
+                .findSessionByWebId(object.webId)
+                .then((session) => {
+                    if (!session) {
+                        reject(new Error(`Unable to find solid session for ${this.dataType.name} with id '${id}'!`));
+                        return;
+                    }
+                    // Link the object
+                    this.service.linkSession(object, session.info.sessionId);
+                    const item: Thing = this.options.serialize(object);
+                    return this.service.setThing(session, '', item);
+                })
+                .then(() => resolve(object))
+                .catch(reject);
         });
     }
 
     delete(id: string): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.service.findSessionByObjectUID(this.dataType, id).then(session => {
-                if (!session) {
-                    reject(new Error(`Unable to find solid session for ${this.dataType.name} with id '${id}'!`));
-                    return;
-                }
-                // Unlink the object
-                this.service.unlinkSession(id);
-                // Delete from Pod
-                return getSolidDataset("", {
-                    fetch: session.fetch,
-                });
-            }).then(dataset => {
-                removeThing(dataset, "");
-                return saveSolidDatasetAt("", dataset);
-            }).then(() => resolve()).catch(reject);
+            this.service
+                .findSessionByObjectUID(this.dataType, id)
+                .then((session) => {
+                    if (!session) {
+                        reject(new Error(`Unable to find solid session for ${this.dataType.name} with id '${id}'!`));
+                        return;
+                    }
+                    // Unlink the object
+                    this.service.unlinkSession(id);
+                    // Delete from Pod
+                    const profileDocumentUrl = new URL(session.info.webId);
+                    profileDocumentUrl.hash = '';
+                    return getSolidDataset(profileDocumentUrl.href, {
+                        fetch: session.fetch,
+                    });
+                })
+                .then((dataset) => {
+                    removeThing(dataset, '');
+                    return saveSolidDatasetAt('', dataset);
+                })
+                .then(() => resolve())
+                .catch(reject);
         });
     }
 
     deleteAll(): Promise<void> {
         throw new Error(`Not supported with SolidDataDriver!`);
     }
-
 }
 
 export interface SolidDataDriverOptions<T> extends DataServiceOptions {
@@ -143,12 +125,21 @@ export interface SolidDataDriverOptions<T> extends DataServiceOptions {
     uriPrefix?: string;
 }
 
+/**
+ * @param object
+ */
 export function defaultThingSerializer<T extends DataObject | DataFrame>(object: T): Thing {
     const rdfThing = RDFSerializer.serialize(object);
-    
-    return undefined;
+    return {
+        type: 'Subject',
+        predicates: {},
+        url: rdfThing.value,
+    };
 }
 
+/**
+ * @param thing
+ */
 export function defaultThingDeserializer<T extends DataObject | DataFrame>(thing: Thing): T {
     return undefined;
 }

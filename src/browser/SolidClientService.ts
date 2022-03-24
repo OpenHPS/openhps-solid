@@ -1,11 +1,7 @@
-import { 
-    getClientAuthenticationWithDependencies,
-    Session,
-} from "@inrupt/solid-client-authn-browser";
-import { SolidService, SolidDataServiceOptions } from "../common/SolidService";
+import { getClientAuthenticationWithDependencies, Session } from '@inrupt/solid-client-authn-browser';
+import { SolidService, SolidDataServiceOptions } from '../common/SolidService';
 
 export class SolidClientService extends SolidService {
-
     constructor(options?: SolidDataServiceOptions) {
         super(options);
         this.once('build', this.login.bind(this));
@@ -17,25 +13,30 @@ export class SolidClientService extends SolidService {
                 insecureStorage: this,
                 secureStorage: this,
             });
-            session.login({
-                oidcIssuer: this.options.defaultOidcIssuer,
-                clientName: this.options.clientName,
-                redirectUrl: this.options.redirectUrl ? this.options.redirectUrl : window.location.href,
-                handleRedirect: this.options.redirectUrl ? this.onRedirect.bind(this, session) : undefined
-            }).then(resolve).catch(reject);
+            session
+                .login({
+                    oidcIssuer: this.options.defaultOidcIssuer,
+                    clientName: this.options.clientName,
+                    redirectUrl: this.options.redirectUrl ? this.options.redirectUrl : window.location.href,
+                    handleRedirect: this.options.redirectUrl ? this.onRedirect.bind(this, session) : undefined,
+                })
+                .then(resolve)
+                .catch(reject);
         });
     }
 
     protected onRedirect(session: Session, url: URL): Promise<void> {
         return new Promise((resolve, reject) => {
-            session.handleIncomingRedirect(url.toString()).then(sessionInfo => {
-                if (sessionInfo.isLoggedIn) {
-                    resolve();
-                } else {
-                    reject(new Error(`Unable to log in!`));
-                }
-            })
-            .catch(reject);
+            session
+                .handleIncomingRedirect(url.toString())
+                .then((sessionInfo) => {
+                    if (sessionInfo.isLoggedIn) {
+                        resolve();
+                    } else {
+                        reject(new Error(`Unable to log in!`));
+                    }
+                })
+                .catch(reject);
         });
     }
 
