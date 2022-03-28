@@ -21,8 +21,10 @@ import {
     setStringNoLocale,
     setThing,
     SolidDataset,
+    createSolidDataset,
     Thing,
     ThingPersisted,
+    FetchError,
 } from '@inrupt/solid-client';
 import { VCARD } from '@inrupt/vocab-common-rdf';
 
@@ -42,11 +44,11 @@ export abstract class SolidService extends RemoteService implements IStorage {
         this.options.defaultOidcIssuer = this.options.defaultOidcIssuer || 'https://broker.pod.inrupt.com/';
     }
 
-    private _getDocumentURL(session: SolidSession, path?: string): URL {
+    getDocumentURL(session: SolidSession, path?: string): URL {
         const documentURL = new URL(session.info.webId);
         if (path) {
             const pathURL = new URL(path, "http://localhost");
-            documentURL.pathname = pathURL.pathname;
+            documentURL.pathname = documentURL.pathname.replace("/profile/card", "") + pathURL.pathname;
             documentURL.hash = pathURL.hash;
         }
         return documentURL;
@@ -56,24 +58,30 @@ export abstract class SolidService extends RemoteService implements IStorage {
      * Get a Solid dataset
      *
      * @param {SolidSession} session Solid session to get a thing from
-     * @param {string} [path] Path URI of the thing in the Solid Pod
+     * @param {string} uri URI of the thing in the Solid Pod
      * @returns {Promise<SolidDataset>} Promise of a solid dataset
      */
-    getDataset(session: SolidSession, path?: string): Promise<SolidDataset> {
+    getDataset(session: SolidSession, uri: string): Promise<SolidDataset> {
         return new Promise((resolve, reject) => {
-            const documentURL = this._getDocumentURL(session, path);
+            const documentURL = this.getDocumentURL(session, uri);
             documentURL.hash = '';
             getSolidDataset(
                 documentURL.href,
                 session
                     ? {
-                          fetch: session.fetch,
+                        fetch: session.fetch,
                       }
                     : undefined,
             ).then((dataset) => {
                 resolve(dataset);
             })
-            .catch(reject);
+            .catch((ex: FetchError) => {
+                if (ex.response.status === 404) {
+                    resolve(createSolidDataset());
+                } else {
+                    reject(ex);
+                }
+            });
         });
     }
     
@@ -81,15 +89,13 @@ export abstract class SolidService extends RemoteService implements IStorage {
      * Save a Solid dataset
      *
      * @param {SolidSession} session Solid session to get a thing from
-     * @param {string} [path] Path URI of the thing in the Solid Pod
+     * @param {string} uri URI of the thing in the Solid Pod
      * @returns {Promise<SolidDataset>} Promise of a solid dataset
      */
-    saveDataset(session: SolidSession, dataset: SolidDataset, path?: string): Promise<void> {
+    saveDataset(session: SolidSession, dataset: SolidDataset, uri: string): Promise<void> {
         return new Promise((resolve, reject) => {
-            const documentURL = this._getDocumentURL(session, path);
-            documentURL.hash = '';
             saveSolidDatasetAt(
-                documentURL.href,
+                uri,
                 dataset,
                 session
                     ? {
@@ -107,14 +113,13 @@ export abstract class SolidService extends RemoteService implements IStorage {
      * Get a thing from a session Pod
      *
      * @param {SolidSession} session Solid session to get a thing from
-     * @param {string} [path] Path URI of the thing in the Solid Pod
+     * @param {string} uri URI of the thing in the Solid Pod
      * @returns {Promise<ThingPersisted>} Persisted thing
      */
-    getThing(session: SolidSession, path?: string): Promise<ThingPersisted> {
+    getThing(session: SolidSession, uri: string): Promise<ThingPersisted> {
         return new Promise((resolve, reject) => {
-            const documentURL = this._getDocumentURL(session, path);
-            this.getDataset(session, path).then((dataset) => {
-                const thing = getThing(dataset, documentURL.href);
+            this.getDataset(session, uri).then((dataset) => {
+                const thing = getThing(dataset, uri);
                 resolve(thing);
             })
             .catch(reject);
@@ -126,19 +131,57 @@ export abstract class SolidService extends RemoteService implements IStorage {
      *
      * @param {SolidSession} session Solid session to set a thing to
      * @param {Thing} thing Non-persisted thing to store in the Pod
-     * @param {string} path Path URI of the thing in the Solid Pod
      * @returns {Promise<void>} Promise if stored
      */
-    setThing(session: SolidSession, thing: Thing, path?: string): Promise<void> {
+    setThing(session: SolidSession, thing: Thing): Promise<void> {
         return new Promise((resolve, reject) => {
-            this.getDataset(session, path)
-                .then((dataset) => {
-                    dataset = setThing(dataset, thing);
-                    return this.saveDataset(session, dataset, path);
+            const documentURL = new URL(thing.url);
+            documentURL.hash = '';
+            this.getDataset(session, documentURL.href)
+                .then(async (dataset) => {
+                    const existingThing = await getThing(dataset, thing.url) ?? {};
+                    const newThing = this._mergeDeep(existingThing, thing);
+                    dataset = setThing(dataset, newThing);
+                    return this.saveDataset(session, dataset, documentURL.href);
                 })
                 .then(() => resolve())
                 .catch(reject);
         });
+    }
+
+    /**
+     * Check if something is an object
+     *
+     * @param {any} item Item to check for object
+     * @returns {boolean} Is an object
+     */
+    private _isObject(item: any) {
+        return item && typeof item === 'object' && !Array.isArray(item);
+    }
+
+    /**
+     * Deep merge objects
+     *
+     * @param {any} target Target object
+     * @param {any} source Source object
+     * @returns {any} Merged object
+     */
+    private _mergeDeep(target: any, source: any) {
+        const output = Object.assign({}, target);
+        if (this._isObject(target) && this._isObject(source)) {
+            Object.keys(source).forEach((key) => {
+                if (Array.isArray(source[key])) {
+                    output[key] = source[key];
+                    output[key].push(...(target[key] || []));
+                } else if (this._isObject(source[key])) {
+                    if (!(key in target)) Object.assign(output, { [key]: source[key] });
+                    else output[key] = this._mergeDeep(target[key], source[key]);
+                } else {
+                    Object.assign(output, { [key]: source[key] });
+                }
+            });
+        }
+        return output;
     }
 
     /**

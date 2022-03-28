@@ -2,12 +2,18 @@ import { getClientAuthenticationWithDependencies, Session } from '@inrupt/solid-
 import { SolidService, SolidDataServiceOptions } from '../common/SolidService';
 
 export class SolidClientService extends SolidService {
-    constructor(options?: SolidDataServiceOptions) {
+    protected options: SolidClientServiceOptions;
+
+    constructor(options?: SolidClientServiceOptions) {
         super(options);
-        this.once('build', this.login.bind(this));
+        this.options.autoLogin = this.options.autoLogin ?? false;
+        
+        if (this.options.autoLogin) {
+            this.once('build', this.login.bind(this));
+        }
     }
 
-    login(): Promise<void> {
+    login(oidcIssuer: string = this.options.defaultOidcIssuer): Promise<void> {
         return new Promise((resolve, reject) => {
             const session = new Session({
                 insecureStorage: this,
@@ -15,7 +21,7 @@ export class SolidClientService extends SolidService {
             });
             session
                 .login({
-                    oidcIssuer: this.options.defaultOidcIssuer,
+                    oidcIssuer,
                     clientName: this.options.clientName,
                     redirectUrl: this.options.redirectUrl ? this.options.redirectUrl : window.location.href,
                     handleRedirect: this.options.redirectUrl ? this.onRedirect.bind(this, session) : undefined,
@@ -62,4 +68,13 @@ export class SolidClientService extends SolidService {
             resolve(session);
         });
     }
+}
+
+export interface SolidClientServiceOptions extends SolidDataServiceOptions {
+    /**
+     * Automatically login after starting the server
+     *
+     * @default false
+     */
+    autoLogin?: boolean;
 }

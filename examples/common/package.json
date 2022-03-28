@@ -1,0 +1,13 @@
+{
+  "name": "openhps-solid-common",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/cjs/index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {},
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {}
+}
