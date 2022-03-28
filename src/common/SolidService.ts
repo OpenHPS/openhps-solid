@@ -26,7 +26,7 @@ import {
     ThingPersisted,
     FetchError,
 } from '@inrupt/solid-client';
-import { VCARD } from '@inrupt/vocab-common-rdf';
+import { vcard } from '@openhps/rdf';
 
 export abstract class SolidService extends RemoteService implements IStorage {
     protected options: SolidDataServiceOptions;
@@ -248,7 +248,7 @@ export abstract class SolidService extends RemoteService implements IStorage {
                 })
                 .then((dataset) => {
                     const profile = getThing(dataset, object.webId);
-                    object.displayName = getStringNoLocale(profile, VCARD.fn);
+                    object.displayName = getStringNoLocale(profile, vcard.fn);
                     resolve(object);
                 })
                 .catch(reject);
@@ -280,7 +280,7 @@ export abstract class SolidService extends RemoteService implements IStorage {
                 })
                 .then((dataset) => {
                     const profile = getThing(dataset, object.webId);
-                    setStringNoLocale(profile, VCARD.fn, object.displayName);
+                    setStringNoLocale(profile, vcard.fn, object.displayName);
                     resolve(object);
                 })
                 .catch(reject);

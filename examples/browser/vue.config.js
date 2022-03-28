@@ -4,9 +4,6 @@ module.exports = {
     : '/',
   transpileDependencies: [],
   chainWebpack: config => {
-    config.resolve.alias
-      .set('@openhps/solid', '@openhps/solid/dist/cjs/index.browser.js');
-
     config.module
       .rule('json')
       .test(/\.(json|geojson)$/i)

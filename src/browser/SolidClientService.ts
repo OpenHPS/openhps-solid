@@ -8,12 +8,28 @@ export class SolidClientService extends SolidService {
         super(options);
         this.options.autoLogin = this.options.autoLogin ?? false;
         
-        if (this.options.autoLogin) {
-            this.once('build', this.login.bind(this));
-        }
+        this.once('build', this._initialize.bind(this));
     }
 
-    login(oidcIssuer: string = this.options.defaultOidcIssuer): Promise<void> {
+    private _initialize(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            
+            console.log("init")
+            if (this.options.autoLogin) {
+                this.login(this.options.defaultOidcIssuer).then(() => resolve()).catch(reject);
+            } else {
+                
+                console.log(" handle")
+                const session = new Session({
+                    insecureStorage: this,
+                    secureStorage: this,
+                });
+                this.onRedirect(session, new URL(window.location.href));
+            }
+        });
+    }
+
+    login(oidcIssuer: string = this.options.defaultOidcIssuer): Promise<Session> {
         return new Promise((resolve, reject) => {
             const session = new Session({
                 insecureStorage: this,
@@ -24,9 +40,8 @@ export class SolidClientService extends SolidService {
                     oidcIssuer,
                     clientName: this.options.clientName,
                     redirectUrl: this.options.redirectUrl ? this.options.redirectUrl : window.location.href,
-                    handleRedirect: this.options.redirectUrl ? this.onRedirect.bind(this, session) : undefined,
                 })
-                .then(resolve)
+                .then(() => resolve(session))
                 .catch(reject);
         });
     }

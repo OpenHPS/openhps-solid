@@ -1,6 +1,6 @@
 import { LengthUnit } from '@openhps/core';
 import { RDFSerializer, vcard } from '@openhps/rdf';
-import { SolidClientService } from '@openhps/solid';
+import { SolidClientService } from '@openhps/solid/browser';
 import {
     FeatureOfInterest, 
     Geometry, 
@@ -11,12 +11,17 @@ import {
 import {
     getLiteral,
 } from '@inrupt/solid-client';
+import {
+    LocalStorageDriver
+} from '@openhps/localstorage';
 
 export class SolidController {
     constructor(clientName) {
         this.service = new SolidClientService({
             clientName,
+            dataServiceDriver: new LocalStorageDriver(String)
         });
+        this.service.emit("build");
     }
 
     async login(webId) {

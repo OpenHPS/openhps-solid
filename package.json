@@ -43,6 +43,7 @@
     "lint": "eslint src/**",
     "clean": "shx rm -rf ./dist && shx rm -rf ./docs/out",
     "build": "npm run clean && npm-run-all --parallel build:esm build:cjs build:declarations build:typedoc && npm run build:webpack",
+    "build:quick": "npm-run-all --parallel build:cjs build:esm",
     "build:declarations": "tsc --declaration --emitDeclarationOnly --outdir dist/types",
     "build:esm": "tsc --module es2015 --outDir dist/esm",
     "build:cjs": "tsc --module commonjs  --outDir dist/cjs",
@@ -65,7 +66,6 @@
     "@inrupt/solid-client-authn-browser": "^1.11.7",
     "@inrupt/solid-client-authn-node": "^1.11.7",
     "@inrupt/solid-client-notifications": "^0.2.0",
-    "@inrupt/vocab-common-rdf": "^1.0.3",
     "cookie-session": "^2.0.0",
     "express": "^4.17.3",
     "solid-file-client": "^2.1.3"
