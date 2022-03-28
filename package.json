@@ -78,7 +78,7 @@
   "devDependencies": {
     "@commitlint/cli": "^16.2.3",
     "@commitlint/config-conventional": "^16.2.1",
-    "@openhps/core": "^0.3.15",
+    "@openhps/core": "^0.3.16",
     "@openhps/rdf": "^0.1.11",
     "@types/chai": "^4.3.0",
     "@types/cookie-session": "^2.0.44",

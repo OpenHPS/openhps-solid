@@ -19,25 +19,31 @@ export class SolidController {
     constructor(clientName) {
         this.service = new SolidClientService({
             clientName,
-            dataServiceDriver: new LocalStorageDriver(String)
+            dataServiceDriver: new LocalStorageDriver(String, {
+                namespace: "example",
+            })
         });
         this.service.emit("build");
+        this.service.on("login", this.initialize.bind(this));
     }
 
-    async login(webId) {
-        await this.service.login(webId);
-        this.webId = webId;
+    get isLoggedIn() {
+        return this.session !== undefined;
+    }
+
+    async login(issuer) {
+        await this.service.login(issuer);
     }
 
     async getSession() {
-        return await this.service.findSessionByWebId(this.webId);
+        return await this.service.session;
     }
     
     async initialize() {
         const session = await this.getSession();
-        const card = await this.service.getThing(session, this.webId);
+        const card = await this.service.getThing(session, session.info.webId);
         // User description
-        this.me = new FeatureOfInterest(this.webId);
+        this.me = new FeatureOfInterest(session.info.webId);
         this.positionProperty = new ObservableProperty(this.service.getDocumentURL(session, `/public/position.ttl`).href);
         this.positionProperty.comment = `Geographical position of ${getLiteral(card, vcard.fn).value}`;
         this.positionProperty.label = "Geographical Position";
@@ -50,9 +56,9 @@ export class SolidController {
         console.log("Updated " + this.me.id)
     }
 
-    async updatePosition(lnglat) {
+    async updatePosition(data) {
         const session = await this.getSession();
-        console.log(session);
+        console.log("update position", data);
         if (session === undefined) {
             return;
         }
@@ -62,11 +68,11 @@ export class SolidController {
         observation.resultTime = timestamp;
         observation.observedProperties.push(this.positionProperty);
         const accuracy = new QuantityValue();
-        accuracy.numericValue = 2;
+        accuracy.numericValue = data.accuracy;
         accuracy.unit = LengthUnit.METER;
         const position = new Geometry();
-        position.latitude = lnglat[1];
-        position.longitude = lnglat[0];
+        position.latitude = data.lnglat[1];
+        position.longitude = data.lnglat[0];
         position.spatialAccuracy = accuracy;
         observation.results.push(position);
         console.log("Updated position", this.positionProperty.id)

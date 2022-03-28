@@ -68,7 +68,7 @@ export default {
       controller: null
     }
   },
-  mounted() {
+  beforeMount() {
     this.controller = new SolidController("OpenHPS Solid Example");
   },
   methods: {
@@ -81,7 +81,7 @@ export default {
     },
     onUpdatePosition(position) {
       this.position.lnglat = position;
-      this.controller.updatePosition();
+      this.controller.updatePosition(this.position);
     },
     onUpdateAltitude(altitude) {
       this.position.altitude = altitude;

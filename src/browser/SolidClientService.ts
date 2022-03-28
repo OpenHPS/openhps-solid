@@ -3,6 +3,7 @@ import { SolidService, SolidDataServiceOptions } from '../common/SolidService';
 
 export class SolidClientService extends SolidService {
     protected options: SolidClientServiceOptions;
+    protected _session: Session;
 
     constructor(options?: SolidClientServiceOptions) {
         super(options);
@@ -13,20 +14,24 @@ export class SolidClientService extends SolidService {
 
     private _initialize(): Promise<void> {
         return new Promise((resolve, reject) => {
-            
-            console.log("init")
             if (this.options.autoLogin) {
                 this.login(this.options.defaultOidcIssuer).then(() => resolve()).catch(reject);
             } else {
-                
-                console.log(" handle")
                 const session = new Session({
                     insecureStorage: this,
                     secureStorage: this,
                 });
-                this.onRedirect(session, new URL(window.location.href));
+                this.onRedirect(session, new URL(window.location.href)).then(() => resolve()).catch(() => resolve())
             }
         });
+    }
+
+    get session(): Session {
+        return this._session;
+    }
+
+    protected set session(value: Session) {
+        this._session = value;
     }
 
     login(oidcIssuer: string = this.options.defaultOidcIssuer): Promise<Session> {
@@ -46,13 +51,15 @@ export class SolidClientService extends SolidService {
         });
     }
 
-    protected onRedirect(session: Session, url: URL): Promise<void> {
+    protected onRedirect(session: Session, url: URL): Promise<Session> {
         return new Promise((resolve, reject) => {
             session
                 .handleIncomingRedirect(url.toString())
                 .then((sessionInfo) => {
                     if (sessionInfo.isLoggedIn) {
-                        resolve();
+                        this.session = session;
+                        this.emitAsync("login", session);
+                        resolve(session);
                     } else {
                         reject(new Error(`Unable to log in!`));
                     }
