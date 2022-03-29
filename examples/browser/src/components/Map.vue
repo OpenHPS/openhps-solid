@@ -38,18 +38,18 @@
       </VlGeoloc>
 
     </VlMap>
-    <LoginModel :controller="controller" />
+    <LoginModal :controller="controller" />
   </div>
 </template>
 
 <script>
 import { FullScreen } from 'ol/control';
-import LoginModel from './LoginModel.vue';
+import LoginModal from './LoginModal.vue';
 import { SolidController } from '../controllers/SolidController';
 
 export default {
   name: 'Map',
-  components: { LoginModel },
+  components: { LoginModal },
   data () {
     return {
       center: [0, 0],

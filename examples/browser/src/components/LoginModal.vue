@@ -1,11 +1,11 @@
 <template>
     <b-modal
-        :active="!this.isLoggedIn()"
+        :active="active"
         has-modal-card
         aria-role="dialog"
         aria-label="Solid Login"
         aria-modal>
-        <form action="">
+        <form action="" @submit="login">
             <div class="modal-card" style="min-width: 400px">
                 <header class="modal-card-head">
                     <p class="modal-card-title">Login to Solid Provider</p>
@@ -33,11 +33,12 @@
 
 <script>
 export default {
-    name: 'LoginModel',
+    name: 'LoginModal',
     props: ['controller'],
     data () {
         return {
-            issuer: null
+            issuer: null,
+            active: true
         }
     },
     methods: {
@@ -45,10 +46,14 @@ export default {
             this.controller.login(this.issuer);
         },
         isLoggedIn() {
-            console.log(this.controller ? this.controller.isLoggedIn : false)
             return this.controller ? this.controller.isLoggedIn : false;
         }
     },
+    mounted() {
+        this.controller.once('ready', () => {
+            this.active = false;
+        });
+    }
 };
 </script>
 

@@ -1,6 +1,6 @@
 module.exports = {
   publicPath: process.env.NODE_ENV === 'production'
-    ? '/demo/'
+    ? '/'
     : '/',
   transpileDependencies: [],
   chainWebpack: config => {
@@ -28,5 +28,9 @@ module.exports = {
       // title of the application
       title: 'OpenHPS Solid Browser',
     },
+  },
+  devServer: {
+    port: 8081,
+    host: '0.0.0.0'
   }
 }
