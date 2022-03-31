@@ -2,13 +2,11 @@ import { DataFrame, DataObject, DataServiceDriver, DataServiceOptions, Model, Co
 import { SolidService, SolidSession } from './SolidService';
 import { getSolidDataset, removeThing, saveSolidDatasetAt, Thing } from '@inrupt/solid-client';
 import { RDFSerializer } from '@openhps/rdf';
-//import { QueryEngine } from '@comunica/query-sparql-solid';
 
 export class SolidDataDriver<T extends DataObject | DataFrame> extends DataServiceDriver<string, T> {
     public model: Model;
     protected service: SolidService;
     protected options: SolidDataDriverOptions<T>;
-    //protected client: QueryEngine;
 
     constructor(dataType: Constructor<T>, options?: SolidDataDriverOptions<T>) {
         super(dataType, options);

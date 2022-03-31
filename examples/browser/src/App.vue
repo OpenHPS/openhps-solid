@@ -1,16 +1,16 @@
 <template>
   <div id="app">
-    <AppMap/>
+    <MapComponent/>
   </div>
 </template>
 
 <script>
-import AppMap from './components/Map.vue'
+import MapComponent from './components/MapComponent.vue'
 
 export default {
   name: 'App',
   components: {
-    AppMap,
+    MapComponent,
   },
 }
 </script>

@@ -24,7 +24,7 @@ module.exports = {
   pages: {
     index: {
       // entry for the page
-      entry: 'src/main.js',
+      entry: 'src/main.ts',
       // title of the application
       title: 'OpenHPS Solid Browser',
     },

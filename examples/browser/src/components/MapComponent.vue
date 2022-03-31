@@ -48,7 +48,7 @@ import LoginModal from './LoginModal.vue';
 import { SolidController } from '../controllers/SolidController';
 
 export default {
-  name: 'Map',
+  name: 'MapComponent',
   components: { LoginModal },
   data () {
     return {

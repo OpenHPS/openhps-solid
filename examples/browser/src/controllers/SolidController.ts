@@ -1,5 +1,5 @@
 import { AngleUnit, LengthUnit } from '@openhps/core';
-import { RDFSerializer, vcard } from '@openhps/rdf';
+import { IriString, RDFSerializer, vcard } from '@openhps/rdf';
 import { SolidClientService } from '@openhps/solid/browser';
 import {
     FeatureOfInterest, 
@@ -7,7 +7,7 @@ import {
     ObservableProperty, 
     Observation, 
     QuantityValue,
-} from "openhps-solid-common";
+} from "../models";
 import {
     getLiteral,
 } from '@inrupt/solid-client';
@@ -15,9 +15,16 @@ import {
     LocalStorageDriver
 } from '@openhps/localstorage';
 import EventEmitter from 'events';
-export class SolidController extends EventEmitter {
+import type { SolidSession } from '@openhps/solid';
 
-    constructor(clientName) {
+export class SolidController extends EventEmitter {
+    protected service: SolidClientService;
+    protected session: SolidSession;
+    protected me: FeatureOfInterest;
+    protected positionProperty: ObservableProperty;
+    protected orientationProperty: ObservableProperty;
+
+    constructor(clientName: string) {
         super();
         this.service = new SolidClientService({
             clientName,
@@ -33,7 +40,7 @@ export class SolidController extends EventEmitter {
         return this.session !== undefined;
     }
 
-    async login(issuer) {
+    async login(issuer: string) {
         await this.service.login(issuer);
     }
 
@@ -49,11 +56,11 @@ export class SolidController extends EventEmitter {
         this.positionProperty = new ObservableProperty(this.service.getDocumentURL(session, `/properties/position.ttl`).href);
         this.positionProperty.comment = `Geographical position of ${getLiteral(card, vcard.fn).value}`;
         this.positionProperty.label = "Geographical Position";
-        this.positionProperty.featureOfInterest = this.me.value;
+        this.positionProperty.featureOfInterest = this.me.value as IriString;
         this.orientationProperty = new ObservableProperty(this.service.getDocumentURL(session, `/properties/orientation.ttl`).href);
         this.orientationProperty.comment = `Orientation of ${getLiteral(card, vcard.fn).value}`;
         this.orientationProperty.label = "Orientation";
-        this.orientationProperty.featureOfInterest = this.me.value;
+        this.orientationProperty.featureOfInterest = this.me.value as IriString;
 
         this.me.properties.push(this.positionProperty);
         this.me.properties.push(this.orientationProperty);
@@ -65,7 +72,7 @@ export class SolidController extends EventEmitter {
         this.emit('ready');
     }
 
-    async updatePosition(data) {
+    async updatePosition(data: any) {
         const session = await this.getSession();
         if (session === undefined) {
             return;
@@ -74,7 +81,7 @@ export class SolidController extends EventEmitter {
         this.createOrientation(session, data);
     }
     
-    async createPosition(session, data) {
+    async createPosition(session: any, data: any) {
         const timestamp = new Date();
         const observation = new Observation(this.service.getDocumentURL(session, `/properties/position.ttl#${timestamp.getTime()}`).href);
         observation.featuresOfInterest.push(this.me);
@@ -92,7 +99,7 @@ export class SolidController extends EventEmitter {
         await this.service.setThing(session, await RDFSerializer.serializeToSubjects(observation)[0]);
     }
     
-    async createOrientation(session, data) {
+    async createOrientation(session: any, data: any) {
         const timestamp = new Date();
         const observation = new Observation(this.service.getDocumentURL(session, `/properties/orientation.ttl#${timestamp.getTime()}`).href);
         observation.featuresOfInterest.push(this.me);
