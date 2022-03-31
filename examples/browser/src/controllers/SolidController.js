@@ -15,8 +15,8 @@ import {
     LocalStorageDriver
 } from '@openhps/localstorage';
 import EventEmitter from 'events';
-
 export class SolidController extends EventEmitter {
+
     constructor(clientName) {
         super();
         this.service = new SolidClientService({
@@ -103,7 +103,7 @@ export class SolidController extends EventEmitter {
         accuracy.unit = AngleUnit.DEGREE;
         const value = new QuantityValue();
         value.unit = AngleUnit.DEGREE;
-        value.value = data.heading;
+        value.numericValue = data.heading;
         observation.results.push(value);
         await this.service.setThing(session, await RDFSerializer.serializeToSubjects(observation)[0]);
     }
