@@ -9,8 +9,7 @@
   "dependencies": {
     "@openhps/solid": "file:../../",
     "cookie-session": "^1.4.0",
-    "express": "^4.17.1",
-    "openhps-solid-common": "file:../common/"
+    "express": "^4.17.1"
   },
   "author": "",
   "license": "ISC",

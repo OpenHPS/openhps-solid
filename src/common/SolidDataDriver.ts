@@ -1,7 +1,7 @@
 import { DataFrame, DataObject, DataServiceDriver, DataServiceOptions, Model, Constructor } from '@openhps/core';
 import { SolidService, SolidSession } from './SolidService';
 import { getSolidDataset, removeThing, saveSolidDatasetAt, Thing } from '@inrupt/solid-client';
-import { RDFSerializer } from '@openhps/rdf';
+import { RDFSerializer } from '@openhps/rdf/serialization';
 
 export class SolidDataDriver<T extends DataObject | DataFrame> extends DataServiceDriver<string, T> {
     public model: Model;

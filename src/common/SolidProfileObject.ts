@@ -1,4 +1,4 @@
-import { foaf } from '@openhps/rdf';
+import { foaf } from '@openhps/rdf/vocab';
 import { DataFrame, DataObject, SerializableMember, SerializableObject } from '@openhps/core';
 
 @SerializableObject({

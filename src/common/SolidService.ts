@@ -26,11 +26,11 @@ import {
     ThingPersisted,
     FetchError,
 } from '@inrupt/solid-client';
-import { vcard } from '@openhps/rdf';
+import { vcard } from '@openhps/rdf/vocab';
 
 export abstract class SolidService extends RemoteService implements IStorage {
     protected options: SolidDataServiceOptions;
-    protected driver: DataServiceDriver<string, string>;
+    protected driver: DataServiceDriver<string, String>;
     model: Model<any, any>;
     private static readonly PREFIX = 'OpenHPS:solid';
 
@@ -39,7 +39,7 @@ export abstract class SolidService extends RemoteService implements IStorage {
         this.options = options || {};
         this.driver =
             this.options.dataServiceDriver ||
-            (new MemoryDataService(String) as unknown as DataServiceDriver<string, string>);
+            (new MemoryDataService(String));
         this.uid = this.constructor.name;
         this.options.defaultOidcIssuer = this.options.defaultOidcIssuer || 'https://broker.pod.inrupt.com/';
     }
@@ -297,7 +297,7 @@ export abstract class SolidService extends RemoteService implements IStorage {
         return new Promise((resolve) => {
             this.driver
                 .findByUID(key)
-                .then(resolve)
+                .then(s => resolve(s as string))
                 .catch(() => resolve(undefined));
         });
     }
@@ -411,7 +411,11 @@ export interface SolidDataServiceOptions {
      */
     redirectUrl?: string;
     defaultOidcIssuer?: string;
-    dataServiceDriver?: DataServiceDriver<string, string>;
+    /**
+     * Data service driver to use for key:value pairs
+     * In a browser this should be @openhps/localstorage
+     */
+    dataServiceDriver?: DataServiceDriver<string, String>;
 }
 
 export type SolidSession = BrowserSession | NodeSession;

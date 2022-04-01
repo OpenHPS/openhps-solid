@@ -1,7 +1,7 @@
 import express from "express";
 import { DataObject, DataObjectService, LengthUnit, ModelBuilder } from '@openhps/core';
 import { SolidClientService, SolidDataDriver, SolidService } from '@openhps/solid';
-import { FeatureOfInterest, Geometry, ObservableProperty, Observation, QuantityValue } from "openhps-solid-common";
+import { FeatureOfInterest, Geometry, ObservableProperty, Observation, QuantityValue } from "./models";
 import { IriString, RDFSerializer, vcard } from "@openhps/rdf";
 import { getLiteral } from "@inrupt/solid-client";
 
