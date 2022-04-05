@@ -1,6 +1,6 @@
 import { AngleUnit, LengthUnit } from '@openhps/core';
 import { IriString, RDFSerializer } from '@openhps/rdf/serialization';
-import { vcard, schema } from '@openhps/rdf/vocab';
+import { vcard } from '@openhps/rdf/vocab';
 import { SolidClientService } from '@openhps/solid/browser';
 import {
     FeatureOfInterest, 
@@ -121,6 +121,7 @@ export class SolidController extends EventEmitter {
         const system = new System(this.service.getDocumentURL(session, `/systems/geolocationapi.ttl`).href);
         system.label = "Geolocation API";
         system.comment = "Geolocation API Location-based Service";
+        
     }
 
 }

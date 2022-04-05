@@ -1,7 +1,6 @@
 import { SerializableArrayMember, SerializableMember, SerializableObject } from "@openhps/core";
 import { SerializableNamedNode } from "@openhps/rdf/serialization";
 import { rdfs, ssn } from "@openhps/rdf/vocab";
-import { Procedure } from ".";
 import { Deployment } from "./Deployment";
 
 @SerializableObject({
@@ -40,11 +39,4 @@ export class System extends SerializableNamedNode {
         }
     })
     subSystems?: System[] = [];
-
-    @SerializableArrayMember(System, {
-        rdf: {
-            predicate: ssn._implements
-        }
-    })
-    procedures?: Procedure[] = [];
 }

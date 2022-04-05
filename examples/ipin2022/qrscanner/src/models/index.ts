@@ -8,4 +8,4 @@ export * from './System';
 export * from './Platform';
 export * from './Deployment';
 export * from './Accuracy';
-export * from './Procedure';
+export * from './Spaces';
