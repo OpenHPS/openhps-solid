@@ -7,5 +7,5 @@ export * from './Geometry';
 export * from './System';
 export * from './Platform';
 export * from './Deployment';
-export * from './Accuracy';
+export * from './PropertyAccuracy';
 export * from './Procedure';

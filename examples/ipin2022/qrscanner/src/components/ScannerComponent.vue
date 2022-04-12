@@ -7,7 +7,7 @@
 
 <script>
 import LoginModal from './LoginModal.vue';
-import { SolidController } from '../controllers/SolidController';
+import { SolidController, BuildingController } from '../controllers';
 import { QrcodeStream } from 'vue-qrcode-reader';
 
 export default {
@@ -18,11 +18,13 @@ export default {
   },
   data () {
     return {
-      controller: null
+      controller: null,
+      buildingController: null
     }
   },
   beforeMount() {
     this.controller = new SolidController("OpenHPS Solid Example");
+    this.buildingController = new BuildingController();
   },
   methods: {
     onDecode(event) {

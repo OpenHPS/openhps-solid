@@ -2,7 +2,7 @@ import { SerializableArrayMember, SerializableMember, SerializableObject } from 
 import { sosa } from "@openhps/rdf/vocab";
 import { FeatureOfInterest } from "./FeatureOfInterest";
 import { ObservableProperty } from "./ObservableProperty";
-import { SerializableNamedNode, xsd } from "@openhps/rdf/serialization";
+import { SerializableNamedNode, xsd, IriString, Thing, N3 } from "@openhps/rdf/serialization";
 
 @SerializableObject({
     rdf: {
@@ -38,4 +38,13 @@ export class Observation extends SerializableNamedNode {
         }
     })
     results: Object[] = [];
+
+    @SerializableArrayMember(String, {
+        rdf: {
+            predicate: sosa.usedProcedure,
+            serializer: (value: string) => (N3.DataFactory.namedNode(value)),
+            deserializer: (thing: Thing) => thing.value
+        }
+    })
+    usedProcedures: IriString[] = [];
 }

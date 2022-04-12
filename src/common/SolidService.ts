@@ -27,6 +27,7 @@ import {
     FetchError,
 } from '@inrupt/solid-client';
 import { vcard } from '@openhps/rdf/vocab';
+import { Quad_Subject, DataFactory, Quad_Object, Quad, Store } from '@openhps/rdf/serialization';
 
 export abstract class SolidService extends RemoteService implements IStorage {
     protected options: SolidDataServiceOptions;
@@ -37,9 +38,7 @@ export abstract class SolidService extends RemoteService implements IStorage {
     constructor(options?: SolidDataServiceOptions) {
         super();
         this.options = options || {};
-        this.driver =
-            this.options.dataServiceDriver ||
-            (new MemoryDataService(String));
+        this.driver = this.options.dataServiceDriver || new MemoryDataService(String);
         this.uid = this.constructor.name;
         this.options.defaultOidcIssuer = this.options.defaultOidcIssuer || 'https://broker.pod.inrupt.com/';
     }
@@ -47,11 +46,87 @@ export abstract class SolidService extends RemoteService implements IStorage {
     getDocumentURL(session: SolidSession, path?: string): URL {
         const documentURL = new URL(session.info.webId);
         if (path) {
-            const pathURL = new URL(path, "http://localhost");
-            documentURL.pathname = documentURL.pathname.replace("/profile/card", "") + pathURL.pathname;
+            const pathURL = new URL(path, 'http://localhost');
+            documentURL.pathname = documentURL.pathname.replace('/profile/card', '') + pathURL.pathname;
             documentURL.hash = pathURL.hash;
         }
         return documentURL;
+    }
+
+    /**
+     * Get a Solid dataset as an N3 Quads dataset
+     *
+     * @param {SolidSession} session Solid session to get a thing from
+     * @param {string} uri URI of the thing in the Solid Pod
+     * @returns {Promise<Store>} Promise of a solid dataset store
+     */
+    getDatasetStore(session: SolidSession, uri: string): Promise<Store> {
+        return new Promise((resolve, reject) => {
+            /**
+             *
+             * @param subject
+             * @param predicates
+             */
+            function convertPredicates(subject: Quad_Subject, predicates: any): Quad[] {
+                return Object.keys(predicates)
+                    .map((key) => {
+                        const predicate = DataFactory.namedNode(key);
+                        const objects: Quad_Object[] = [];
+                        objects.push(
+                            ...Object.keys(predicates[key].literals ?? {})
+                                .map((dataTypeIRI) => {
+                                    return predicates[key].literals[dataTypeIRI].map((val: string) => {
+                                        return DataFactory.literal(val, dataTypeIRI);
+                                    });
+                                })
+                                .reduce((a, b) => a.concat(b), []),
+                        );
+                        objects.push(
+                            ...Object.keys(predicates[key].langStrings ?? {})
+                                .map((locale) => {
+                                    return predicates[key].langStrings[locale].map((val: string) => {
+                                        return DataFactory.literal(val, locale);
+                                    });
+                                })
+                                .reduce((a, b) => a.concat(b), []),
+                        );
+                        objects.push(
+                            ...(predicates[key].namedNodes ?? []).map((uri: string) => {
+                                return DataFactory.namedNode(uri);
+                            }),
+                        );
+                        return objects
+                            .map((object) => new Quad(subject, predicate, object))
+                            .concat(
+                                ...Object.keys(predicates[key].blankNodes ?? {})
+                                    .map((blankNode: string) => {
+                                        return convertPredicates(
+                                            DataFactory.blankNode(blankNode),
+                                            predicates[key].blankNodes[blankNode],
+                                        );
+                                    })
+                                    .reduce((a, b) => a.concat(b), []),
+                            );
+                    })
+                    .reduce((a, b) => a.concat(b), []);
+            }
+            this.getDataset(session, uri)
+                .then((dataset) => {
+                    const quads: Quad[] = Object.keys(dataset.graphs)
+                        .map((key) => {
+                            const graph = dataset.graphs[key];
+                            return Object.values(graph)
+                                .map((thing) => {
+                                    const subject = DataFactory.namedNode(thing.url);
+                                    return convertPredicates(subject, thing.predicates);
+                                })
+                                .reduce((a, b) => a.concat(b), []);
+                        })
+                        .reduce((a, b) => a.concat(b), []);
+                    resolve(new Store(quads));
+                })
+                .catch(reject);
+        });
     }
 
     /**
@@ -69,26 +144,28 @@ export abstract class SolidService extends RemoteService implements IStorage {
                 documentURL.href,
                 session
                     ? {
-                        fetch: session.fetch,
+                          fetch: session.fetch,
                       }
                     : undefined,
-            ).then((dataset) => {
-                resolve(dataset);
-            })
-            .catch((ex: FetchError) => {
-                if (ex.response.status === 404) {
-                    resolve(createSolidDataset());
-                } else {
-                    reject(ex);
-                }
-            });
+            )
+                .then((dataset) => {
+                    resolve(dataset);
+                })
+                .catch((ex: FetchError) => {
+                    if (ex.response.status === 404) {
+                        resolve(createSolidDataset());
+                    } else {
+                        reject(ex);
+                    }
+                });
         });
     }
-    
+
     /**
      * Save a Solid dataset
      *
      * @param {SolidSession} session Solid session to get a thing from
+     * @param dataset
      * @param {string} uri URI of the thing in the Solid Pod
      * @returns {Promise<SolidDataset>} Promise of a solid dataset
      */
@@ -102,10 +179,11 @@ export abstract class SolidService extends RemoteService implements IStorage {
                           fetch: session.fetch,
                       }
                     : undefined,
-            ).then(() => {
-                resolve();
-            })
-            .catch(reject);
+            )
+                .then(() => {
+                    resolve();
+                })
+                .catch(reject);
         });
     }
 
@@ -118,11 +196,12 @@ export abstract class SolidService extends RemoteService implements IStorage {
      */
     getThing(session: SolidSession, uri: string): Promise<ThingPersisted> {
         return new Promise((resolve, reject) => {
-            this.getDataset(session, uri).then((dataset) => {
-                const thing = getThing(dataset, uri);
-                resolve(thing);
-            })
-            .catch(reject);
+            this.getDataset(session, uri)
+                .then((dataset) => {
+                    const thing = getThing(dataset, uri);
+                    resolve(thing);
+                })
+                .catch(reject);
         });
     }
 
@@ -139,7 +218,7 @@ export abstract class SolidService extends RemoteService implements IStorage {
             documentURL.hash = '';
             this.getDataset(session, documentURL.href)
                 .then(async (dataset) => {
-                    const existingThing = await getThing(dataset, thing.url) ?? {};
+                    const existingThing = (await getThing(dataset, thing.url)) ?? {};
                     const newThing = this._mergeDeep(existingThing, thing);
                     dataset = setThing(dataset, newThing);
                     return this.saveDataset(session, dataset, documentURL.href);
@@ -297,7 +376,7 @@ export abstract class SolidService extends RemoteService implements IStorage {
         return new Promise((resolve) => {
             this.driver
                 .findByUID(key)
-                .then(s => resolve(s as string))
+                .then((s) => resolve(s as string))
                 .catch(() => resolve(undefined));
         });
     }
@@ -415,7 +494,7 @@ export interface SolidDataServiceOptions {
      * Data service driver to use for key:value pairs
      * In a browser this should be @openhps/localstorage
      */
-    dataServiceDriver?: DataServiceDriver<string, String>;
+    dataServiceDriver?: DataServiceDriver<string, string>;
 }
 
 export type SolidSession = BrowserSession | NodeSession;

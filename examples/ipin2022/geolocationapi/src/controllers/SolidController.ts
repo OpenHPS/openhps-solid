@@ -1,14 +1,14 @@
-import { AngleUnit, LengthUnit } from '@openhps/core';
-import { IriString, RDFSerializer } from '@openhps/rdf/serialization';
-import { vcard, schema } from '@openhps/rdf/vocab';
+import { AngleUnit, LengthUnit, LinearVelocityUnit } from '@openhps/core';
+import { IriString, RDFSerializer, N3 } from '@openhps/rdf/serialization';
+import { vcard, rdf, sosa } from '@openhps/rdf/vocab';
 import { SolidClientService } from '@openhps/solid/browser';
 import {
     FeatureOfInterest, 
     Geometry, 
     ObservableProperty, 
     Observation, 
+    PropertyAccuracy, 
     QuantityValue,
-    System,
 } from "../models";
 import {
     getLiteral,
@@ -25,6 +25,7 @@ export class SolidController extends EventEmitter {
     protected me: FeatureOfInterest;
     protected positionProperty: ObservableProperty;
     protected orientationProperty: ObservableProperty;
+    protected velocityProperty: ObservableProperty;
 
     constructor(clientName: string) {
         super();
@@ -42,34 +43,53 @@ export class SolidController extends EventEmitter {
         return this.session !== undefined;
     }
 
+    protected getPropertyURI(session: SolidSession, property: string): IriString {
+        return this.service.getDocumentURL(session, `/properties/${property}.ttl`).href as IriString;
+    }
+
     async login(issuer: string) {
         await this.service.login(issuer);
     }
 
-    async getSession() {
-        return await this.service.session;
+    getSession(): SolidSession {
+        return this.service.session;
     }
     
     async initialize() {
-        const session = await this.getSession();
+        const session = this.getSession();
         const card = await this.service.getThing(session, session.info.webId);
         // User description
         this.me = new FeatureOfInterest(session.info.webId);
-        this.positionProperty = new ObservableProperty(this.service.getDocumentURL(session, `/properties/position.ttl`).href);
+        this.positionProperty = new ObservableProperty(this.getPropertyURI(session, "position"));
         this.positionProperty.comment = `Geographical position of ${getLiteral(card, vcard.fn).value}`;
         this.positionProperty.label = "Geographical Position";
         this.positionProperty.featureOfInterest = this.me.value as IriString;
-        this.orientationProperty = new ObservableProperty(this.service.getDocumentURL(session, `/properties/orientation.ttl`).href);
+        const positionPropertyAccuracy = new PropertyAccuracy(this.getPropertyURI(session, "position") + "#accuracy");
+        positionPropertyAccuracy.unit = LengthUnit.METER;
+        positionPropertyAccuracy.minValue = -1;
+        positionPropertyAccuracy.minValue = 1;
+        positionPropertyAccuracy.forProperty = this.positionProperty;
+        positionPropertyAccuracy.label = "Maximum accuracy";
+        positionPropertyAccuracy.comment = "The maximum accuracy for the geographical position";
+
+        this.orientationProperty = new ObservableProperty(this.getPropertyURI(session, "orientation"));
         this.orientationProperty.comment = `Orientation of ${getLiteral(card, vcard.fn).value}`;
         this.orientationProperty.label = "Orientation";
         this.orientationProperty.featureOfInterest = this.me.value as IriString;
+        
+        this.velocityProperty = new ObservableProperty(this.getPropertyURI(session, "velocity"));
+        this.velocityProperty.comment = `Velocity of ${getLiteral(card, vcard.fn).value}`;
+        this.velocityProperty.label = "Velocity";
+        this.velocityProperty.featureOfInterest = this.me.value as IriString;
 
         this.me.properties.push(this.positionProperty);
         this.me.properties.push(this.orientationProperty);
+        this.me.properties.push(this.velocityProperty);
         const subjects = await RDFSerializer.serializeToSubjects(this.me);
         subjects.forEach(subject => {
             this.service.setThing(session, subject);
         });
+        this.service.setThing(session, RDFSerializer.serializeToSubjects(positionPropertyAccuracy)[0]);
         console.log("Created properties for", this.me.id);
         this.emit('ready');
     }
@@ -81,8 +101,30 @@ export class SolidController extends EventEmitter {
         }
         this.createPosition(session, data);
         this.createOrientation(session, data);
+        this.createVelocity(session, data);
+
     }
     
+    async findPosition(session: SolidSession): Promise<Geometry> {
+        this.service.getThing(session, this.getPropertyURI(session, "position"));
+
+        return undefined;
+    }
+
+    async findAllPositions(session: SolidSession): Promise<Geometry[]> {
+        const dataset: N3.Store = await this.service.getDatasetStore(session, this.getPropertyURI(session, "position"));
+        console.log(dataset.getSubjects(N3.DataFactory.namedNode(rdf.type), N3.DataFactory.namedNode(sosa.Observation), null));
+        return undefined;
+    }
+
+    async findAllOrientations(session: SolidSession): Promise<QuantityValue[]> {
+        return undefined;
+    }
+
+    async findAllVelocities(session: SolidSession): Promise<QuantityValue[]> {
+        return undefined;
+    }
+
     async createPosition(session: SolidSession, data: any) {
         const timestamp = new Date();
         const observation = new Observation(this.service.getDocumentURL(session, `/properties/position.ttl#${timestamp.getTime()}`).href);
@@ -97,7 +139,6 @@ export class SolidController extends EventEmitter {
         position.longitude = data.lnglat[0];
         position.spatialAccuracy = accuracy;
         observation.results.push(position);
-        console.log(await RDFSerializer.stringify(observation));
         await this.service.setThing(session, await RDFSerializer.serializeToSubjects(observation)[0]);
     }
     
@@ -114,13 +155,24 @@ export class SolidController extends EventEmitter {
         value.unit = AngleUnit.DEGREE;
         value.numericValue = data.heading;
         observation.results.push(value);
+        observation.usedProcedures.push("http://example.com/geolocationapi.ttl");
         await this.service.setThing(session, await RDFSerializer.serializeToSubjects(observation)[0]);
     }
 
-    async createSystem(session: SolidSession) {
-        const system = new System(this.service.getDocumentURL(session, `/systems/geolocationapi.ttl`).href);
-        system.label = "Geolocation API";
-        system.comment = "Geolocation API Location-based Service";
+    async createVelocity(session: SolidSession, data: any) {
+        const timestamp = new Date();
+        const observation = new Observation(this.service.getDocumentURL(session, `/properties/velocity.ttl#${timestamp.getTime()}`).href);
+        observation.featuresOfInterest.push(this.me);
+        observation.resultTime = timestamp;
+        observation.observedProperties.push(this.velocityProperty);
+        const accuracy = new QuantityValue();
+        accuracy.numericValue = 1;
+        accuracy.unit = LinearVelocityUnit.METER_PER_SECOND;
+        const value = new QuantityValue();
+        value.unit = LinearVelocityUnit.METER_PER_SECOND;
+        value.numericValue = data.speed;
+        observation.results.push(value);
+        observation.usedProcedures.push("http://example.com/geolocationapi.ttl");
+        await this.service.setThing(session, await RDFSerializer.serializeToSubjects(observation)[0]);
     }
-
 }

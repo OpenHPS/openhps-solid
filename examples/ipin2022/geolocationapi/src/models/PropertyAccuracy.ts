@@ -1,5 +1,5 @@
-import { SerializableMember, SerializableObject } from "@openhps/core";
-import { schema, ssn, ssns } from "@openhps/rdf/vocab";
+import { SerializableMember, SerializableObject, Unit } from "@openhps/core";
+import { schema, ssn, ssns, rdfs } from "@openhps/rdf/vocab";
 import { SerializableNamedNode } from "@openhps/rdf/serialization";
 import { ObservableProperty } from "./ObservableProperty";
 
@@ -8,7 +8,23 @@ import { ObservableProperty } from "./ObservableProperty";
         type: ssns.Accuracy
     }
 })
-export class Accuracy extends SerializableNamedNode {
+export class PropertyAccuracy extends SerializableNamedNode {
+    @SerializableMember({
+        rdf: {
+            predicate: rdfs.label,
+            language: "en"
+        }
+    })
+    label?: string;
+
+    @SerializableMember({
+        rdf: {
+            predicate: rdfs.comment,
+            language: "en"
+        }
+    })
+    comment?: string;
+
     @SerializableMember({
         rdf: {
             predicate: ssn.forProperty
@@ -35,5 +51,5 @@ export class Accuracy extends SerializableNamedNode {
             predicate: schema.unitCode
         }
     })
-    unit: number;
+    unit: Unit;
 }

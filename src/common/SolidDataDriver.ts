@@ -1,9 +1,10 @@
-import { DataFrame, DataObject, DataServiceDriver, DataServiceOptions, Model, Constructor } from '@openhps/core';
+import { DataFrame, DataObject, DataServiceOptions, Model, Constructor } from '@openhps/core';
 import { SolidService, SolidSession } from './SolidService';
 import { getSolidDataset, removeThing, saveSolidDatasetAt, Thing } from '@inrupt/solid-client';
 import { RDFSerializer } from '@openhps/rdf/serialization';
+import { SPARQLDataDriver } from '@openhps/rdf';
 
-export class SolidDataDriver<T extends DataObject | DataFrame> extends DataServiceDriver<string, T> {
+export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDataDriver<T> {
     public model: Model;
     protected service: SolidService;
     protected options: SolidDataDriverOptions<T>;
