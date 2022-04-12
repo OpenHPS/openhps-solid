@@ -9,7 +9,11 @@
         "declaration": true,
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
-        "sourceMap": false
+        "sourceMap": false,
+        "typeRoots": [
+            "../node_modules/@types",
+            "../types",
+        ]
     },
     "transpileOnline": true
 }

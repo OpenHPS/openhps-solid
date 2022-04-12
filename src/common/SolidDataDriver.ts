@@ -1,8 +1,9 @@
-import { DataFrame, DataObject, DataServiceOptions, Model, Constructor } from '@openhps/core';
+import { DataFrame, DataObject, Model, Constructor } from '@openhps/core';
 import { SolidService, SolidSession } from './SolidService';
 import { getSolidDataset, removeThing, saveSolidDatasetAt, Thing } from '@inrupt/solid-client';
 import { RDFSerializer } from '@openhps/rdf/serialization';
-import { SPARQLDataDriver } from '@openhps/rdf';
+import { SPARQLDataDriver, SPARQLDriverOptions } from '@openhps/rdf';
+import { QueryEngine } from '@comunica/query-sparql-link-traversal-solid';
 
 export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDataDriver<T> {
     public model: Model;
@@ -11,6 +12,7 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
 
     constructor(dataType: Constructor<T>, options?: SolidDataDriverOptions<T>) {
         super(dataType, options);
+        this.options.engine = new QueryEngine();
         this.options.uriPrefix = this.options.uriPrefix || '/openhps';
         this.options.serialize = this.options.serialize || defaultThingSerializer;
         this.options.deserialize = this.options.deserialize || defaultThingDeserializer;
@@ -20,11 +22,13 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
 
     private async _initService(): Promise<void> {
         return new Promise((resolve, reject) => {
+            if (!this.model) {
+                return resolve();
+            }
             this.service = this.model.findService(SolidService);
             if (!this.service) {
                 return reject(new Error(`Unable to find SolidDataService!`));
             }
-            //this.client = new QueryEngine();
             resolve();
         });
     }
@@ -110,7 +114,7 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
     }
 }
 
-export interface SolidDataDriverOptions<T> extends DataServiceOptions {
+export interface SolidDataDriverOptions<T> extends SPARQLDriverOptions {
     /**
      * Serialize the object to an RDF thing
      */
