@@ -19,6 +19,9 @@ import {
 import EventEmitter from 'events';
 import type { SolidSession } from '@openhps/solid';
 
+/**
+ * Solid controller for handling remote data storage
+ */
 export class SolidController extends EventEmitter {
     protected service: SolidClientService;
     protected session: SolidSession;
@@ -42,11 +45,21 @@ export class SolidController extends EventEmitter {
         return this.session !== undefined;
     }
 
-    async login(issuer: string) {
+    /**
+     * Login at a specific issuer
+     *
+     * @param {IriString} issuer Issuer URI
+     */
+    async login(issuer: IriString) {
         await this.service.login(issuer);
     }
 
-    async getSession() {
+    /**
+     * Get the current Solid session
+     *
+     * @returns {Promise<SolidSession>} Solid session
+     */
+    async getSession(): Promise<SolidSession> {
         return await this.service.session;
     }
     

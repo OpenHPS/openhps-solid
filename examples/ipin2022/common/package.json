@@ -1,0 +1,39 @@
+{
+    "name": "ipin2022-common",
+    "version": "0.1.0",
+    "private": true,
+    "author": "Maxim Van de Wynckel",
+    "dependencies": {
+      "@openhps/localstorage": "^0.2.2",
+      "@openhps/solid": "file:../../../",
+      "reflect-metadata": "^0.1.13"
+    },
+    "devDependencies": {
+      "@typescript-eslint/eslint-plugin": "^5.17.0",
+      "@typescript-eslint/parser": "^5.17.0",
+      "eslint": "^8.12.0",
+      "typescript": "~4.4.0"
+    },
+    "eslintConfig": {
+      "root": true,
+      "env": {
+        "node": true
+      },
+      "extends": [
+        "eslint:recommended",
+        "@vue/typescript/recommended"
+      ],
+      "parserOptions": {
+        "parser": "@typescript-eslint/parser"
+      },
+      "rules": {
+        "@typescript-eslint/ban-types": "off"
+      }
+    },
+    "browserslist": [
+      "> 1%",
+      "last 2 versions",
+      "not dead"
+    ]
+  }
+  

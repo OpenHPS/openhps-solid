@@ -2,7 +2,7 @@ import { DataFrame, DataObject, Model, Constructor } from '@openhps/core';
 import { SolidService, SolidSession } from './SolidService';
 import { getSolidDataset, removeThing, saveSolidDatasetAt, Thing } from '@inrupt/solid-client';
 import { RDFSerializer } from '@openhps/rdf/serialization';
-import { SPARQLDataDriver, SPARQLDriverOptions } from '@openhps/rdf';
+import { SPARQLDataDriver, SPARQLDriverOptions } from '@openhps/rdf/sparql';
 import { QueryEngine } from '@comunica/query-sparql-link-traversal-solid';
 
 export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDataDriver<T> {

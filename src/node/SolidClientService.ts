@@ -1,5 +1,5 @@
 import * as express from 'express';
-const cookieSession = require('cookie-session');
+const cookieSession = require('cookie-session'); // eslint-disable-line
 import { Session, ISessionInfo, getSessionFromStorage } from '@inrupt/solid-client-authn-node';
 import { SolidDataServiceOptions, SolidService } from '../common/SolidService';
 import { SolidProfileObject } from '../common';
@@ -31,7 +31,7 @@ export class SolidClientService extends SolidService {
                         maxAge: authOptions.cookies ? authOptions.cookies.maxAge : 24 * 60 * 60 * 1000,
                     }),
                 );
-                this.express.listen(authOptions.port, () => {});
+                this.express.listen(authOptions.port, () => undefined);
             }
             this.express.get(this.options.loginPath, this.onLogin.bind(this));
             this.express.get(this.options.redirectPath, this.onRedirect.bind(this));

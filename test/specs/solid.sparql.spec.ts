@@ -17,7 +17,7 @@ describe('SolidDataDriver', () => {
 
     describe('querying', () => {
         it('should support simple queries on the source', (done) => {
-            driver.queryBinding(`
+            driver.queryBindings(`
             SELECT ?x ?y ?z {
                 ?x ?y ?z .
             } LIMIT 50
@@ -29,10 +29,7 @@ describe('SolidDataDriver', () => {
         
         it('should support traversal queries on the source', (done) => {
             new QueryEngine().queryBindings(`
-            PREFIX qudt: <http://qudt.org/schema/qudt/>
-            PREFIX geosparql: <http://www.opengis.net/ont/geosparql#>
             PREFIX sosa: <http://www.w3.org/ns/sosa/>
-            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
             PREFIX ssn: <http://www.w3.org/ns/ssn/>
             
             SELECT ?result {
@@ -44,14 +41,14 @@ describe('SolidDataDriver', () => {
             }
             `, {
                 lenient: true,
-                sources: ["https://maximvdw.solidweb.org/profile/card#me"],
+                sources: ["https://maximvdw.solidweb.org/profile/card"],
             }).then((stream) => {
                 const bindings = [];
                 stream.on('data', (binding) => {
                     bindings.push(binding);
                 });
                 stream.on('end', () => {
-                    console.log(bindings.map(b => b.toString()))
+                    expect(bindings.length).to.be.greaterThan(5);
                     done();
                 });
                 stream.on('error', done);

@@ -271,7 +271,9 @@ export abstract class SolidService extends RemoteService implements IStorage {
      * @param {PushOptions} [options] Push options
      */
     remotePush<T extends DataFrame | DataFrame[]>(uid: string, frame: T, options?: PushOptions): Promise<void> {
-        return new Promise((resolve, reject) => {});
+        return new Promise((resolve, reject) => {
+            resolve(undefined);
+        });
     }
 
     /**
@@ -281,7 +283,9 @@ export abstract class SolidService extends RemoteService implements IStorage {
      * @param {PullOptions} [options] Pull options
      */
     remotePull(uid: string, options?: PullOptions): Promise<void> {
-        return new Promise((resolve, reject) => {});
+        return new Promise((resolve, reject) => {
+            resolve(undefined);
+        });
     }
 
     /**
@@ -292,7 +296,9 @@ export abstract class SolidService extends RemoteService implements IStorage {
      * @param {any[]} [args] Event argument
      */
     remoteEvent(uid: string, event: string, ...args: any[]): Promise<void> {
-        return new Promise((resolve, reject) => {});
+        return new Promise((resolve, reject) => {
+            resolve(undefined);
+        });
     }
 
     /**
@@ -303,7 +309,9 @@ export abstract class SolidService extends RemoteService implements IStorage {
      * @param {any[]} [args] Optional set of arguments
      */
     remoteServiceCall(uid: string, method: string, ...args: any[]): Promise<any> {
-        return new Promise((resolve, reject) => {});
+        return new Promise((resolve, reject) => {
+            resolve(undefined);
+        });
     }
 
     /**

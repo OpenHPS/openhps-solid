@@ -73,25 +73,32 @@ export class SolidClientService extends SolidService {
     }
 
     findSessionById(sessionId: string): Promise<Session> {
-        return new Promise(async (resolve) => {
+        return new Promise((resolve, reject) => {
             const clientAuth = getClientAuthenticationWithDependencies({
                 secureStorage: this,
                 insecureStorage: this,
             });
-            const sessionInfo = await clientAuth.getSessionInfo(sessionId);
-            if (sessionInfo === undefined) {
-                return resolve(undefined);
-            }
-            const session = new Session({
-                sessionInfo,
-                clientAuthentication: clientAuth,
-            });
-            if (sessionInfo.refreshToken) {
-                await session.login({
-                    oidcIssuer: sessionInfo.issuer,
-                });
-            }
-            resolve(session);
+            clientAuth
+                .getSessionInfo(sessionId)
+                .then((sessionInfo) => {
+                    if (sessionInfo === undefined) {
+                        return resolve(undefined);
+                    }
+                    const session = new Session({
+                        sessionInfo,
+                        clientAuthentication: clientAuth,
+                    });
+                    if (sessionInfo.refreshToken) {
+                        session.login({
+                            oidcIssuer: sessionInfo.issuer,
+                        });
+                    }
+                    return session;
+                })
+                .then((session: Session) => {
+                    resolve(session);
+                })
+                .catch(reject);
         });
     }
 }
