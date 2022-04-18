@@ -5,7 +5,8 @@
   "author": "Maxim Van de Wynckel",
   "main": "dist/cjs/index.js",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "test": "mocha --config test/.mocharc.json"
   },
   "dependencies": {
     "@openhps/localstorage": "^0.2.2",
@@ -14,9 +15,13 @@
     "wkt": "^0.1.1"
   },
   "devDependencies": {
+    "@types/chai": "^4.3.1",
+    "@types/mocha": "^9.1.0",
     "@typescript-eslint/eslint-plugin": "^5.17.0",
     "@typescript-eslint/parser": "^5.17.0",
+    "chai": "^4.3.6",
     "eslint": "^8.12.0",
+    "mocha": "^9.2.2",
     "typescript": "~4.4.0"
   },
   "eslintConfig": {

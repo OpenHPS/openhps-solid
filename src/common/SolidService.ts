@@ -502,7 +502,7 @@ export interface SolidDataServiceOptions {
      * Data service driver to use for key:value pairs
      * In a browser this should be @openhps/localstorage
      */
-    dataServiceDriver?: DataServiceDriver<string, string>;
+    dataServiceDriver?: DataServiceDriver<string, String>;
 }
 
 export type SolidSession = BrowserSession | NodeSession;

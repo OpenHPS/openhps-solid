@@ -72,7 +72,7 @@
   },
   "peerDependencies": {
     "@openhps/core": ">=0.3.23",
-    "@openhps/rdf": ">=0.1.20",
+    "@openhps/rdf": ">=0.1.21",
     "reflect-metadata": ">=0.1.13"
   },
   "devDependencies": {
@@ -80,7 +80,7 @@
     "@commitlint/config-conventional": "^16.2.1",
     "@comunica/config-query-sparql-link-traversal": "0.0.2-alpha.1.0",
     "@openhps/core": ">=0.3.23",
-    "@openhps/rdf": ">=0.1.20",
+    "@openhps/rdf": ">=0.1.21",
     "@types/chai": "^4.3.1",
     "@types/cookie-session": "^2.0.44",
     "@types/express": "^4.17.13",
@@ -113,10 +113,10 @@
     "webpack-cli": "^4.9.2"
   },
   "nyc": {
-    "branches": 0,
-    "lines": 20,
-    "functions": 17,
-    "statements": 20,
+    "branches": 1,
+    "lines": 1,
+    "functions": 1,
+    "statements": 1,
     "include": [
       "src"
     ],

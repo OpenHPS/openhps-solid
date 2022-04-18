@@ -1,13 +1,13 @@
-import { AngleUnit, DataObject, LengthUnit, LinearVelocityUnit } from '@openhps/core';
+import { AngleUnit, DataObject, GeographicalPosition, LengthUnit, LinearVelocityUnit } from '@openhps/core';
 import { 
     IriString, 
     RDFSerializer,
-    NamedNode,
     DataFactory,
     Term
 } from '@openhps/rdf/serialization';
-import { vcard, rdf, ogc } from '@openhps/rdf/vocab';
-import { SolidClientService, SolidDataDriver } from '@openhps/solid/browser';
+import { vcard, ogc } from '@openhps/rdf/vocab';
+import type { Bindings } from '@openhps/rdf/sparql';
+import { SolidClientService, SolidDataDriver, } from '@openhps/solid/browser';
 import {
     FeatureOfInterest, 
     Geometry, 
@@ -151,8 +151,15 @@ export class SolidController extends EventEmitter {
         this.createVelocity(session, data);
     }
 
-    async findAllPositions(session: SolidSession, minAccuracy: number = 6, limit: number = 20): Promise<Geometry[]> {
-        const store = await this.driver.queryQuads(`
+    async findAllPositions(session: SolidSession, minAccuracy: number = 6, limit: number = 20): Promise<any[]> {
+        const bindings = await this.driver.queryBindings(`
+            PREFIX geosparql: <http://www.opengis.net/ont/geosparql#>
+            PREFIX geof: <http://www.opengis.net/def/function/geosparql/>
+            PREFIX ssn: <http://www.w3.org/ns/ssn/>
+            PREFIX sosa: <http://www.w3.org/ns/sosa/>
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            PREFIX qudt: <http://qudt.org/schema/qudt/>
+
             SELECT ?posGeoJSON ?datetime ?accuracy {
                 ?profile a sosa:FeatureOfInterest ;
                         ssn:hasProperty ?property .
@@ -162,17 +169,17 @@ export class SolidController extends EventEmitter {
                 ?result a geosparql:Geometry ;
                         geosparql:hasSpatialAccuracy ?spatialAccuracy ;
                         geosparql:asWKT ?posWKT .
-            BIND(geof:asGeoJSON(?posWKT) AS ?posGeoJSON)
-            {
-                ?spatialAccuracy qudt:numericValue ?value ;
-                                qudt:unit ?unit .
-                ?unit qudt:conversionMultiplier ?multiplier .
-                OPTIONAL { ?unit qudt:conversionOffset ?offset }
-                BIND(COALESCE(?offset, 0) as ?offset)
-                BIND(((?value * ?multiplier) + ?offset) 
-                AS ?accuracy)
-                FILTER(?accuracy <= ${minAccuracy})
-            }
+                BIND(geof:asGeoJSON(?posWKT) AS ?posGeoJSON)
+                {
+                    ?spatialAccuracy qudt:numericValue ?value ;
+                                    qudt:unit ?unit .
+                    OPTIONAL { ?unit qudt:conversionMultiplier ?multiplier }
+                    OPTIONAL { ?unit qudt:conversionOffset ?offset }
+                    BIND(COALESCE(?multiplier, 1) as ?multiplier)
+                    BIND(COALESCE(?offset, 0) as ?offset)
+                    BIND(((?value * ?multiplier) + ?offset) AS ?accuracy)
+                    FILTER(?accuracy <= ${minAccuracy})
+                }
             } ORDER BY DESC(?datetime) LIMIT ${limit}
         `, session, {
             extensionFunctions: {
@@ -187,18 +194,9 @@ export class SolidController extends EventEmitter {
                 }
             }
         });
-        return store.getSubjects(rdf.type, ogc.Geometry, null).map(subject => {
-            return RDFSerializer.deserializeFromStore(subject as NamedNode, store);
+        return bindings.map((binding: Bindings) => {
+            return binding.get("posGeoJSON").value
         });
-    }
-
-    async findAllOrientations(session: SolidSession): Promise<QuantityValue[]> {
-        const store = await this.driver.queryQuads(``, session);
-        return undefined;
-    }
-
-    async findAllVelocities(session: SolidSession): Promise<QuantityValue[]> {
-        return undefined;
     }
 
     async createPosition(session: SolidSession, data: GeolocationPosition) {

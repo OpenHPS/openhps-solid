@@ -2,7 +2,7 @@ import { DataFrame, DataObject, Model, Constructor } from '@openhps/core';
 import { SolidService, SolidSession } from './SolidService';
 import { getSolidDataset, removeThing, saveSolidDatasetAt, Thing } from '@inrupt/solid-client';
 import { RDFSerializer, Store } from '@openhps/rdf/serialization';
-import { SPARQLDataDriver, SPARQLDriverOptions } from '@openhps/rdf/sparql';
+import { SPARQLDataDriver, SPARQLDriverOptions, Bindings } from '@openhps/rdf/sparql';
 import { QueryEngine } from '@comunica/query-sparql-link-traversal-solid';
 import type { QueryStringContext } from '@comunica/types';
 
@@ -14,6 +14,7 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
     constructor(dataType: Constructor<T>, options?: SolidDataDriverOptions<T>) {
         super(dataType, options);
         this.options.engine = new QueryEngine();
+        this.options.lenient = true;
         this.options.uriPrefix = this.options.uriPrefix || '/openhps';
         this.options.serialize = this.options.serialize || defaultThingSerializer;
         this.options.deserialize = this.options.deserialize || defaultThingDeserializer;
@@ -34,9 +35,20 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
         });
     }
 
-    queryQuads(query: string, session: SolidSession, options?: QueryStringContext): Promise<Store> {
+    queryQuads(query: string, session?: SolidSession, options?: QueryStringContext): Promise<Store> {
         return super.queryQuads(query, {
             '@comunica/actor-http-inrupt-solid-client-authn:session': session,
+            sources: [session.info.webId],
+            lenient: true,
+            ...options,
+        });
+    }
+
+    queryBindings(query: string, session?: SolidSession, options?: QueryStringContext): Promise<Bindings[]> {
+        return super.queryBindings(query, {
+            '@comunica/actor-http-inrupt-solid-client-authn:session': session,
+            sources: [session.info.webId],
+            lenient: true,
             ...options,
         });
     }
