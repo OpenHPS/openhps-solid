@@ -1,9 +1,10 @@
 import { DataFrame, DataObject, Model, Constructor } from '@openhps/core';
 import { SolidService, SolidSession } from './SolidService';
 import { getSolidDataset, removeThing, saveSolidDatasetAt, Thing } from '@inrupt/solid-client';
-import { RDFSerializer } from '@openhps/rdf/serialization';
+import { RDFSerializer, Store } from '@openhps/rdf/serialization';
 import { SPARQLDataDriver, SPARQLDriverOptions } from '@openhps/rdf/sparql';
 import { QueryEngine } from '@comunica/query-sparql-link-traversal-solid';
+import type { QueryStringContext } from '@comunica/types';
 
 export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDataDriver<T> {
     public model: Model;
@@ -30,6 +31,13 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
                 return reject(new Error(`Unable to find SolidDataService!`));
             }
             resolve();
+        });
+    }
+
+    queryQuads(query: string, session: SolidSession, options?: QueryStringContext): Promise<Store> {
+        return super.queryQuads(query, {
+            '@comunica/actor-http-inrupt-solid-client-authn:session': session,
+            ...options,
         });
     }
 

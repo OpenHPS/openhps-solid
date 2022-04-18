@@ -45,7 +45,7 @@
 <script>
 import { FullScreen } from 'ol/control';
 import LoginModal from './LoginModal.vue';
-import { SolidController } from '../controllers/SolidController';
+import { SolidController } from 'ipin2022-common';
 
 export default {
   name: 'MapComponent',

@@ -9,3 +9,4 @@ export * from './Platform';
 export * from './Deployment';
 export * from './PropertyAccuracy';
 export * from './Procedure';
+export * from './GeolocationPosition';

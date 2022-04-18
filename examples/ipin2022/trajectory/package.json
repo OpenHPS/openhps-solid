@@ -1,15 +1,15 @@
 {
-  "name": "openhps-solid-browser",
+  "name": "ipin2022-trajectory",
   "version": "0.1.0",
   "private": true,
+  "author": "Maxim Van de Wynckel",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
-    "@openhps/localstorage": "^0.2.2",
-    "@openhps/solid": "file:../../../",
+    "ipin2022-common": "file:../common/",
     "buefy": "^0.9.4",
     "core-js": "^3.6.5",
     "ol": "^6.12.0",

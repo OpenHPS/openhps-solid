@@ -7,7 +7,8 @@
 
 <script>
 import LoginModal from './LoginModal.vue';
-import { SolidController, BuildingController } from '../controllers';
+import { BuildingController } from '../controllers';
+import { SolidController } from 'ipin2022-common';
 import { QrcodeStream } from 'vue-qrcode-reader';
 
 export default {

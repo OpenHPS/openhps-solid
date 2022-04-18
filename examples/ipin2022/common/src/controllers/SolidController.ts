@@ -2,10 +2,11 @@ import { AngleUnit, DataObject, LengthUnit, LinearVelocityUnit } from '@openhps/
 import { 
     IriString, 
     RDFSerializer,
+    NamedNode,
     DataFactory,
-    Store
+    Term
 } from '@openhps/rdf/serialization';
-import { vcard, rdf, sosa } from '@openhps/rdf/vocab';
+import { vcard, rdf, ogc } from '@openhps/rdf/vocab';
 import { SolidClientService, SolidDataDriver } from '@openhps/solid/browser';
 import {
     FeatureOfInterest, 
@@ -14,6 +15,7 @@ import {
     Observation, 
     PropertyAccuracy, 
     QuantityValue,
+    GeolocationPosition
 } from "../models";
 import {
     getLiteral,
@@ -21,8 +23,9 @@ import {
 import {
     LocalStorageDriver
 } from '@openhps/localstorage';
-import EventEmitter from 'events';
+import { EventEmitter } from 'events';
 import type { SolidSession } from '@openhps/solid';
+const wkt = require('wkt');
 
 /**
  * Solid controller for handling remote data storage
@@ -36,6 +39,11 @@ export class SolidController extends EventEmitter {
     protected velocityProperty: ObservableProperty;
     protected driver: SolidDataDriver<DataObject>;
 
+    /**
+     * Create a new Solid app
+     *
+     * @param {string} clientName Client name to show to the user when logging in
+     */
     constructor(clientName: string) {
         super();
         this.service = new SolidClientService({
@@ -44,6 +52,7 @@ export class SolidController extends EventEmitter {
                 namespace: "example",
             })
         });
+        this.driver = new SolidDataDriver(DataObject);
         this.service.emit("build");
         this.service.on("login", this.initialize.bind(this));
     }
@@ -84,6 +93,9 @@ export class SolidController extends EventEmitter {
         return this.service.session;
     }
     
+    /**
+     * Initialize the properties of the user
+     */
     async initialize() {
         const session = this.getSession();
         const card = await this.service.getThing(session, session.info.webId);
@@ -123,7 +135,13 @@ export class SolidController extends EventEmitter {
         this.emit('ready');
     }
 
-    async updatePosition(data: any) {
+    /**
+     * Update the position of a user
+     *
+     * @param data 
+     * @returns 
+     */
+    async updatePosition(data: GeolocationPosition) {
         const session = await this.getSession();
         if (session === undefined) {
             return;
@@ -131,22 +149,51 @@ export class SolidController extends EventEmitter {
         this.createPosition(session, data);
         this.createOrientation(session, data);
         this.createVelocity(session, data);
-
-    }
-    
-    async findPosition(session: SolidSession): Promise<Geometry> {
-        this.service.getThing(session, this.getPropertyURI(session, "position"));
-
-        return undefined;
     }
 
-    async findAllPositions(session: SolidSession): Promise<Geometry[]> {
-        const dataset: Store = await this.service.getDatasetStore(session, this.getPropertyURI(session, "position"));
-        console.log(dataset.getSubjects(DataFactory.namedNode(rdf.type), DataFactory.namedNode(sosa.Observation), null));
-        return undefined;
+    async findAllPositions(session: SolidSession, minAccuracy: number = 6, limit: number = 20): Promise<Geometry[]> {
+        const store = await this.driver.queryQuads(`
+            SELECT ?posGeoJSON ?datetime ?accuracy {
+                ?profile a sosa:FeatureOfInterest ;
+                        ssn:hasProperty ?property .
+                ?observation sosa:hasResult ?result ;
+                            sosa:observedProperty ?property ;
+                            sosa:resultTime ?datetime .
+                ?result a geosparql:Geometry ;
+                        geosparql:hasSpatialAccuracy ?spatialAccuracy ;
+                        geosparql:asWKT ?posWKT .
+            BIND(geof:asGeoJSON(?posWKT) AS ?posGeoJSON)
+            {
+                ?spatialAccuracy qudt:numericValue ?value ;
+                                qudt:unit ?unit .
+                ?unit qudt:conversionMultiplier ?multiplier .
+                OPTIONAL { ?unit qudt:conversionOffset ?offset }
+                BIND(COALESCE(?offset, 0) as ?offset)
+                BIND(((?value * ?multiplier) + ?offset) 
+                AS ?accuracy)
+                FILTER(?accuracy <= ${minAccuracy})
+            }
+            } ORDER BY DESC(?datetime) LIMIT ${limit}
+        `, session, {
+            extensionFunctions: {
+                // GeoSPARQL 1.1 specification is still in draft
+                // this is the implementation of the asGeoJSON function in the proposal
+                'http://www.opengis.net/def/function/geosparql/asGeoJSON'(args: Term[]) {
+                    const wktLiteral = args[0];
+                    const pattern = /^<(https?:\/\/.*)>/g;
+                    let wktString: string = wktLiteral.value.replace(pattern, "").replace("\n", "").trim();
+                    const geoJSON = wkt.parse(wktString);
+                    return DataFactory.literal(JSON.stringify(geoJSON), ogc.geoJSONLiteral);
+                }
+            }
+        });
+        return store.getSubjects(rdf.type, ogc.Geometry, null).map(subject => {
+            return RDFSerializer.deserializeFromStore(subject as NamedNode, store);
+        });
     }
 
     async findAllOrientations(session: SolidSession): Promise<QuantityValue[]> {
+        const store = await this.driver.queryQuads(``, session);
         return undefined;
     }
 
@@ -154,7 +201,7 @@ export class SolidController extends EventEmitter {
         return undefined;
     }
 
-    async createPosition(session: SolidSession, data: any) {
+    async createPosition(session: SolidSession, data: GeolocationPosition) {
         const timestamp = new Date();
         const observation = new Observation(this.service.getDocumentURL(session, `/properties/position.ttl#${timestamp.getTime()}`).href);
         observation.featuresOfInterest.push(this.me);
@@ -168,10 +215,10 @@ export class SolidController extends EventEmitter {
         position.longitude = data.lnglat[0];
         position.spatialAccuracy = accuracy;
         observation.results.push(position);
-        await this.service.setThing(session, await RDFSerializer.serializeToSubjects(observation)[0]);
+        await this.service.setThing(session, RDFSerializer.serializeToSubjects(observation)[0]);
     }
     
-    async createOrientation(session: SolidSession, data: any) {
+    async createOrientation(session: SolidSession, data: GeolocationPosition) {
         const timestamp = new Date();
         const observation = new Observation(this.service.getDocumentURL(session, `/properties/orientation.ttl#${timestamp.getTime()}`).href);
         observation.featuresOfInterest.push(this.me);
@@ -185,10 +232,10 @@ export class SolidController extends EventEmitter {
         value.numericValue = data.heading;
         observation.results.push(value);
         observation.usedProcedures.push("http://example.com/geolocationapi.ttl");
-        await this.service.setThing(session, await RDFSerializer.serializeToSubjects(observation)[0]);
+        await this.service.setThing(session, RDFSerializer.serializeToSubjects(observation)[0]);
     }
 
-    async createVelocity(session: SolidSession, data: any) {
+    async createVelocity(session: SolidSession, data: GeolocationPosition) {
         const timestamp = new Date();
         const observation = new Observation(this.service.getDocumentURL(session, `/properties/velocity.ttl#${timestamp.getTime()}`).href);
         observation.featuresOfInterest.push(this.me);
@@ -202,6 +249,6 @@ export class SolidController extends EventEmitter {
         value.numericValue = data.speed;
         observation.results.push(value);
         observation.usedProcedures.push("http://example.com/geolocationapi.ttl");
-        await this.service.setThing(session, await RDFSerializer.serializeToSubjects(observation)[0]);
+        await this.service.setThing(session, RDFSerializer.serializeToSubjects(observation)[0]);
     }
 }
