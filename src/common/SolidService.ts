@@ -318,7 +318,7 @@ export abstract class SolidService extends RemoteService implements IStorage {
      * Fetch profile information
      *
      * @param {SolidProfileObject} object Data object to fetch profile information for
-     * @returns {Promise<SolidDataObject>} Promise of data object with profile information
+     * @returns {Promise<SolidProfileObject>} Promise of data object with profile information
      */
     fetchProfile(object: SolidProfileObject): Promise<SolidProfileObject> {
         return new Promise((resolve, reject) => {

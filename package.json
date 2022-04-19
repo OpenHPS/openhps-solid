@@ -38,6 +38,7 @@
     "src/**/*"
   ],
   "scripts": {
+    "postinstall": "ts-node ./src/fix/install.ts",
     "test": "mocha --config test/.mocharc.json",
     "cover": "nyc mocha --config test/.mocharc.json && nyc report --reporter=cobertura",
     "lint": "eslint src/**",

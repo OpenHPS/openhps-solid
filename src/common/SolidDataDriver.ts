@@ -35,8 +35,11 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
         });
     }
 
-    queryQuads(query: string, session?: SolidSession, options?: QueryStringContext): Promise<Store> {
-        return super.queryQuads(query, {
+    queryQuadsSolid(query: string, session?: SolidSession, options?: QueryStringContext): Promise<Store> {
+        if (!session) {
+            return Promise.reject('Solid session not provided!');
+        }
+        return this.queryQuads(query, {
             '@comunica/actor-http-inrupt-solid-client-authn:session': session,
             sources: [session.info.webId],
             lenient: true,
@@ -44,8 +47,11 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
         });
     }
 
-    queryBindings(query: string, session?: SolidSession, options?: QueryStringContext): Promise<Bindings[]> {
-        return super.queryBindings(query, {
+    queryBindingsSolid(query: string, session?: SolidSession, options?: QueryStringContext): Promise<Bindings[]> {
+        if (!session) {
+            return Promise.reject('Solid session not provided!');
+        }
+        return this.queryBindings(query, {
             '@comunica/actor-http-inrupt-solid-client-authn:session': session,
             sources: [session.info.webId],
             lenient: true,
