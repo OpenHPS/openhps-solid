@@ -9,8 +9,10 @@
     "test": "mocha --config test/.mocharc.json"
   },
   "dependencies": {
+    "@openhps/core": "^0.3.23",
     "@openhps/localstorage": "^0.2.2",
-    "@openhps/solid": "^0.1.0-alpha.6",
+    "@openhps/rdf": "^0.1.24",
+    "@openhps/solid": "^0.1.0-alpha.7",
     "reflect-metadata": "^0.1.13",
     "wkt": "^0.1.1"
   },

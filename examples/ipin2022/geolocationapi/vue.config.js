@@ -1,14 +1,13 @@
+const fs = require('fs');
+const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
+
 module.exports = {
   publicPath: process.env.NODE_ENV === 'production'
     ? '/'
     : '/',
   transpileDependencies: [],
   chainWebpack: config => {
-    config.module
-      .rule('json')
-      .test(/\.(json|geojson)$/i)
-      .use('json')
-      .loader('json-loader')
+    config.plugin('polyfills').use(NodePolyfillPlugin)
 
     config.module
       .rule('vue')
@@ -26,11 +25,15 @@ module.exports = {
       // entry for the page
       entry: 'src/main.ts',
       // title of the application
-      title: 'OpenHPS Solid Browser',
+      title: 'IPIN2022 Geolocation API',
     },
   },
   devServer: {
     port: 8081,
-    host: '0.0.0.0'
+    host: '0.0.0.0',
+    https: {
+      key: fs.readFileSync('../common/cert/key.pem'),
+      cert: fs.readFileSync('../common/cert/server.crt'),
+    },
   }
 }

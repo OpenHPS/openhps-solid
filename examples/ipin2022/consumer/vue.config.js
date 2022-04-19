@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 module.exports = {
   publicPath: process.env.NODE_ENV === 'production'
     ? '/'
@@ -31,6 +33,10 @@ module.exports = {
   },
   devServer: {
     port: 8081,
-    host: '0.0.0.0'
+    host: '0.0.0.0',
+    https: {
+      key: fs.readFileSync('../common/cert/key.pem'),
+      cert: fs.readFileSync('../common/cert/server.crt'),
+    },
   }
 }

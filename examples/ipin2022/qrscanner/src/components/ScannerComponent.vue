@@ -29,9 +29,16 @@ export default {
   },
   methods: {
     onDecode(event) {
-      console.log(event);
+      // Get the first detected code
+      // Check if it contains http://example.com/tracking.ttl# 
+      const uri = event;
+      if (uri.startsWith("http://example.com/tracking.ttl#")) {
+        const spaceUID = uri.replace("http://example.com/tracking.ttl#", "");
+        const space = this.buildingController.findByUID(spaceUID);
+        console.log(space);
+      }
     },
-    paintOutline (detectedCodes, ctx) {
+    paintOutline(detectedCodes, ctx) {
       console.log(detectedCodes);
       for (const detectedCode of detectedCodes) {
         const [ firstPoint, ...otherPoints ] = detectedCode.cornerPoints
