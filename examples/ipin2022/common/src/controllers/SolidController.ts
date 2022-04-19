@@ -182,16 +182,17 @@ export class SolidController extends EventEmitter {
                 }
             } ORDER BY DESC(?datetime) LIMIT ${limit}
         `, session, {
-            sources: [""],
             extensionFunctions: {
                 // GeoSPARQL 1.1 specification is still in draft
                 // this is the implementation of the asGeoJSON function in the proposal
                 'http://www.opengis.net/def/function/geosparql/asGeoJSON'(args: Term[]) {
-                    const wktLiteral = args[0];
-                    const pattern = /^<(https?:\/\/.*)>/g;
-                    let wktString: string = wktLiteral.value.replace(pattern, "").replace("\n", "").trim();
-                    const geoJSON = wkt.parse(wktString);
-                    return DataFactory.literal(JSON.stringify(geoJSON), ogc.geoJSONLiteral);
+                    return new Promise((resolve) => {
+                        const wktLiteral = args[0];
+                        const pattern = /^<(https?:\/\/.*)>/g;
+                        let wktString: string = wktLiteral.value.replace(pattern, "").replace("\n", "").trim();
+                        const geoJSON = wkt.parse(wktString);
+                        resolve(DataFactory.literal(JSON.stringify(geoJSON), ogc.geoJSONLiteral));
+                    });
                 }
             }
         });

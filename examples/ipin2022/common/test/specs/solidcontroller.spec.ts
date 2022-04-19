@@ -1,6 +1,6 @@
 import 'mocha';
 import { expect } from 'chai';
-import { SolidController } from '../../src/controllers';
+import { SolidController } from '../../src/';
 import { Session } from '@inrupt/solid-client-authn-node';
 
 describe('SolidController', () => {
