@@ -38,8 +38,7 @@
     "dist/**/*",
     "src/**/*",
     "browser.js",
-    "browser.d.ts",
-    "types/**/*"
+    "browser.d.ts"
   ],
   "scripts": {
     "postinstall": "node ./src/fix/install.js",
