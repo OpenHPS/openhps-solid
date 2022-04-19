@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@openhps/localstorage": "^0.2.2",
-    "@openhps/solid": "^0.1.0-alpha.1",
+    "@openhps/solid": "^0.1.0-alpha.2",
     "reflect-metadata": "^0.1.13",
     "wkt": "^0.1.1"
   },

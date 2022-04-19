@@ -34,8 +34,12 @@
   "unpkg": "dist/web/openhps-solid.min.js",
   "jsdelivr": "dist/web/openhps-solid.min.js",
   "files": [
+    "LICENSE",
     "dist/**/*",
-    "src/**/*"
+    "src/**/*",
+    "browser.js",
+    "browser.d.ts",
+    "types/**/*"
   ],
   "scripts": {
     "postinstall": "node ./src/fix/install.js",
