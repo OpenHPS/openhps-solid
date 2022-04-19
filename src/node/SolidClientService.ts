@@ -18,7 +18,7 @@ export class SolidClientService extends SolidService {
     }
 
     private _onBuild(): Promise<void> {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             if (!Object.keys(this.options.authServer).includes('port')) {
                 this.express = this.options.authServer as express.Express;
             } else {

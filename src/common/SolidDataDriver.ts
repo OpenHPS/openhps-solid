@@ -35,7 +35,7 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
         });
     }
 
-    queryQuadsSolid(query: string, session?: SolidSession, options?: QueryStringContext): Promise<Store> {
+    queryQuadsSolid(query: string, session?: SolidSession, options?: Partial<QueryStringContext>): Promise<Store> {
         if (!session) {
             return Promise.reject('Solid session not provided!');
         }
@@ -47,7 +47,11 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
         });
     }
 
-    queryBindingsSolid(query: string, session?: SolidSession, options?: QueryStringContext): Promise<Bindings[]> {
+    queryBindingsSolid(
+        query: string,
+        session?: SolidSession,
+        options?: Partial<QueryStringContext>,
+    ): Promise<Bindings[]> {
         if (!session) {
             return Promise.reject('Solid session not provided!');
         }

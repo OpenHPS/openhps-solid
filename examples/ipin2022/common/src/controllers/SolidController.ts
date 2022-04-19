@@ -1,4 +1,4 @@
-import { AngleUnit, DataObject, GeographicalPosition, LengthUnit, LinearVelocityUnit } from '@openhps/core';
+import { AngleUnit, DataObject, LengthUnit, LinearVelocityUnit } from '@openhps/core';
 import { 
     IriString, 
     RDFSerializer,
@@ -152,7 +152,7 @@ export class SolidController extends EventEmitter {
     }
 
     async findAllPositions(session: SolidSession, minAccuracy: number = 6, limit: number = 20): Promise<any[]> {
-        const bindings = await this.driver.queryBindings(`
+        const bindings = await this.driver.queryBindingsSolid(`
             PREFIX geosparql: <http://www.opengis.net/ont/geosparql#>
             PREFIX geof: <http://www.opengis.net/def/function/geosparql/>
             PREFIX ssn: <http://www.w3.org/ns/ssn/>
@@ -182,6 +182,7 @@ export class SolidController extends EventEmitter {
                 }
             } ORDER BY DESC(?datetime) LIMIT ${limit}
         `, session, {
+            sources: [""],
             extensionFunctions: {
                 // GeoSPARQL 1.1 specification is still in draft
                 // this is the implementation of the asGeoJSON function in the proposal

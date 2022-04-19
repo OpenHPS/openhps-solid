@@ -10,19 +10,19 @@
   },
   "dependencies": {
     "@openhps/localstorage": "^0.2.2",
-    "@openhps/solid": "^0.1.0-alpha.3",
+    "@openhps/solid": "^0.1.0-alpha.4",
     "reflect-metadata": "^0.1.13",
     "wkt": "^0.1.1"
   },
   "devDependencies": {
     "@types/chai": "^4.3.1",
     "@types/mocha": "^9.1.0",
-    "@typescript-eslint/eslint-plugin": "^5.17.0",
-    "@typescript-eslint/parser": "^5.17.0",
+    "@typescript-eslint/eslint-plugin": "^5.20.0",
+    "@typescript-eslint/parser": "^5.20.0",
     "chai": "^4.3.6",
-    "eslint": "^8.12.0",
+    "eslint": "^8.13.0",
     "mocha": "^9.2.2",
-    "typescript": "~4.4.0"
+    "typescript": "~4.6.3"
   },
   "eslintConfig": {
     "root": true,
