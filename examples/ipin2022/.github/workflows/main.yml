@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build 'common'
+        working-directory: ./common
+        run: |
+          npm install
+          npm run build
+      - name: Testing 'common'
+        run: |
+          npm run test
+      - name: Build 'geolocationapi'
+        working-directory: ./geolocationapi
+        run: |
+          npm install
+          npm run build
+      - name: Build 'qrscanner'
+        working-directory: ./qrscanner
+        run: |
+          npm install
+          npm run build

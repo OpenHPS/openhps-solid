@@ -38,7 +38,7 @@
     "src/**/*"
   ],
   "scripts": {
-    "postinstall": "ts-node ./src/fix/install.ts",
+    "postinstall": "node ./src/fix/install.js",
     "test": "mocha --config test/.mocharc.json",
     "cover": "nyc mocha --config test/.mocharc.json && nyc report --reporter=cobertura",
     "lint": "eslint src/**",
@@ -107,7 +107,6 @@
     "shx": "^0.3.4",
     "standard-version": "^9.3.2",
     "terser-webpack-plugin": "^5.3.1",
-    "ts-node": "^10.7.0",
     "typedoc": "^0.22.15",
     "typescript": "^4.6.3",
     "webpack": "^5.72.0",

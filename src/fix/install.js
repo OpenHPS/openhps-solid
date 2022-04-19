@@ -3,8 +3,10 @@
  *
  * @see {@link https://github.com/inrupt/solid-client-js/pull/1545}
  */
-import * as fs from 'fs';
-import * as path from 'path';
+
+/* eslint-disable */
+const fs = require('fs');
+const path = require('path');
 
 const directory = path.dirname(require.resolve('@inrupt/solid-client'));
 const indexFiles = fs.readdirSync(directory).filter((file) => file.startsWith('index'));
