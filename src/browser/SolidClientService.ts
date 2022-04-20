@@ -1,4 +1,8 @@
-import { getClientAuthenticationWithDependencies, Session } from '@inrupt/solid-client-authn-browser';
+import {
+    getClientAuthenticationWithDependencies,
+    Session,
+    getDefaultSession,
+} from '@inrupt/solid-client-authn-browser';
 import { SolidService, SolidDataServiceOptions } from '../common/SolidService';
 
 export class SolidClientService extends SolidService {
@@ -25,7 +29,14 @@ export class SolidClientService extends SolidService {
                 });
                 this.onRedirect(session, new URL(window.location.href))
                     .then(() => resolve())
-                    .catch(() => resolve());
+                    .catch(() => {
+                        // Default session (local storage)
+                        this.session = getDefaultSession();
+                        if (this.session) {
+                            this.emitAsync('login', session);
+                        }
+                        resolve();
+                    });
             }
         });
     }
@@ -38,6 +49,24 @@ export class SolidClientService extends SolidService {
         this._session = value;
     }
 
+    logout(session: Session): Promise<void> {
+        return new Promise((resolve, reject) => {
+            session
+                .logout()
+                .then(() => {
+                    this.session = undefined;
+                    resolve();
+                })
+                .catch(reject);
+        });
+    }
+
+    /**
+     * Login a Solid browser user
+     *
+     * @param {string} oidcIssuer OpenID Issuer
+     * @returns {Promise<Session>} Session promise
+     */
     login(oidcIssuer: string = this.options.defaultOidcIssuer): Promise<Session> {
         return new Promise((resolve, reject) => {
             const session = new Session({
