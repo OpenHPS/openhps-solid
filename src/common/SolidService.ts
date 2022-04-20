@@ -27,7 +27,8 @@ import {
     FetchError,
 } from '@inrupt/solid-client';
 import { vcard } from '@openhps/rdf/vocab';
-import { Quad_Subject, DataFactory, Quad_Object, Quad, Store } from '@openhps/rdf/serialization';
+import { Quad_Subject, DataFactory, Quad_Object, Quad, Store, IriString } from '@openhps/rdf/serialization';
+import { WebsocketNotification } from '@inrupt/solid-client-notifications';
 
 export abstract class SolidService extends RemoteService implements IStorage {
     protected options: SolidDataServiceOptions;
@@ -148,9 +149,7 @@ export abstract class SolidService extends RemoteService implements IStorage {
                       }
                     : undefined,
             )
-                .then((dataset) => {
-                    resolve(dataset);
-                })
+                .then(resolve)
                 .catch((ex: FetchError) => {
                     if (ex.response.status === 404) {
                         resolve(createSolidDataset());
@@ -217,8 +216,8 @@ export abstract class SolidService extends RemoteService implements IStorage {
             const documentURL = new URL(thing.url);
             documentURL.hash = '';
             this.getDataset(session, documentURL.href)
-                .then(async (dataset) => {
-                    const existingThing = (await getThing(dataset, thing.url)) ?? {};
+                .then((dataset) => {
+                    const existingThing = getThing(dataset, thing.url) ?? {};
                     const newThing = this._mergeDeep(existingThing, thing);
                     dataset = setThing(dataset, newThing);
                     return this.saveDataset(session, dataset, documentURL.href);
@@ -226,6 +225,22 @@ export abstract class SolidService extends RemoteService implements IStorage {
                 .then(() => resolve())
                 .catch(reject);
         });
+    }
+
+    /**
+     * Create a notification lsitener for a container URL
+     *
+     * @param {SolidSession} session Solid session
+     * @param {IriString} containerUrl Container URL
+     * @returns {WebsocketNotification} Open websocket
+     */
+    createNotificationListener(session: SolidSession, containerUrl: IriString): WebsocketNotification {
+        const websocket = new WebsocketNotification(containerUrl, { fetch: session ? session.fetch : fetch });
+        websocket.on('message', (message) => {
+            console.log(message);
+        });
+        websocket.connect();
+        return websocket;
     }
 
     /**
