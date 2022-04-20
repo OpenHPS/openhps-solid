@@ -1,16 +1,17 @@
 <template>
   <div class="app">
-    <QrcodeStream @track="paintOutline" @decode="onDecode"></QrcodeStream>
+    <QrcodeStream :track="paintOutline" @decode="onDecode"></QrcodeStream>
     <LoginModal :controller="controller" />
   </div>
 </template>
 
 <script>
 import LoginModal from './LoginModal.vue';
-import { BuildingController } from '../controllers';
-import { SolidController } from 'ipin2022-common';
+import { SolidController, BuildingController } from 'ipin2022-common';
 import { QrcodeStream } from 'vue-qrcode-reader';
+import { DataObject, DataSerializer } from '@openhps/core';
 
+DataSerializer.serialize(new DataObject())
 export default {
   name: 'ScannerComponent',
   components: { 
@@ -24,8 +25,11 @@ export default {
     }
   },
   beforeMount() {
-    this.controller = new SolidController("OpenHPS Solid Example");
+    this.controller = new SolidController("IPIN2022 QR-scanner");
     this.buildingController = new BuildingController();
+    this.buildingController.initialize().then(() => {
+      // Ready
+    }).catch(console.error);
   },
   methods: {
     onDecode(event) {
@@ -34,17 +38,17 @@ export default {
       const uri = event;
       if (uri.startsWith("http://example.com/tracking.ttl#")) {
         const spaceUID = uri.replace("http://example.com/tracking.ttl#", "");
-        const space = this.buildingController.findByUID(spaceUID);
-        console.log(space);
+        this.buildingController.findByUID(spaceUID).then(space => {
+          console.log(space);
+        }).catch(console.error);
       }
     },
     paintOutline(detectedCodes, ctx) {
-      console.log(detectedCodes);
       for (const detectedCode of detectedCodes) {
         const [ firstPoint, ...otherPoints ] = detectedCode.cornerPoints
 
-        ctx.strokeStyle = "red";
-
+        ctx.strokeStyle = "green";
+        ctx.lineWidth = 10;
         ctx.beginPath();
         ctx.moveTo(firstPoint.x, firstPoint.y);
         for (const { x, y } of otherPoints) {

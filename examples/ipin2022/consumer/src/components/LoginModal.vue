@@ -5,7 +5,7 @@
         aria-role="dialog"
         aria-label="Solid Login"
         aria-modal>
-        <form action="" @submit="login">
+        <form action="" @submit="(e) => { e.preventDefault(); login(); }">
             <div class="modal-card" style="min-width: 400px">
                 <header class="modal-card-head">
                     <p class="modal-card-title">Login to Solid Provider</p>
@@ -15,7 +15,7 @@
                         <b-input
                             type="text"
                             v-model="issuer"
-                            placeholder="Your OIDC Issuer"
+                            placeholder="Your Solid Issuer"
                             required>
                         </b-input>
                     </b-field>

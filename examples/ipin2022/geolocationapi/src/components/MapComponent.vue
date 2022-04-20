@@ -69,11 +69,7 @@ export default {
     }
   },
   beforeMount() {
-    this.controller = new SolidController("OpenHPS Solid Example");
-    this.controller.once('ready', () => {
-      console.log("FIND ALL POSITIONS");
-      this.controller.findAllPositions(this.controller.getSession());
-    });
+    this.controller = new SolidController("IPIN2022 Geolocation API");
   },
   methods: {
     onMapCreated(vm) {

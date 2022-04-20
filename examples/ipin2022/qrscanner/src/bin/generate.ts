@@ -1,12 +1,11 @@
-import { SymbolicSpace } from '@openhps/geospatial';
-import * as Spaces from '../models/Spaces';
+import { Spaces } from 'ipin2022-common';
 import * as qr from 'qr-image';
 import * as pdf from 'html-pdf';
 import * as path from 'path';
 import * as ejs from 'ejs';
 
 Object.keys(Spaces).forEach(key => {
-    const space = Spaces[key] as SymbolicSpace<any>;
+    const space = Spaces[key];
     const image = qr.imageSync(`http://example.com/tracking.ttl#${space.uid}`, { type: 'svg', ec_level: 'L' });
     ejs.renderFile(path.join(__dirname, '../../templates/a4.ejs'), {
         qr: "data:image/svg+xml;base64," + Buffer.from(image).toString('base64'),

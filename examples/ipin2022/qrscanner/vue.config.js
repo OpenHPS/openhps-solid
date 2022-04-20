@@ -2,13 +2,10 @@ const fs = require('fs');
 const NodePolyfillPlugin = require('node-polyfill-webpack-plugin');
 
 module.exports = {
-  publicPath: process.env.NODE_ENV === 'production'
-    ? '/'
-    : '/',
+  publicPath: '/',
   transpileDependencies: [],
   chainWebpack: config => {
     config.plugin('polyfills').use(NodePolyfillPlugin)
-
     config.module
       .rule('vue')
       .use('vue-loader')
