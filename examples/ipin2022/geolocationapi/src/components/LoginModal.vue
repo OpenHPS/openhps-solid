@@ -13,7 +13,7 @@
                 <section class="modal-card-body">
                     <b-field label="Solid Issuer">
                         <b-input
-                            type="text"
+                            type="url"
                             v-model="issuer"
                             placeholder="Your Solid Issuer"
                             required>

@@ -22,6 +22,7 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-decorators": "^7.17.8",
+    "@openhps/geospatial": "^0.1.6",
     "@types/ejs": "^3.1.0",
     "@types/html-pdf": "^3.0.0",
     "@types/qr-image": "^3.2.5",

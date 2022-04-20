@@ -10,12 +10,13 @@ import type { Bindings } from '@openhps/rdf/sparql';
 import { SolidClientService, SolidDataDriver, } from '@openhps/solid/browser';
 import {
     FeatureOfInterest, 
-    Geometry, 
+    PointGeometry, 
     ObservableProperty, 
     Observation, 
     PropertyAccuracy, 
     QuantityValue,
-    GeolocationPosition
+    GeolocationPosition,
+    BASE_URI
 } from "../models";
 import {
     getLiteral,
@@ -142,13 +143,16 @@ export class SolidController extends EventEmitter {
      * @returns 
      */
     async updatePosition(data: GeolocationPosition) {
-        const session = await this.getSession();
+        const session = this.getSession();
         if (session === undefined) {
             return;
         }
-        this.createPosition(session, data);
-        this.createOrientation(session, data);
-        this.createVelocity(session, data);
+        if (data.lnglat)
+            this.createPosition(session, data);
+        if (data.heading)
+            this.createOrientation(session, data);
+        if (data.speed)
+            this.createVelocity(session, data);
     }
 
     async findAllPositions(session: SolidSession, minAccuracy: number = 6, limit: number = 20): Promise<any[]> {
@@ -210,11 +214,12 @@ export class SolidController extends EventEmitter {
         const accuracy = new QuantityValue();
         accuracy.numericValue = data.accuracy;
         accuracy.unit = LengthUnit.METER;
-        const position = new Geometry();
+        const position = new PointGeometry();
         position.latitude = data.lnglat[1];
         position.longitude = data.lnglat[0];
         position.spatialAccuracy = accuracy;
         observation.results.push(position);
+        observation.usedProcedures.push(`${BASE_URI}geolocationapi` as IriString);
         await this.service.setThing(session, RDFSerializer.serializeToSubjects(observation)[0]);
     }
     
@@ -231,7 +236,7 @@ export class SolidController extends EventEmitter {
         value.unit = AngleUnit.DEGREE;
         value.numericValue = data.heading;
         observation.results.push(value);
-        observation.usedProcedures.push("http://example.com/geolocationapi.ttl");
+        observation.usedProcedures.push(`${BASE_URI}geolocationapi` as IriString);
         await this.service.setThing(session, RDFSerializer.serializeToSubjects(observation)[0]);
     }
 
@@ -248,7 +253,7 @@ export class SolidController extends EventEmitter {
         value.unit = LinearVelocityUnit.METER_PER_SECOND;
         value.numericValue = data.speed;
         observation.results.push(value);
-        observation.usedProcedures.push("http://example.com/geolocationapi.ttl");
+        observation.usedProcedures.push(`${BASE_URI}geolocationapi` as IriString);
         await this.service.setThing(session, RDFSerializer.serializeToSubjects(observation)[0]);
     }
 }

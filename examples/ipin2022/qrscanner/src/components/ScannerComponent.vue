@@ -10,6 +10,8 @@ import LoginModal from './LoginModal.vue';
 import { SolidController, BuildingController } from 'ipin2022-common';
 import { QrcodeStream } from 'vue-qrcode-reader';
 import { DataObject, DataSerializer } from '@openhps/core';
+import beepOK from '../assets/beep-02.mp3';
+import beepERR from '../assets/beep-03.mp3';
 
 DataSerializer.serialize(new DataObject())
 export default {
@@ -21,7 +23,8 @@ export default {
   data () {
     return {
       controller: null,
-      buildingController: null
+      buildingController: null,
+      qr: undefined
     }
   },
   beforeMount() {
@@ -34,20 +37,25 @@ export default {
   methods: {
     onDecode(event) {
       // Get the first detected code
-      // Check if it contains http://example.com/tracking.ttl# 
-      const uri = event;
-      if (uri.startsWith("http://example.com/tracking.ttl#")) {
-        const spaceUID = uri.replace("http://example.com/tracking.ttl#", "");
-        this.buildingController.findByUID(spaceUID).then(space => {
-          console.log(space);
-        }).catch(console.error);
-      }
+      this.buildingController.findByURI(event).then(space => {
+        const position = space.transform(space.toPosition(), space);
+        this.controller.updatePosition({
+          lngLat: [position.longitude, position.latitude],
+          accuracy: position.accuracy.value
+        });
+        this.qr = space.displayName;
+        new Audio(beepOK).play(); // Beep sound for OK
+      }).catch(err => {
+        console.error(err);
+        this.qr = undefined;
+        new Audio(beepERR).play(); // Beep sound for ERROR
+      });
     },
     paintOutline(detectedCodes, ctx) {
       for (const detectedCode of detectedCodes) {
         const [ firstPoint, ...otherPoints ] = detectedCode.cornerPoints
 
-        ctx.strokeStyle = "green";
+        ctx.strokeStyle = this.qr ? "green" : "red";
         ctx.lineWidth = 10;
         ctx.beginPath();
         ctx.moveTo(firstPoint.x, firstPoint.y);
@@ -57,6 +65,19 @@ export default {
         ctx.lineTo(firstPoint.x, firstPoint.y);
         ctx.closePath();
         ctx.stroke();
+
+        const { boundingBox } = detectedCode
+
+        const centerX = boundingBox.x + boundingBox.width/ 2
+        const centerY = boundingBox.y + boundingBox.height/ 2
+
+        const fontSize = Math.max(20, 50 * boundingBox.width/ctx.canvas.width)
+
+        ctx.font = `bold ${fontSize}px sans-serif`
+        ctx.textAlign = "center"
+
+        ctx.fillStyle = ctx.strokeStyle;
+        ctx.fillText(this.qr ?? "Error", centerX, centerY)
       }
     },
   },

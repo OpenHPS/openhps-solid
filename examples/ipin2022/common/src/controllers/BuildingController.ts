@@ -1,6 +1,6 @@
 import { AbsolutePosition, DataObjectService, MemoryDataService } from "@openhps/core";
 import { SymbolicSpace } from "@openhps/geospatial";
-import { Spaces } from '../models';
+import { Spaces, BASE_URI } from '../models';
 
 /**
  * Building controller
@@ -35,6 +35,19 @@ export class BuildingController {
         return this.service.findByUID(uid);
     }
 
+    findByURI(uri: string): Promise<SymbolicSpace<AbsolutePosition>> {
+        if (uri.startsWith(BASE_URI)) {
+            const spaceUID = uri.replace(BASE_URI, "");
+            return this.findByUID(spaceUID);
+        }
+        return Promise.reject(`Not a valid QR-code!`);
+    }
+
+    /**
+     * Find all spaces
+     *
+     * @returns {Promise<SymbolicSpace<AbsolutePosition>[]>} Promise of an array of spaces
+     */
     findAll(): Promise<SymbolicSpace<AbsolutePosition>[]> {
         return this.service.findAll();
     }

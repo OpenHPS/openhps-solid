@@ -11,9 +11,9 @@
                     <p class="modal-card-title">Login to Solid Provider</p>
                 </header>
                 <section class="modal-card-body">
-                    <b-field label="OIDC Issuer">
+                    <b-field label="Solid Issuer">
                         <b-input
-                            type="text"
+                            type="url"
                             v-model="issuer"
                             placeholder="Your Solid Issuer"
                             required>

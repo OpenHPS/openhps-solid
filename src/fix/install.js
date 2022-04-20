@@ -10,6 +10,7 @@ const path = require('path');
 
 const directory = path.dirname(require.resolve('@inrupt/solid-client'));
 const indexFiles = fs.readdirSync(directory).filter((file) => file.startsWith('index'));
+indexFiles.push("thing/thing.internal.mjs");
 indexFiles.forEach((indexFile) => {
     indexFile = path.join(directory, indexFile);
     let indexContents = fs.readFileSync(indexFile, { encoding: 'utf-8' });
