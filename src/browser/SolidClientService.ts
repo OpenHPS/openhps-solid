@@ -87,7 +87,10 @@ export class SolidClientService extends SolidService {
     protected onRedirect(session: Session, url: URL): Promise<Session> {
         return new Promise((resolve, reject) => {
             session
-                .handleIncomingRedirect(url.toString())
+                .handleIncomingRedirect({
+                    url: url.toString(),
+                    restorePreviousSession: this.options.restorePreviousSession,
+                })
                 .then((sessionInfo) => {
                     if (sessionInfo.isLoggedIn) {
                         this.session = session;
@@ -139,4 +142,11 @@ export interface SolidClientServiceOptions extends SolidDataServiceOptions {
      * @default false
      */
     autoLogin?: boolean;
+    /**
+     * Automatically restore a previous session on autoLogin
+     * requires autoLogin=true
+     *
+     * @default false
+     */
+    restorePreviousSession?: boolean;
 }
