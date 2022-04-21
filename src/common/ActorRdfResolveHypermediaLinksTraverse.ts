@@ -4,6 +4,7 @@ import type {
     ILink,
 } from '@comunica/bus-rdf-resolve-hypermedia-links';
 import { ActorRdfResolveHypermediaLinks } from '@comunica/bus-rdf-resolve-hypermedia-links';
+import { KeysHttpProxy } from '@comunica/context-entries';
 import type { IActorArgs, IActorTest } from '@comunica/core';
 import { ActionContextKey } from '@comunica/core';
 
@@ -42,11 +43,13 @@ export class ActorRdfResolveHypermediaLinksTraverse extends ActorRdfResolveHyper
                     fileLink.url = fileLink.url.slice(0, hashPosition);
                 }
                 // Check if we are currently using the query via the browser in https
-                if (globalThis.window && globalThis.window.location.protocol === 'https:') {
-                    // Avoid mixed content when using https
-                    if (fileLink.url.startsWith('http:')) {
-                        fileLink.url = fileLink.url.replace('http:', 'https:');
-                    }
+                if (
+                    globalThis.window &&
+                    globalThis.window.location.protocol === 'https:' &&
+                    !action.context.get(KeysHttpProxy.httpProxyHandler) && // Avoid mixed content when using https
+                    fileLink.url.startsWith('http:')
+                ) {
+                    fileLink.url = fileLink.url.replace('http:', 'https:');
                 }
                 return fileLink;
             }),
