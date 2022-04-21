@@ -1,8 +1,7 @@
 import 'mocha';
 import { expect } from 'chai';
-import { SolidDataDriver } from '../../src';
+import { SolidDataDriver, QueryEngine } from '../../src';
 import { DataObject } from '@openhps/core';
-import { QueryEngine } from '@comunica/query-sparql-link-traversal-solid';
 
 describe('SolidDataDriver', () => {
     let driver: SolidDataDriver<any>;
@@ -10,17 +9,21 @@ describe('SolidDataDriver', () => {
     before(async () => {
         driver = new SolidDataDriver(DataObject, {
             sources: ["http://maximvdw.solidweb.org/profile/card#me"],
-            lenient: true,
+            lenient: true
         });
         await driver.emitAsync('build');
+    });
+
+    after(() => {
+        driver.emit('destroy');
     });
 
     describe('querying', () => {
         it('should support simple queries on the source', (done) => {
             driver.queryBindings(`
-            SELECT ?x ?y ?z {
-                ?x ?y ?z .
-            } LIMIT 50
+                SELECT ?x ?y ?z {
+                    ?x ?y ?z .
+                } LIMIT 50
             `).then(rows => {
                 expect(rows.length).to.be.greaterThan(10);
                 done();
@@ -48,7 +51,8 @@ describe('SolidDataDriver', () => {
                     bindings.push(binding);
                 });
                 stream.on('end', () => {
-                    //expect(bindings.length).to.be.greaterThan(5);
+                    expect(bindings.length).to.be.greaterThan(5);
+                    stream.close();
                     done();
                 });
                 stream.on('error', done);

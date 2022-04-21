@@ -3,7 +3,7 @@ import { SolidService, SolidSession } from './SolidService';
 import { getSolidDataset, removeThing, saveSolidDatasetAt, Thing } from '@inrupt/solid-client';
 import { RDFSerializer, Store } from '@openhps/rdf/serialization';
 import { SPARQLDataDriver, SPARQLDriverOptions, Bindings } from '@openhps/rdf/sparql';
-import { QueryEngine } from '@comunica/query-sparql-link-traversal-solid';
+import { QueryEngine } from './QueryEngine';
 import type { QueryStringContext } from '@comunica/types';
 
 export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDataDriver<T> {
