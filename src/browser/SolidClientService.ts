@@ -33,7 +33,7 @@ export class SolidClientService extends SolidService {
                         // Default session (local storage)
                         this.session = getDefaultSession();
                         if (this.session) {
-                            this.emitAsync('login', session);
+                            this.emitAsync('login', this.session);
                         }
                         resolve();
                     });
