@@ -34,9 +34,10 @@ export class SolidClientService extends SolidService {
                         const currentLocalSessionId = await this.get('currentSession');
                         if (currentLocalSessionId) {
                             // Ugly workaround for https://github.com/inrupt/solid-client-authn-js/issues/2095
-                            const currentGlobalSessionId = window.localStorage.get('solidClientAuthn:currentSession');
+                            const CURRENT_SESSION_KEY = 'solidClientAuthn:currentSession';
+                            const currentGlobalSessionId = window.localStorage.getItem(CURRENT_SESSION_KEY);
                             if (currentGlobalSessionId && currentLocalSessionId !== currentGlobalSessionId) {
-                                window.localStorage.set('solidClientAuthn:currentSession', currentLocalSessionId);
+                                window.localStorage.setItem(CURRENT_SESSION_KEY, currentLocalSessionId);
                             }
 
                             const currentGlobalSession = getDefaultSession();
@@ -56,7 +57,7 @@ export class SolidClientService extends SolidService {
     }
 
     protected set session(value: Session) {
-        if (value) {
+        if (value && value.info.isLoggedIn) {
             this.set('currentSession', value.info.sessionId);
         } else {
             this.delete('currentSession');
