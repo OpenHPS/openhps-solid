@@ -241,7 +241,10 @@ export abstract class SolidService extends RemoteService implements IStorage {
                 console.log(message);
             });
             websocket.on('error', console.error);
-            websocket.connect().then(() => resolve(websocket)).catch(reject);
+            websocket
+                .connect()
+                .then(() => resolve(websocket))
+                .catch(reject);
         });
     }
 

@@ -1,7 +1,7 @@
 import {
     getClientAuthenticationWithDependencies,
-    Session,
     getDefaultSession,
+    Session,
 } from '@inrupt/solid-client-authn-browser';
 import { SolidService, SolidDataServiceOptions } from '../common/SolidService';
 
@@ -29,11 +29,21 @@ export class SolidClientService extends SolidService {
                 });
                 this.onRedirect(session, new URL(window.location.href))
                     .then(() => resolve())
-                    .catch(() => {
+                    .catch(async () => {
                         // Default session (local storage)
-                        this.session = getDefaultSession();
-                        if (this.session && this.session.info.isLoggedIn) {
-                            this.emitAsync('login', this.session);
+                        const currentLocalSessionId = await this.get('currentSession');
+                        if (currentLocalSessionId) {
+                            // Ugly workaround for https://github.com/inrupt/solid-client-authn-js/issues/2095
+                            const currentGlobalSessionId = window.localStorage.get('solidClientAuthn:currentSession');
+                            if (currentGlobalSessionId && currentLocalSessionId !== currentGlobalSessionId) {
+                                window.localStorage.set('solidClientAuthn:currentSession', currentLocalSessionId);
+                            }
+
+                            const currentGlobalSession = getDefaultSession();
+                            if (currentGlobalSession && currentGlobalSession.info.isLoggedIn) {
+                                this.session = currentGlobalSession;
+                                this.emitAsync('login', this.session);
+                            }
                         }
                         resolve();
                     });
@@ -46,6 +56,11 @@ export class SolidClientService extends SolidService {
     }
 
     protected set session(value: Session) {
+        if (value) {
+            this.set('currentSession', value.info.sessionId);
+        } else {
+            this.delete('currentSession');
+        }
         this._session = value;
     }
 
@@ -143,8 +158,7 @@ export interface SolidClientServiceOptions extends SolidDataServiceOptions {
      */
     autoLogin?: boolean;
     /**
-     * Automatically restore a previous session on autoLogin
-     * requires autoLogin=true
+     * Automatically restore a previous session.
      *
      * @default false
      */
