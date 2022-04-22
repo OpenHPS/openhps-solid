@@ -230,17 +230,19 @@ export abstract class SolidService extends RemoteService implements IStorage {
     /**
      * Create a notification lsitener for a container URL
      *
-     * @param {SolidSession} session Solid session
      * @param {IriString} containerUrl Container URL
-     * @returns {WebsocketNotification} Open websocket
+     * @param {SolidSession} [session] Solid session
+     * @returns {Promise<WebsocketNotification>} Open websocket
      */
-    createNotificationListener(session: SolidSession, containerUrl: IriString): WebsocketNotification {
-        const websocket = new WebsocketNotification(containerUrl, { fetch: session ? session.fetch : fetch });
-        websocket.on('message', (message) => {
-            console.log(message);
+    createNotificationListener(containerUrl: IriString, session?: SolidSession): Promise<WebsocketNotification> {
+        return new Promise((resolve, reject) => {
+            const websocket = new WebsocketNotification(containerUrl, session ? { fetch: session.fetch } : undefined);
+            websocket.on('message', (message) => {
+                console.log(message);
+            });
+            websocket.on('error', console.error);
+            websocket.connect().then(() => resolve(websocket)).catch(reject);
         });
-        websocket.connect();
-        return websocket;
     }
 
     /**
