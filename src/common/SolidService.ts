@@ -26,9 +26,11 @@ import {
     ThingPersisted,
     FetchError,
 } from '@inrupt/solid-client';
+import { fetch } from 'cross-fetch';
+import * as WebSocket from 'isomorphic-ws';
 import { vcard } from '@openhps/rdf/vocab';
-import { Quad_Subject, DataFactory, Quad_Object, Quad, Store, IriString } from '@openhps/rdf/serialization';
-import { WebsocketNotification } from '@inrupt/solid-client-notifications';
+import { Quad_Subject, DataFactory, Quad_Object, Quad, Store } from '@openhps/rdf/serialization';
+import { DatasetSubscription } from './DatasetSubscription';
 
 export abstract class SolidService extends RemoteService implements IStorage {
     protected options: SolidDataServiceOptions;
@@ -160,6 +162,28 @@ export abstract class SolidService extends RemoteService implements IStorage {
         });
     }
 
+    getDatasetSubscription(session: SolidSession, uri: string): Promise<DatasetSubscription> {
+        return new Promise((resolve, reject) => {
+            const fetchFn = session ? session.fetch : fetch;
+            fetchFn(uri, {
+                method: 'HEAD',
+            })
+                .then((response) => {
+                    const websocketUri = response.headers.get('updates-via');
+                    if (!websocketUri) {
+                        return resolve(undefined);
+                    }
+                    DatasetSubscription.create(websocketUri)
+                        .then((subscription) => {
+                            subscription.subscribe(uri);
+                            resolve(subscription);
+                        })
+                        .catch(reject);
+                })
+                .catch(reject);
+        });
+    }
+
     /**
      * Save a Solid dataset
      *
@@ -223,27 +247,6 @@ export abstract class SolidService extends RemoteService implements IStorage {
                     return this.saveDataset(session, dataset, documentURL.href);
                 })
                 .then(() => resolve())
-                .catch(reject);
-        });
-    }
-
-    /**
-     * Create a notification lsitener for a container URL
-     *
-     * @param {IriString} containerUrl Container URL
-     * @param {SolidSession} [session] Solid session
-     * @returns {Promise<WebsocketNotification>} Open websocket
-     */
-    createNotificationListener(containerUrl: IriString, session?: SolidSession): Promise<WebsocketNotification> {
-        return new Promise((resolve, reject) => {
-            const websocket = new WebsocketNotification(containerUrl, session ? { fetch: session.fetch } : undefined);
-            websocket.on('message', (message) => {
-                console.log(message);
-            });
-            websocket.on('error', console.error);
-            websocket
-                .connect()
-                .then(() => resolve(websocket))
                 .catch(reject);
         });
     }

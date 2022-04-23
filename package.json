@@ -86,7 +86,9 @@
     "@inrupt/solid-client-authn-node": "^1.11.7",
     "@inrupt/solid-client-notifications": "^0.2.0",
     "cookie-session": "^2.0.0",
-    "express": "^4.17.3"
+    "cross-fetch": "^3.1.5",
+    "express": "^4.17.3",
+    "isomorphic-ws": "^4.0.1"
   },
   "peerDependencies": {
     "@openhps/core": ">=0.3.27",
