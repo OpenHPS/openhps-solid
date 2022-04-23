@@ -1,18 +1,16 @@
-import EventEmitter = require('events');
+import * as EventEmitter from 'events';
 import * as WebSocket from 'isomorphic-ws';
 
 export class DatasetSubscription extends EventEmitter {
     private _ws: WebSocket;
-    private _websocketUri: string;
 
-    private constructor(websocketUri: string) {
+    private constructor() {
         super();
-        this._websocketUri = websocketUri;
     }
 
     static create(websocketUri: string): Promise<DatasetSubscription> {
         return new Promise((resolve) => {
-            const subscription = new DatasetSubscription(websocketUri);
+            const subscription = new DatasetSubscription();
             subscription._ws = new WebSocket(websocketUri, ['solid-0.1']);
             subscription._ws.onopen = () => {
                 resolve(subscription);
