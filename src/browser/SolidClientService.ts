@@ -27,11 +27,9 @@ export class SolidClientService extends SolidService {
                     insecureStorage: this,
                     secureStorage: this,
                 });
-                this.onRedirect(session, new URL(window.location.href))
-                    .then(() => resolve())
-                    .catch(async () => {
-                        // Default session (local storage)
-                        const currentLocalSessionId = await this.get('currentSession');
+                // Default session (local storage)
+                this.get('currentSession')
+                    .then((currentLocalSessionId) => {
                         if (currentLocalSessionId) {
                             // Ugly workaround for https://github.com/inrupt/solid-client-authn-js/issues/2095
                             const CURRENT_SESSION_KEY = 'solidClientAuthn:currentSession';
@@ -39,12 +37,15 @@ export class SolidClientService extends SolidService {
                             if (currentGlobalSessionId && currentLocalSessionId !== currentGlobalSessionId) {
                                 window.localStorage.setItem(CURRENT_SESSION_KEY, currentLocalSessionId);
                             }
-
-                            const currentGlobalSession = getDefaultSession();
-                            if (currentGlobalSession && currentGlobalSession.info.isLoggedIn) {
-                                this.session = currentGlobalSession;
-                                this.emitAsync('login', this.session);
-                            }
+                        }
+                        return this.onRedirect(session, new URL(window.location.href));
+                    })
+                    .then(() => resolve())
+                    .catch(() => {
+                        const currentGlobalSession = getDefaultSession();
+                        if (currentGlobalSession && currentGlobalSession.info.isLoggedIn) {
+                            this.session = currentGlobalSession;
+                            this.emitAsync('login', this.session);
                         }
                         resolve();
                     });
