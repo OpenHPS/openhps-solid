@@ -27,7 +27,6 @@ import {
     FetchError,
 } from '@inrupt/solid-client';
 import { fetch } from 'cross-fetch';
-import * as WebSocket from 'isomorphic-ws';
 import { vcard } from '@openhps/rdf/vocab';
 import { Quad_Subject, DataFactory, Quad_Object, Quad, Store } from '@openhps/rdf/serialization';
 import { DatasetSubscription } from './DatasetSubscription';
@@ -47,10 +46,14 @@ export abstract class SolidService extends RemoteService implements IStorage {
     }
 
     getDocumentURL(session: SolidSession, path?: string): URL {
+        const podURL = new URL(session.info.webId.replace('/profile/card#me', ''));
         const documentURL = new URL(session.info.webId);
         if (path) {
-            const pathURL = new URL(path, 'http://localhost');
-            documentURL.pathname = documentURL.pathname.replace('/profile/card', '') + pathURL.pathname;
+            const pathURL = new URL(
+                (podURL.pathname.length > 1 ? podURL.pathname : '') + path.replace(podURL.href, ''),
+                podURL.href,
+            );
+            documentURL.pathname = pathURL.pathname;
             documentURL.hash = pathURL.hash;
         }
         return documentURL;
@@ -516,6 +519,14 @@ export interface SolidDataServiceOptions {
      * Client name displayed to the user
      */
     clientName?: string;
+    /**
+     * Client identifier
+     */
+    clientId?: string;
+    /**
+     * Client secret
+     */
+    clientSecret?: string;
     /**
      * Redirect URL
      */

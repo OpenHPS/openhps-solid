@@ -94,6 +94,8 @@ export class SolidClientService extends SolidService {
                 .login({
                     oidcIssuer,
                     clientName: this.options.clientName,
+                    clientId: this.options.clientId,
+                    clientSecret: this.options.clientSecret,
                     redirectUrl: this.options.redirectUrl ? this.options.redirectUrl : window.location.href,
                 })
                 .then(() => resolve(session))
