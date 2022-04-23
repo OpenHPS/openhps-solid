@@ -1,6 +1,6 @@
 import 'mocha';
 import { expect } from 'chai';
-import { SolidDataDriver, QueryEngine } from '../../src';
+import { SolidDataDriver } from '../../src';
 import { DataObject } from '@openhps/core';
 
 describe('SolidDataDriver', () => {
@@ -8,7 +8,7 @@ describe('SolidDataDriver', () => {
     
     before(async () => {
         driver = new SolidDataDriver(DataObject, {
-            sources: ["http://maximvdw.solidweb.org/profile/card#me"],
+            sources: ["https://maximvdw.solidweb.org/profile/card#me"],
             lenient: true
         });
         await driver.emitAsync('build');
@@ -31,31 +31,34 @@ describe('SolidDataDriver', () => {
         });
         
         it('should support traversal queries on the source', (done) => {
-            new QueryEngine().queryBindings(`
-            PREFIX sosa: <http://www.w3.org/ns/sosa/>
-            PREFIX ssn: <http://www.w3.org/ns/ssn/>
-            
-            SELECT ?result {
-                ?profile     a sosa:FeatureOfInterest ;
-                        ssn:hasProperty ?property .
-                ?property a sosa:ObservableProperty .
-                ?observation    a sosa:Observation ;
+            driver.engine.invalidateHttpCache();
+            driver.queryBindings(`
+                PREFIX geosparql: <http://www.opengis.net/ont/geosparql#>
+                PREFIX geof: <http://www.opengis.net/def/function/geosparql/>
+                PREFIX ssn: <http://www.w3.org/ns/ssn/>
+                PREFIX sosa: <http://www.w3.org/ns/sosa/>
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                PREFIX qudt: <http://qudt.org/schema/qudt/>
+
+                SELECT ?posWKT ?datetime ?accuracy
+                {
+                    ?profile ssn:hasProperty ?property .
+                    ?observation sosa:observedProperty ?property ;
+                                sosa:resultTime ?datetime ;
                                 sosa:hasResult ?result .
-            }
-            `, {
-                lenient: true,
-                sources: ["https://maximvdw.solidweb.org/profile/card"],
-            }).then((stream) => {
-                const bindings = [];
-                stream.on('data', (binding) => {
-                    bindings.push(binding);
-                });
-                stream.on('end', () => {
-                    expect(bindings.length).to.be.greaterThan(5);
-                    stream.close();
-                    done();
-                });
-                stream.on('error', done);
+                    ?result geosparql:hasSpatialAccuracy ?spatialAccuracy ;
+                            geosparql:asWKT ?posWKT .
+                    ?spatialAccuracy qudt:numericValue ?value ;
+                                    qudt:unit ?unit .
+                    OPTIONAL { ?unit qudt:conversionMultiplier ?multiplier }
+                    OPTIONAL { ?unit qudt:conversionOffset ?offset }
+                    BIND(COALESCE(?multiplier, 1) as ?multiplier)
+                    BIND(COALESCE(?offset, 0) as ?offset)
+                    BIND(((?value * ?multiplier) + ?offset) AS ?accuracy)
+                } ORDER BY DESC(?datetime) LIMIT 25
+            `).then(rows => {
+                expect(rows.length).to.be.greaterThan(10);
+                done();
             }).catch(done);
         });
     });

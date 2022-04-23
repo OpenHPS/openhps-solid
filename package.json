@@ -75,7 +75,7 @@
   },
   "keywords": [
     "openhps",
-    "solidproject",
+    "solid project",
     "solid"
   ],
   "dependencies": {
@@ -98,7 +98,6 @@
   "devDependencies": {
     "@commitlint/cli": "^16.2.3",
     "@commitlint/config-conventional": "^16.2.1",
-    "@comunica/config-query-sparql-link-traversal": "0.0.2-alpha.1.0",
     "@openhps/core": ">=0.3.27",
     "@openhps/rdf": ">=0.1.27",
     "@types/chai": "^4.3.1",
