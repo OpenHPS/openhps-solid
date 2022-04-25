@@ -3,6 +3,7 @@ const cookieSession = require('cookie-session'); // eslint-disable-line
 import { Session, ISessionInfo, getSessionFromStorage } from '@inrupt/solid-client-authn-node';
 import { SolidDataServiceOptions, SolidService } from '../common/SolidService';
 import { SolidProfileObject } from '../common';
+import { interactiveLogin } from 'solid-node-interactive-auth';
 
 export class SolidClientService extends SolidService {
     protected options: SolidDataClientOptions;
@@ -36,6 +37,20 @@ export class SolidClientService extends SolidService {
             this.express.get(this.options.loginPath, this.onLogin.bind(this));
             this.express.get(this.options.redirectPath, this.onRedirect.bind(this));
             resolve();
+        });
+    }
+
+    /**
+     * Interactive login a Solid CLI user
+     *
+     * @param {string} oidcIssuer OpenID Issuer
+     * @returns {Promise<Session>} Session promise
+     */
+    interactiveLogin(oidcIssuer: string = this.options.defaultOidcIssuer): Promise<Session> {
+        const session = new Session();
+        return interactiveLogin({
+            session,
+            oidcIssuer,
         });
     }
 
@@ -86,8 +101,8 @@ export class SolidClientService extends SolidService {
 
 export interface SolidDataClientOptions extends SolidDataServiceOptions {
     loginPath?: string;
-    redirectPath: string;
-    redirectUrl: string;
+    redirectPath?: string;
+    redirectUrl?: string;
     authServer?: SolidAuthServerOptions | express.Express;
     loginSuccessCallback?: (req: express.Request, res: express.Response, sessionInfo: ISessionInfo) => void;
     loginErrorCallback?: (req: express.Request, res: express.Response, sessionInfo: ISessionInfo, reason: any) => void;

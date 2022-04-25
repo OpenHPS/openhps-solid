@@ -88,7 +88,8 @@
     "cookie-session": "^2.0.0",
     "cross-fetch": "^3.1.5",
     "express": "^4.17.3",
-    "isomorphic-ws": "^4.0.1"
+    "isomorphic-ws": "^4.0.1",
+    "solid-node-interactive-auth": "^1.0.2"
   },
   "peerDependencies": {
     "@openhps/core": ">=0.3.27",

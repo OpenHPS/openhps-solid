@@ -43,7 +43,7 @@ describe('SolidDataDriver', () => {
                 SELECT ?posWKT ?datetime ?accuracy
                 {
                     ?profile ssn:hasProperty ?property .
-                    ?observation sosa:observedProperty ?property ;
+                    {?observation sosa:observedProperty ?property ;
                                 sosa:resultTime ?datetime ;
                                 sosa:hasResult ?result .
                     ?result geosparql:hasSpatialAccuracy ?spatialAccuracy ;
@@ -54,24 +54,13 @@ describe('SolidDataDriver', () => {
                     OPTIONAL { ?unit qudt:conversionOffset ?offset }
                     BIND(COALESCE(?multiplier, 1) as ?multiplier)
                     BIND(COALESCE(?offset, 0) as ?offset)
-                    BIND(((?value * ?multiplier) + ?offset) AS ?accuracy)
+                    BIND(((?value * ?multiplier) + ?offset) AS ?accuracy)}
                 } ORDER BY DESC(?datetime) LIMIT 25
             `, {}).then(rows => {
                 expect(rows.length).to.be.greaterThan(10);
                 done();
             }).catch(done);
         });
-
-        /**
-         * Check if the given URL matches with the given URL template.
-         * @param url a URL.
-         * @param template a URL template.
-         */
-        function urlMatchesTemplate(url: string, template: string): boolean {
-            // TODO: this is not able to handle more complex cases, see https://datatracker.ietf.org/doc/html/rfc6570
-            const templateRegex = new RegExp(template.replace(/\{[^}]*\}/gu, '.+'), 'u');
-            return templateRegex.test(url);
-        }
 
         // it('should support shape trees', (done) => {
         //     const shapeTree = new ShapeTree(undefined, undefined, 'http://qudt.org/vocab/unit/');

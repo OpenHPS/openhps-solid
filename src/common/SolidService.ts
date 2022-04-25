@@ -18,6 +18,7 @@ import {
     getStringNoLocale,
     getThing,
     saveSolidDatasetAt,
+    deleteSolidDataset,
     setStringNoLocale,
     setThing,
     SolidDataset,
@@ -188,10 +189,34 @@ export abstract class SolidService extends RemoteService implements IStorage {
     }
 
     /**
+     * Delete a Solid dataset
+     *
+     * @param {SolidSession} session Solid session to get a thing from
+     * @param {string} uri URI of the thing in the Solid Pod
+     * @returns {Promise<SolidDataset>} Promise of a solid dataset
+     */
+    deleteDataset(session: SolidSession, uri: string): Promise<void> {
+        return new Promise((resolve, reject) => {
+            deleteSolidDataset(
+                uri,
+                session
+                    ? {
+                          fetch: session.fetch,
+                      }
+                    : undefined,
+            )
+                .then(() => {
+                    resolve();
+                })
+                .catch(reject);
+        });
+    }
+
+    /**
      * Save a Solid dataset
      *
      * @param {SolidSession} session Solid session to get a thing from
-     * @param dataset
+     * @param {SolidDataset} dataset Dataset to save at the uri
      * @param {string} uri URI of the thing in the Solid Pod
      * @returns {Promise<SolidDataset>} Promise of a solid dataset
      */
