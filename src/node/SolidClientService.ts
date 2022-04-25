@@ -47,11 +47,33 @@ export class SolidClientService extends SolidService {
      * @returns {Promise<Session>} Session promise
      */
     interactiveLogin(oidcIssuer: string = this.options.defaultOidcIssuer): Promise<Session> {
-        const session = new Session();
-        return interactiveLogin({
-            session,
-            oidcIssuer,
+        const session = new Session({
+            insecureStorage: this,
+            secureStorage: this,
         });
+        if (this.options.clientId && this.options.clientSecret) {
+            return new Promise((resolve, reject) => {
+                session
+                    .login({
+                        oidcIssuer,
+                        clientId: this.options.clientId,
+                        clientSecret: this.options.clientSecret,
+                        clientName: this.options.clientName,
+                    })
+                    .then(() => {
+                        resolve(session);
+                    })
+                    .catch(reject);
+            });
+        } else {
+            return interactiveLogin({
+                session,
+                oidcIssuer,
+                clientId: this.options.clientId,
+                clientSecret: this.options.clientSecret,
+                clientName: this.options.clientName,
+            });
+        }
     }
 
     protected onLogin(req: express.Request, res: express.Response): void {

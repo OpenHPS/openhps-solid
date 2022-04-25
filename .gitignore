@@ -5,3 +5,4 @@ coverage/
 artifacts/
 .nyc_output/
 test-results.xml
+.env

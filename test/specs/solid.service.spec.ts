@@ -1,6 +1,7 @@
 import 'mocha';
 import { expect } from 'chai';
 import { SolidClientService } from '../../src';
+require('dotenv').config();
 
 describe('SolidService', () => {
     let service: SolidClientService;
@@ -33,6 +34,20 @@ describe('SolidService', () => {
 
         url = service.getDocumentURL({ info: { webId }} as any, webId);
         expect(url.href).to.equal(webId);
+    });
+    
+    it('should login with a clientId and clientSecret', (done) => {
+        const service = new SolidClientService({
+            clientName: "@openhps/solid",
+            clientId: process.env.clientId,
+            clientSecret: process.env.clientSecret,
+        });
+        service.interactiveLogin("https://broker.pod.inrupt.com/").then(session => {
+            expect(session).to.not.be.undefined;
+            expect(session.info.isLoggedIn).to.be.true;
+            session.logout();
+            done();
+        }).catch(done);
     });
     
 });
