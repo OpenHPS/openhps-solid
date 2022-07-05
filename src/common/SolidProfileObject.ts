@@ -1,11 +1,10 @@
-import '@openhps/rdf';
+import { foaf } from '@openhps/rdf/vocab';
 import { DataFrame, DataObject, SerializableMember, SerializableObject } from '@openhps/core';
-import { foaf } from '@openhps/rdf';
 
 @SerializableObject({
     rdf: {
         type: foaf.Person,
-    }
+    },
 })
 export class SolidProfileObject extends DataObject {
     /**
@@ -42,15 +41,15 @@ export class SolidProfileObject extends DataObject {
      */
     get profileDocumentUrl(): URL {
         const profileDocumentUrl = new URL(this.webId);
-        profileDocumentUrl.hash = "";
+        profileDocumentUrl.hash = '';
         return profileDocumentUrl;
     }
 }
 
 /* Add the WebID attribute to the DataObject prototype, and allow serialization */
 DataObject.prototype.webId = undefined;
-SerializableMember(String)(DataObject.prototype, "webId");
+SerializableMember(String)(DataObject.prototype, 'webId');
 
 /* Add the WebID attribute to the DataFrame prototype, and allow serialization */
 DataFrame.prototype.webId = undefined;
-SerializableMember(String)(DataFrame.prototype, "webId");
+SerializableMember(String)(DataFrame.prototype, 'webId');
