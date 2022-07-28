@@ -178,6 +178,8 @@ jobs:
       - build
       - quality
       - test_coverage
+      - publish_test_coverage
+      - publish_documentation
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/dev'
     steps:
@@ -217,6 +219,8 @@ jobs:
       - build
       - quality
       - test_coverage
+      - publish_test_coverage
+      - publish_documentation
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master'
     steps:
