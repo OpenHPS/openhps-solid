@@ -34,7 +34,7 @@ import { DatasetSubscription } from './DatasetSubscription';
 
 export abstract class SolidService extends RemoteService implements IStorage {
     protected options: SolidDataServiceOptions;
-    protected driver: DataServiceDriver<string, String>;
+    protected driver: DataServiceDriver<string, string>;
     model: Model<any, any>;
     private static readonly PREFIX = 'OpenHPS:solid';
 
@@ -62,7 +62,6 @@ export abstract class SolidService extends RemoteService implements IStorage {
 
     /**
      * Get a Solid dataset as an N3 Quads dataset
-     *
      * @param {SolidSession} session Solid session to get a thing from
      * @param {string} uri URI of the thing in the Solid Pod
      * @returns {Promise<Store>} Promise of a solid dataset store
@@ -138,7 +137,6 @@ export abstract class SolidService extends RemoteService implements IStorage {
 
     /**
      * Get a Solid dataset
-     *
      * @param {SolidSession} session Solid session to get a thing from
      * @param {string} uri URI of the thing in the Solid Pod
      * @returns {Promise<SolidDataset>} Promise of a solid dataset
@@ -190,7 +188,6 @@ export abstract class SolidService extends RemoteService implements IStorage {
 
     /**
      * Delete a Solid dataset
-     *
      * @param {SolidSession} session Solid session to get a thing from
      * @param {string} uri URI of the thing in the Solid Pod
      * @returns {Promise<SolidDataset>} Promise of a solid dataset
@@ -214,7 +211,6 @@ export abstract class SolidService extends RemoteService implements IStorage {
 
     /**
      * Save a Solid dataset
-     *
      * @param {SolidSession} session Solid session to get a thing from
      * @param {SolidDataset} dataset Dataset to save at the uri
      * @param {string} uri URI of the thing in the Solid Pod
@@ -240,7 +236,6 @@ export abstract class SolidService extends RemoteService implements IStorage {
 
     /**
      * Get a thing from a session Pod
-     *
      * @param {SolidSession} session Solid session to get a thing from
      * @param {string} uri URI of the thing in the Solid Pod
      * @returns {Promise<ThingPersisted>} Persisted thing
@@ -258,7 +253,6 @@ export abstract class SolidService extends RemoteService implements IStorage {
 
     /**
      * Set a thing in a session Pod
-     *
      * @param {SolidSession} session Solid session to set a thing to
      * @param {Thing} thing Non-persisted thing to store in the Pod
      * @returns {Promise<void>} Promise if stored
@@ -281,7 +275,6 @@ export abstract class SolidService extends RemoteService implements IStorage {
 
     /**
      * Check if something is an object
-     *
      * @param {any} item Item to check for object
      * @returns {boolean} Is an object
      */
@@ -291,7 +284,6 @@ export abstract class SolidService extends RemoteService implements IStorage {
 
     /**
      * Deep merge objects
-     *
      * @param {any} target Target object
      * @param {any} source Source object
      * @returns {any} Merged object
@@ -316,7 +308,6 @@ export abstract class SolidService extends RemoteService implements IStorage {
 
     /**
      * Send a push to a specific remote node
-     *
      * @param {string} uid Remote Node UID
      * @param {DataFrame} frame Data frame to push
      * @param {PushOptions} [options] Push options
@@ -329,7 +320,6 @@ export abstract class SolidService extends RemoteService implements IStorage {
 
     /**
      * Send a pull request to a specific remote node
-     *
      * @param {string} uid Remote Node UID
      * @param {PullOptions} [options] Pull options
      */
@@ -341,7 +331,6 @@ export abstract class SolidService extends RemoteService implements IStorage {
 
     /**
      * Send an error to a remote node
-     *
      * @param {string} uid Remote Node UID
      * @param {string} event Event to send
      * @param {any[]} [args] Event argument
@@ -354,7 +343,6 @@ export abstract class SolidService extends RemoteService implements IStorage {
 
     /**
      * Send a remote service call
-     *
      * @param {string} uid Service uid
      * @param {string} method Method to call
      * @param {any[]} [args] Optional set of arguments
@@ -367,7 +355,6 @@ export abstract class SolidService extends RemoteService implements IStorage {
 
     /**
      * Fetch profile information
-     *
      * @param {SolidProfileObject} object Data object to fetch profile information for
      * @returns {Promise<SolidProfileObject>} Promise of data object with profile information
      */
@@ -395,7 +382,6 @@ export abstract class SolidService extends RemoteService implements IStorage {
 
     /**
      * Store profile information
-     *
      * @param {SolidProfileObject} object Data object to store profile information for
      * @returns {Promise<void>} Promise of storing
      */
@@ -427,7 +413,6 @@ export abstract class SolidService extends RemoteService implements IStorage {
 
     /**
      * Get a key value
-     *
      * @param {string} key Key of the key value pair
      * @returns {Promise<string | undefined>} Value
      */
@@ -442,7 +427,6 @@ export abstract class SolidService extends RemoteService implements IStorage {
 
     /**
      * Set a key vlaue
-     *
      * @param {string} key Key of the key value pair
      * @param {string} value Value to store
      * @returns {Promise<void>} Store promise
@@ -458,7 +442,6 @@ export abstract class SolidService extends RemoteService implements IStorage {
 
     /**
      * Delete an object
-     *
      * @param {string} key Key of the key value pair
      * @returns {Promise<void>} Store promise
      */
@@ -473,7 +456,6 @@ export abstract class SolidService extends RemoteService implements IStorage {
 
     /**
      * Find session by session identifier
-     *
      * @param {string} sessionId Session identifier
      * @returns {SolidSession} Browser or Node session
      */
@@ -481,7 +463,6 @@ export abstract class SolidService extends RemoteService implements IStorage {
 
     /**
      * Find session by WebID
-     *
      * @param {string} webId Web Identifier
      * @returns {SolidSession} Browser or Node session
      */
@@ -503,7 +484,6 @@ export abstract class SolidService extends RemoteService implements IStorage {
 
     /**
      * Find session by object identifier
-     *
      * @param {Constructor<DataObject | DataFrame>} dataType Data type of data object or data frame
      * @param {string} uid Object unique identifier
      * @returns {SolidSession} Browser or Node session
@@ -561,7 +541,7 @@ export interface SolidDataServiceOptions {
      * Data service driver to use for key:value pairs
      * In a browser this should be @openhps/localstorage
      */
-    dataServiceDriver?: DataServiceDriver<string, String>;
+    dataServiceDriver?: DataServiceDriver<string, string>;
 }
 
 export type SolidSession = BrowserSession | NodeSession;

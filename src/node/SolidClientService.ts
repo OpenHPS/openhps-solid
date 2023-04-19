@@ -42,7 +42,6 @@ export class SolidClientService extends SolidService {
 
     /**
      * Interactive login a Solid CLI user
-     *
      * @param {string} oidcIssuer OpenID Issuer
      * @returns {Promise<Session>} Session promise
      */

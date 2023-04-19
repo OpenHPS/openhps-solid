@@ -155,7 +155,6 @@ export interface SolidDataDriverOptions<T> extends SPARQLDriverOptions {
     deserialize?: (obj: Thing) => T;
     /**
      * URI prefix
-     *
      * @default /openhps
      */
     uriPrefix?: string;

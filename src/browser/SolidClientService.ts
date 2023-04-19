@@ -80,7 +80,6 @@ export class SolidClientService extends SolidService {
 
     /**
      * Login a Solid browser user
-     *
      * @param {string} oidcIssuer OpenID Issuer
      * @returns {Promise<Session>} Session promise
      */
@@ -157,13 +156,11 @@ export class SolidClientService extends SolidService {
 export interface SolidClientServiceOptions extends SolidDataServiceOptions {
     /**
      * Automatically login after starting the server
-     *
      * @default false
      */
     autoLogin?: boolean;
     /**
      * Automatically restore a previous session.
-     *
      * @default false
      */
     restorePreviousSession?: boolean;

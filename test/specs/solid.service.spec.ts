@@ -28,9 +28,9 @@ describe('SolidService', () => {
     });
 
     it('should support webids with a subpath', () => {
-        let webId = "https://pod.inrupt.com/maximvdw/profile/card#me";
+        let webId = "https://id.inrupt.com/maximvdw/profile/card#me";
         let url = service.getDocumentURL({ info: { webId }} as any, "/properties/position.ttl");
-        expect(url.href).to.equal("https://pod.inrupt.com/maximvdw/properties/position.ttl");
+        expect(url.href).to.equal("https://id.inrupt.com/maximvdw/properties/position.ttl");
 
         url = service.getDocumentURL({ info: { webId }} as any, webId);
         expect(url.href).to.equal(webId);
@@ -38,11 +38,11 @@ describe('SolidService', () => {
     
     it('should login with a clientId and clientSecret', (done) => {
         const service = new SolidClientService({
-            clientName: "@openhps/solid",
+            clientName: "OpenHPS",
             clientId: process.env.clientId,
             clientSecret: process.env.clientSecret,
         });
-        service.interactiveLogin("https://broker.pod.inrupt.com/").then(session => {
+        service.interactiveLogin("https://login.inrupt.com/").then(session => {
             expect(session).to.not.be.undefined;
             expect(session.info.isLoggedIn).to.be.true;
             session.logout();

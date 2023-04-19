@@ -36,7 +36,6 @@ export class SolidProfileObject extends DataObject {
 
     /**
      * Get the profile document URL without trailing hashtag
-     *
      * @returns {URL} Profile URL
      */
     get profileDocumentUrl(): URL {
