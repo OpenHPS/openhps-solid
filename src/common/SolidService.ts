@@ -28,13 +28,12 @@ import {
     FetchError,
 } from '@inrupt/solid-client';
 import { fetch } from 'cross-fetch';
-import { vcard } from '@openhps/rdf/vocab';
-import { Quad_Subject, DataFactory, Quad_Object, Quad, Store } from '@openhps/rdf/serialization';
+import { vcard, Quad_Subject, DataFactory, Quad_Object, Quad, Store } from '@openhps/rdf';
 import { DatasetSubscription } from './DatasetSubscription';
 
 export abstract class SolidService extends RemoteService implements IStorage {
     protected options: SolidDataServiceOptions;
-    protected driver: DataServiceDriver<string, string>;
+    protected driver: DataServiceDriver<String, String>;
     model: Model<any, any>;
     private static readonly PREFIX = 'OpenHPS:solid';
 

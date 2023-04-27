@@ -1,8 +1,7 @@
 import { DataFrame, DataObject, Model, Constructor } from '@openhps/core';
 import { SolidService, SolidSession } from './SolidService';
 import { getSolidDataset, removeThing, saveSolidDatasetAt, Thing } from '@inrupt/solid-client';
-import { RDFSerializer, Store } from '@openhps/rdf/serialization';
-import { SPARQLDataDriver, SPARQLDriverOptions, Bindings } from '@openhps/rdf/sparql';
+import { RDFSerializer, Store, SPARQLDataDriver, SPARQLDriverOptions, Bindings } from '@openhps/rdf';
 import { QueryEngine } from './QueryEngine';
 import type { QueryStringContext } from '@comunica/types';
 

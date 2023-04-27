@@ -1,5 +1,5 @@
 import { DataObject, DataFrame } from '@openhps/core'; // eslint-disable-line @typescript-eslint/no-unused-vars
-import '@openhps/rdf/serialization';
+import '@openhps/rdf';
 
 declare module '@openhps/core/dist/types/data/object/DataObject' {
     export interface DataObject {
