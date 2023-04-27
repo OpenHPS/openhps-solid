@@ -40,7 +40,7 @@ export abstract class SolidService extends RemoteService implements IStorage {
     constructor(options?: SolidDataServiceOptions) {
         super();
         this.options = options || {};
-        this.driver = this.options.dataServiceDriver || new MemoryDataService(String);
+        this.driver = this.options.dataServiceDriver || new MemoryDataService<string, string>(String as unknown as any);
         this.uid = this.constructor.name;
         this.options.defaultOidcIssuer = this.options.defaultOidcIssuer || 'https://broker.pod.inrupt.com/';
     }
