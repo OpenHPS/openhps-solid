@@ -33,7 +33,7 @@ import { DatasetSubscription } from './DatasetSubscription';
 
 export abstract class SolidService extends RemoteService implements IStorage {
     protected options: SolidDataServiceOptions;
-    protected driver: DataServiceDriver<String, String>;
+    protected driver: DataServiceDriver<string, string>;
     model: Model<any, any>;
     private static readonly PREFIX = 'OpenHPS:solid';
 
