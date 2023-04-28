@@ -96,6 +96,7 @@ export class SolidClientService extends SolidService {
                     clientId: this.options.clientId,
                     clientSecret: this.options.clientSecret,
                     redirectUrl: this.options.redirectUrl ? this.options.redirectUrl : window.location.href,
+                    handleRedirect: this.options.handleRedirect,
                 })
                 .then(() => resolve(session))
                 .catch(reject);
@@ -164,4 +165,5 @@ export interface SolidClientServiceOptions extends SolidDataServiceOptions {
      * @default false
      */
     restorePreviousSession?: boolean;
+    handleRedirect?: (redirectUrl: string) => void;
 }
