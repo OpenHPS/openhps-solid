@@ -49,12 +49,18 @@ export abstract class SolidService extends RemoteService implements IStorage {
         const podURL = new URL(session.info.webId.replace('/profile/card#me', ''));
         const documentURL = new URL(session.info.webId);
         if (path) {
-            const pathURL = new URL(
-                (podURL.pathname.length > 1 ? podURL.pathname : '') + path.replace(podURL.href, ''),
-                podURL.href,
-            );
-            documentURL.pathname = pathURL.pathname;
-            documentURL.hash = pathURL.hash;
+            const filteredPath = (podURL.pathname.length > 1 ? podURL.pathname : '') + path.replace(podURL.href, '');
+            if (filteredPath.startsWith('http')) {
+                // Treat as absolute path
+                documentURL.pathname = path;
+            } else {
+                const pathURL = new URL(
+                    (podURL.pathname.length > 1 ? podURL.pathname : '') + path.replace(podURL.href, ''),
+                    podURL.href,
+                );
+                documentURL.pathname = pathURL.pathname;
+                documentURL.hash = pathURL.hash;
+            }
         }
         return documentURL;
     }
