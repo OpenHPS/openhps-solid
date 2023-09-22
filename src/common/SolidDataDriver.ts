@@ -2,8 +2,8 @@ import { DataFrame, DataObject, Model, Constructor } from '@openhps/core';
 import { SolidService, SolidSession } from './SolidService';
 import { getSolidDataset, removeThing, saveSolidDatasetAt, Thing } from '@inrupt/solid-client';
 import { RDFSerializer, Store, SPARQLDataDriver, SPARQLDriverOptions, Bindings } from '@openhps/rdf';
-import { QueryEngine } from './QueryEngine';
 import type { QueryStringContext } from '@comunica/types';
+import { QueryEngine } from './QueryEngine';
 
 export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDataDriver<T> {
     public model: Model;
@@ -12,7 +12,8 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
 
     constructor(dataType: Constructor<T>, options?: SolidDataDriverOptions<T>) {
         super(dataType, options);
-        this.options.engine = new QueryEngine();
+        this.options.engine = require('./engine-default'); // eslint-disable-line
+        this.engine = new QueryEngine(this.options.engine);
         this.options.lenient = true;
         this.options.uriPrefix = this.options.uriPrefix || '/openhps';
         this.options.serialize = this.options.serialize || defaultThingSerializer;

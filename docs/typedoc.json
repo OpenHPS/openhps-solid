@@ -4,6 +4,7 @@
     "exclude": ["**/_internal/**/*"],
     "excludePrivate": true,
     "hideGenerator": true,
+    "tsconfig": "../tsconfig/tsconfig.app.json",
     "categorizeByGroup": true,
     "media": "media"
 }

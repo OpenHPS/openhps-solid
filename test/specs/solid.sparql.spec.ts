@@ -9,7 +9,7 @@ describe('SolidDataDriver', () => {
     before(async () => {
         driver = new SolidDataDriver(DataObject, {
             sources: ["https://maximvdw.solidweb.org/profile/card#me"],
-            lenient: true
+            lenient: true,
         });
         await driver.emitAsync('build');
     });
@@ -51,9 +51,9 @@ describe('SolidDataDriver', () => {
                     ?spatialAccuracy qudt:numericValue ?value ;
                                     qudt:unit ?unit .
                     OPTIONAL { ?unit qudt:conversionMultiplier ?multiplier }
+                    OPTIONAL { BIND(COALESCE(?multiplier, 1) as ?multiplier) }
                     OPTIONAL { ?unit qudt:conversionOffset ?offset }
-                    BIND(COALESCE(?multiplier, 1) as ?multiplier)
-                    BIND(COALESCE(?offset, 0) as ?offset)
+                    OPTIONAL { BIND(COALESCE(?offset, 0) as ?offset) }
                     BIND(((?value * ?multiplier) + ?offset) AS ?accuracy)}
                 } ORDER BY DESC(?datetime) LIMIT 25
             `, {}).then(rows => {
