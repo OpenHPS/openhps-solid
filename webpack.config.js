@@ -12,7 +12,7 @@ const defaultConfig = env => ({
     alias: {
       typescript: false,
       'readable-stream': path.join(__dirname, 'node_modules/readable-stream'),
-      'lru-cache': path.join(__dirname, 'node_modules/lru-cache'),
+      //'lru-cache': path.join(__dirname, 'node_modules/lru-cache'),
       'jsonld-streaming-parser': path.join(__dirname, 'node_modules/jsonld-streaming-parser')
     },
     fallback: {
