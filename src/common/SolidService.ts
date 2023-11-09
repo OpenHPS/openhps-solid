@@ -36,7 +36,7 @@ export abstract class SolidService extends RemoteService implements IStorage {
     protected driver: DataServiceDriver<string, string>;
     model: Model<any, any>;
     private static readonly PREFIX = 'OpenHPS:solid';
-
+    
     constructor(options?: SolidDataServiceOptions) {
         super();
         this.options = options || {};

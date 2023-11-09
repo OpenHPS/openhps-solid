@@ -1,4 +1,4 @@
-import { DataFrame, DataObject, Model, Constructor } from '@openhps/core';
+import { DataFrame, DataObject, Model, Constructor, FindOptions, FilterQuery } from '@openhps/core';
 import { SolidService, SolidSession } from './SolidService';
 import { getSolidDataset, removeThing, saveSolidDatasetAt, Thing } from '@inrupt/solid-client';
 import { RDFSerializer, Store, SPARQLDataDriver, SPARQLDriverOptions, Bindings } from '@openhps/rdf';
@@ -78,16 +78,40 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
         });
     }
 
-    findOne(): Promise<T> {
-        throw new Error(`Not supported with SolidDataDriver!`);
+    findOne(query: FilterQuery<T>, options: FindOptions = {}): Promise<T> {
+        return this.service.findSessionByWebId(query.webId).then(session => {
+            return this.service.getThing(session, query.uri);
+        }).then(thing => {
+            const quads = RDFSerializer.serializeToQuads(thing);
+            const store = new Store(quads);
+            return super.findOne(query.query, options, {
+                source: store
+            });
+        });
     }
 
-    findAll(): Promise<T[]> {
-        throw new Error(`Not supported with SolidDataDriver!`);
+    findAll(query: FilterQuery<T>, options: FindOptions = {}): Promise<T[]> {
+        return this.service.findSessionByWebId(query.webId).then(session => {
+            return this.service.getThing(session, query.uri);
+        }).then(thing => {
+            const quads = RDFSerializer.serializeToQuads(thing);
+            const store = new Store(quads);
+            return super.findAll(query.query, options, {
+                source: store
+            });
+        });
     }
 
-    count(): Promise<number> {
-        throw new Error(`Not supported with SolidDataDriver!`);
+    count(query: SolidFilterQuery<T>): Promise<number> {
+        return this.service.findSessionByWebId(query.webId).then(session => {
+            return this.service.getThing(session, query.uri);
+        }).then(thing => {
+            const quads = RDFSerializer.serializeToQuads(thing);
+            const store = new Store(quads);
+            return super.count(query.query, {
+                source: store
+            });
+        });
     }
 
     insert(id: string, object: T): Promise<T> {
@@ -177,4 +201,10 @@ export function defaultThingSerializer<T extends DataObject | DataFrame>(object:
  */
 export function defaultThingDeserializer<T extends DataObject | DataFrame>(thing: Thing): T {
     return undefined;
+}
+
+export interface SolidFilterQuery<T> {
+    webId: string;
+    uri: string;
+    query: FilterQuery<T>;
 }

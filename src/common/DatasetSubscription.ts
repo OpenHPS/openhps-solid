@@ -1,6 +1,9 @@
 import { EventEmitter } from 'events';
 import * as WebSocket from 'isomorphic-ws';
 
+/**
+ * Solid Dataset subscription
+ */
 export class DatasetSubscription extends EventEmitter {
     private _ws: WebSocket;
 

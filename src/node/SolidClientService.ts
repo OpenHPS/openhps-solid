@@ -5,6 +5,9 @@ import { SolidDataServiceOptions, SolidService } from '../common/SolidService';
 import { SolidProfileObject } from '../common';
 import { interactiveLogin } from 'solid-node-interactive-auth';
 
+/**
+ * Solid client service
+ */
 export class SolidClientService extends SolidService {
     protected options: SolidDataClientOptions;
     protected express: express.Express;
