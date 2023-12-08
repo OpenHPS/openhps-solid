@@ -79,39 +79,48 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
     }
 
     findOne(query: FilterQuery<T>, options: FindOptions = {}): Promise<T> {
-        return this.service.findSessionByWebId(query.webId).then(session => {
-            return this.service.getThing(session, query.uri);
-        }).then(thing => {
-            const quads = RDFSerializer.serializeToQuads(thing);
-            const store = new Store(quads);
-            return super.findOne(query.query, options, {
-                source: store
+        return this.service
+            .findSessionByWebId(query.webId)
+            .then((session) => {
+                return this.service.getThing(session, query.uri);
+            })
+            .then((thing) => {
+                const quads = RDFSerializer.serializeToQuads(thing);
+                const store = new Store(quads);
+                return super.findOne(query.query, options, {
+                    source: store,
+                });
             });
-        });
     }
 
     findAll(query: FilterQuery<T>, options: FindOptions = {}): Promise<T[]> {
-        return this.service.findSessionByWebId(query.webId).then(session => {
-            return this.service.getThing(session, query.uri);
-        }).then(thing => {
-            const quads = RDFSerializer.serializeToQuads(thing);
-            const store = new Store(quads);
-            return super.findAll(query.query, options, {
-                source: store
+        return this.service
+            .findSessionByWebId(query.webId)
+            .then((session) => {
+                return this.service.getThing(session, query.uri);
+            })
+            .then((thing) => {
+                const quads = RDFSerializer.serializeToQuads(thing);
+                const store = new Store(quads);
+                return super.findAll(query.query, options, {
+                    source: store,
+                });
             });
-        });
     }
 
     count(query: SolidFilterQuery<T>): Promise<number> {
-        return this.service.findSessionByWebId(query.webId).then(session => {
-            return this.service.getThing(session, query.uri);
-        }).then(thing => {
-            const quads = RDFSerializer.serializeToQuads(thing);
-            const store = new Store(quads);
-            return super.count(query.query, {
-                source: store
+        return this.service
+            .findSessionByWebId(query.webId)
+            .then((session) => {
+                return this.service.getThing(session, query.uri);
+            })
+            .then((thing) => {
+                const quads = RDFSerializer.serializeToQuads(thing);
+                const store = new Store(quads);
+                return super.count(query.query, {
+                    source: store,
+                });
             });
-        });
     }
 
     insert(id: string, object: T): Promise<T> {
