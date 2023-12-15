@@ -7,7 +7,8 @@ import { QueryEngine } from './QueryEngine';
 
 export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDataDriver<T> {
     public model: Model;
-    protected service: SolidService;
+    // Solid service
+    service: SolidService;
     protected options: SolidDataDriverOptions<T>;
 
     constructor(dataType: Constructor<T>, options?: SolidDataDriverOptions<T>) {
@@ -35,32 +36,30 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
         });
     }
 
-    queryQuadsSolid(query: string, session?: SolidSession, options?: Partial<QueryStringContext>): Promise<Store> {
-        if (!session) {
-            return Promise.reject('Solid session not provided!');
+    queryQuads(query: string, session?: SolidSession, options?: Partial<QueryStringContext>): Promise<Store> {
+        if (session) {
+            return super.queryQuads(query, {
+                '@comunica/actor-http-inrupt-solid-client-authn:session': session,
+                sources: [session.info.webId],
+                lenient: true,
+                ...options,
+            });
+        } else {
+            return super.queryQuads(query, options);
         }
-        return this.queryQuads(query, {
-            '@comunica/actor-http-inrupt-solid-client-authn:session': session,
-            sources: [session.info.webId],
-            lenient: true,
-            ...options,
-        });
     }
 
-    queryBindingsSolid(
-        query: string,
-        session?: SolidSession,
-        options?: Partial<QueryStringContext>,
-    ): Promise<Bindings[]> {
-        if (!session) {
-            return Promise.reject('Solid session not provided!');
+    queryBindings(query: string, session?: SolidSession, options?: Partial<QueryStringContext>): Promise<Bindings[]> {
+        if (session) {
+            return super.queryBindings(query, {
+                '@comunica/actor-http-inrupt-solid-client-authn:session': session,
+                sources: [session.info.webId],
+                lenient: true,
+                ...options,
+            });
+        } else {
+            return super.queryBindings(query, options);
         }
-        return this.queryBindings(query, {
-            '@comunica/actor-http-inrupt-solid-client-authn:session': session,
-            sources: [session.info.webId],
-            lenient: true,
-            ...options,
-        });
     }
 
     findByUID(id: string): Promise<T> {
@@ -78,7 +77,7 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
         });
     }
 
-    findOne(query: FilterQuery<T>, options: FindOptions = {}): Promise<T> {
+    findOne(query: SolidFilterQuery<T>, options: FindOptions = {}): Promise<T> {
         return this.service
             .findSessionByWebId(query.webId)
             .then((session) => {
@@ -93,7 +92,7 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
             });
     }
 
-    findAll(query: FilterQuery<T>, options: FindOptions = {}): Promise<T[]> {
+    findAll(query: SolidFilterQuery<T>, options: FindOptions = {}): Promise<T[]> {
         return this.service
             .findSessionByWebId(query.webId)
             .then((session) => {
@@ -123,7 +122,7 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
             });
     }
 
-    insert(id: string, object: T): Promise<T> {
+    insert(_, object: T): Promise<T> {
         return new Promise((resolve, reject) => {
             if (!object.webId) {
                 return reject(new Error(`Unable to store data object or frame without WebID!`));
@@ -132,7 +131,7 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
                 .findSessionByWebId(object.webId)
                 .then((session) => {
                     if (!session) {
-                        reject(new Error(`Unable to find solid session for ${this.dataType.name} with id '${id}'!`));
+                        reject(new Error(`Unable to find solid session for ${object.webId}!`));
                         return;
                     }
                     // Link the object

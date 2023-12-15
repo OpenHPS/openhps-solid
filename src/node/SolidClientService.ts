@@ -22,38 +22,47 @@ export class SolidClientService extends SolidService {
     }
 
     private _onBuild(): Promise<void> {
-        return new Promise((resolve) => {
-            if (!Object.keys(this.options.authServer).includes('port')) {
-                this.express = this.options.authServer as express.Express;
-            } else {
-                const authOptions = this.options.authServer as SolidAuthServerOptions;
-                this.express = express();
-                this.express.use(
-                    cookieSession({
-                        name: 'session',
-                        keys: authOptions.cookies ? authOptions.cookies.keys : ['test', 'test2'],
-                        maxAge: authOptions.cookies ? authOptions.cookies.maxAge : 24 * 60 * 60 * 1000,
-                    }),
-                );
-                this.express.listen(authOptions.port, () => undefined);
+        return new Promise((resolve, reject) => {
+            if (this.options.authServer) {
+                if (!Object.keys(this.options.authServer).includes('port')) {
+                    this.express = this.options.authServer as express.Express;
+                } else {
+                    const authOptions = this.options.authServer as SolidAuthServerOptions;
+                    this.express = express();
+                    this.express.use(
+                        cookieSession({
+                            name: 'session',
+                            keys: authOptions.cookies ? authOptions.cookies.keys : ['test', 'test2'],
+                            maxAge: authOptions.cookies ? authOptions.cookies.maxAge : 24 * 60 * 60 * 1000,
+                        }),
+                    );
+                    this.express.listen(authOptions.port, () => undefined);
+                }
+                this.express.get(this.options.loginPath, this.onLogin.bind(this));
+                this.express.get(this.options.redirectPath, this.onRedirect.bind(this));
             }
-            this.express.get(this.options.loginPath, this.onLogin.bind(this));
-            this.express.get(this.options.redirectPath, this.onRedirect.bind(this));
-            resolve();
+    
+            if (this.options.autoLogin) {
+                this.login(this.options.defaultOidcIssuer)
+                    .then(() => resolve()).catch(reject);
+            } else {
+                resolve();
+            }
         });
     }
 
     /**
-     * Interactive login a Solid CLI user
+     * Login a Solid user
+     *
      * @param {string} oidcIssuer OpenID Issuer
      * @returns {Promise<Session>} Session promise
      */
-    interactiveLogin(oidcIssuer: string = this.options.defaultOidcIssuer): Promise<Session> {
+    login(oidcIssuer: string = this.options.defaultOidcIssuer, interactive: boolean = false): Promise<Session> {
         const session = new Session({
             insecureStorage: this,
             secureStorage: this,
         });
-        if (this.options.clientId && this.options.clientSecret) {
+        if (!interactive) {
             return new Promise((resolve, reject) => {
                 session
                     .login({
@@ -63,6 +72,10 @@ export class SolidClientService extends SolidService {
                         clientName: this.options.clientName,
                     })
                     .then(() => {
+                        const object = new SolidProfileObject(session.info.webId);
+                        object.sessionId = session.info.sessionId;
+                        return Promise.all([session.info, this.storeProfile(object)]);
+                    }).then(() => {
                         resolve(session);
                     })
                     .catch(reject);

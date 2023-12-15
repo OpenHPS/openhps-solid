@@ -1,4 +1,4 @@
-import { foaf } from '@openhps/rdf';
+import { foaf, vcard } from '@openhps/rdf';
 import { DataFrame, DataObject, SerializableMember, SerializableObject } from '@openhps/core';
 
 @SerializableObject({
@@ -7,6 +7,41 @@ import { DataFrame, DataObject, SerializableMember, SerializableObject } from '@
     },
 })
 export class SolidProfileObject extends DataObject {
+    @SerializableMember({
+        rdf: {
+            predicates: [vcard.given_name, foaf.givenname],
+        },
+    })
+    firstName: string;
+
+    @SerializableMember({
+        rdf: {
+            predicates: [vcard.family_name, foaf.surname],
+        },
+    })
+    lastName: string;
+
+    @SerializableMember({
+        rdf: {
+            predicates: [vcard.fn, foaf.name],
+        },
+    })
+    private _formattedName: string;
+
+    @SerializableMember({
+        rdf: {
+            predicates: [foaf.nick],
+        },
+    })
+    nickname?: string;
+
+    @SerializableMember({
+        rdf: {
+            predicate: [vcard.hasPhoto],
+        },
+    })
+    picture?: string;
+
     /**
      * OpenID Issuer
      */
@@ -32,6 +67,14 @@ export class SolidProfileObject extends DataObject {
 
     set webId(value: string) {
         this.uid = value;
+    }
+
+    get name(): string {
+        return this._formattedName ?? `${this.firstName} ${this.lastName}`;
+    }
+
+    set name(name: string) {
+        this._formattedName = name;
     }
 
     /**

@@ -56,60 +56,11 @@ describe('SolidDataDriver', () => {
                     OPTIONAL { BIND(COALESCE(?offset, 0) as ?offset) }
                     BIND(((?value * ?multiplier) + ?offset) AS ?accuracy)}
                 } ORDER BY DESC(?datetime) LIMIT 25
-            `, {}).then(rows => {
+            `, undefined, {}).then(rows => {
                 expect(rows.length).to.be.greaterThan(10);
                 done();
             }).catch(done);
         });
-
-        // it('should support shape trees', (done) => {
-        //     const shapeTree = new ShapeTree(undefined, undefined, 'http://qudt.org/vocab/unit/');
-        //     expect(urlMatchesTemplate('http://qudt.org/vocab/unit/DEG', shapeTree.uriTemplate));
-        //     driver.engine.invalidateHttpCache();
-        //     new QueryEngine().queryBindings(`
-        //         PREFIX qudt: <http://qudt.org/schema/qudt/>
-        //         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-
-        //         SELECT ?unitName {
-        //             ?unit a qudt:Unit ;
-        //                     rdfs:label ?unitName .
-        //         }
-        //     `, {
-        //         sources: ["http://qudt.org/vocab/unit/"],
-
-        //         log: {
-        //             info: (message, data) => {
-        //                 console.log(message);
-        //             },
-        //             debug: (message, data) => {
-        //              //   console.log(message);
-        //             },
-        //             error: (message, data) => {
-        //                 console.log(message);
-        //             },
-        //             warn: (message, data) => {
-        //                 console.log(message);
-        //             },
-        //             fatal: (message, data) => {
-        //                 console.log(message);
-        //             },
-        //             trace: (message, data) => {
-        //                 console.log(message);
-        //             }
-        //         },
-        //         metadata: {
-        //             shapetrees: {
-        //                 applicable: [
-        //                     shapeTree
-        //                 ]
-        //             }
-        //         }
-        //     }).then(stream => {
-        //         stream.on('end', () => {
-        //             done();
-        //         });
-        //     }).catch(done);
-        // });
     });
 
 });

@@ -11,6 +11,11 @@ export class DatasetSubscription extends EventEmitter {
         super();
     }
 
+    /**
+     * Create a new dataset subscription
+     * @param {string} websocketUri  Websocket URI
+     * @returns {Promise<DatasetSubscription>}      Dataset subscription
+     */
     static create(websocketUri: string): Promise<DatasetSubscription> {
         return new Promise((resolve) => {
             const subscription = new DatasetSubscription();
@@ -31,10 +36,17 @@ export class DatasetSubscription extends EventEmitter {
         });
     }
 
+    /**
+     * Subscribe to a dataset
+     * @param {string} uri  Dataset URI
+     */
     subscribe(uri: string): void {
         this._ws.send(`sub ${uri}`);
     }
 
+    /**
+     * Close the subscription
+     */
     close(): void {
         if (this._ws) {
             this._ws.close();

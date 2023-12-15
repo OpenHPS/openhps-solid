@@ -42,7 +42,7 @@ describe('SolidService', () => {
             clientId: process.env.clientId,
             clientSecret: process.env.clientSecret,
         });
-        service.interactiveLogin("https://login.inrupt.com/").then(session => {
+        service.login("https://login.inrupt.com/").then(session => {
             expect(session).to.not.be.undefined;
             expect(session.info.isLoggedIn).to.be.true;
             session.logout();

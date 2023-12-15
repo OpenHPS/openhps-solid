@@ -42,9 +42,15 @@ export abstract class SolidService extends RemoteService implements IStorage {
         this.options = options || {};
         this.driver = this.options.dataServiceDriver || new MemoryDataService<string, string>(String as unknown as any);
         this.uid = this.constructor.name;
-        this.options.defaultOidcIssuer = this.options.defaultOidcIssuer || 'https://broker.pod.inrupt.com/';
+        this.options.defaultOidcIssuer = this.options.defaultOidcIssuer || 'https://login.inrupt.com/';
     }
 
+    /**
+     * Get the URL of a document
+     * @param {SolidSession}    session Solid session to get an URL from
+     * @param {string}          [path]  Path to append to the document URL
+     * @returns {URL}                    Document URL
+     */
     getDocumentURL(session: SolidSession, path?: string): URL {
         const podURL = new URL(session.info.webId.replace('/profile/card#me', ''));
         const documentURL = new URL(session.info.webId);
@@ -169,6 +175,12 @@ export abstract class SolidService extends RemoteService implements IStorage {
         });
     }
 
+    /**
+     * Get a Solid dataset subscription
+     * @param {SolidSession} session Solid session to get a subscription from
+     * @param {string} uri URI of the thing in the Solid Pod
+     * @returns {Promise<DatasetSubscription>} Promise of a solid dataset subscription
+     */
     getDatasetSubscription(session: SolidSession, uri: string): Promise<DatasetSubscription> {
         return new Promise((resolve, reject) => {
             const fetchFn = session ? session.fetch : fetch;
@@ -537,6 +549,11 @@ export interface SolidDataServiceOptions {
      * Client secret
      */
     clientSecret?: string;
+    /**
+     * Automatically login after starting the server
+     * @default false
+     */
+    autoLogin?: boolean;
     /**
      * Redirect URL
      */
