@@ -1,6 +1,6 @@
 import * as express from 'express';
 const cookieSession = require('cookie-session'); // eslint-disable-line
-import { Session, ISessionInfo, getSessionFromStorage } from '@inrupt/solid-client-authn-node';
+import { Session, ISessionInfo, ISessionOptions } from '@inrupt/solid-client-authn-node';
 import { SolidDataServiceOptions, SolidService } from '../common/SolidService';
 import { SolidProfileObject } from '../common';
 import { interactiveLogin } from 'solid-node-interactive-auth';
@@ -41,10 +41,11 @@ export class SolidClientService extends SolidService {
                 this.express.get(this.options.loginPath, this.onLogin.bind(this));
                 this.express.get(this.options.redirectPath, this.onRedirect.bind(this));
             }
-    
+
             if (this.options.autoLogin) {
                 this.login(this.options.defaultOidcIssuer)
-                    .then(() => resolve()).catch(reject);
+                    .then(() => resolve())
+                    .catch(reject);
             } else {
                 resolve();
             }
@@ -53,14 +54,13 @@ export class SolidClientService extends SolidService {
 
     /**
      * Login a Solid user
-     *
      * @param {string} oidcIssuer OpenID Issuer
+     * @param interactive
      * @returns {Promise<Session>} Session promise
      */
     login(oidcIssuer: string = this.options.defaultOidcIssuer, interactive: boolean = false): Promise<Session> {
         const session = new Session({
-            insecureStorage: this,
-            secureStorage: this,
+            storage: this,
         });
         if (!interactive) {
             return new Promise((resolve, reject) => {
@@ -71,11 +71,25 @@ export class SolidClientService extends SolidService {
                         clientSecret: this.options.clientSecret,
                         clientName: this.options.clientName,
                     })
+                    .then(async () => {
+                        this.session = session;
+                        return this.get(`solidClientAuthenticationUser:${session.info.sessionId}`);
+                    })
+                    .then((data) => {
+                        const sessionData = JSON.parse(data);
+                        sessionData.webId = session.info.webId;
+                        sessionData.issuer = oidcIssuer;
+                        return this.set(
+                            `solidClientAuthenticationUser:${session.info.sessionId}`,
+                            JSON.stringify(sessionData),
+                        );
+                    })
                     .then(() => {
                         const object = new SolidProfileObject(session.info.webId);
                         object.sessionId = session.info.sessionId;
                         return Promise.all([session.info, this.storeProfile(object)]);
-                    }).then(() => {
+                    })
+                    .then(() => {
                         resolve(session);
                     })
                     .catch(reject);
@@ -93,8 +107,7 @@ export class SolidClientService extends SolidService {
 
     protected onLogin(req: express.Request, res: express.Response): void {
         const session = new Session({
-            insecureStorage: this,
-            secureStorage: this,
+            storage: this,
         });
         req.session!.sessionId = session.info.sessionId;
         session
@@ -119,7 +132,7 @@ export class SolidClientService extends SolidService {
                 object.sessionId = info.sessionId;
                 return Promise.all([info, this.storeProfile(object)]);
             })
-            .then(([info, object]) => {
+            .then(([info]) => {
                 if (info.isLoggedIn) {
                     this.options.loginSuccessCallback(req, res, info);
                 } else {
@@ -131,8 +144,8 @@ export class SolidClientService extends SolidService {
             });
     }
 
-    findSessionById(sessionId: string): Promise<Session> {
-        return getSessionFromStorage(sessionId, this);
+    protected createSession(options: Partial<ISessionOptions>): Session {
+        return new Session(options);
     }
 }
 

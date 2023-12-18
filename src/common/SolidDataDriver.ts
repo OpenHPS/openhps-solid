@@ -1,7 +1,7 @@
 import { DataFrame, DataObject, Model, Constructor, FindOptions, FilterQuery } from '@openhps/core';
 import { SolidService, SolidSession } from './SolidService';
 import { getSolidDataset, removeThing, saveSolidDatasetAt, Thing } from '@inrupt/solid-client';
-import { RDFSerializer, Store, SPARQLDataDriver, SPARQLDriverOptions, Bindings } from '@openhps/rdf';
+import { RDFSerializer, Store, SPARQLDataDriver, SPARQLDriverOptions, Bindings, Thing as RDFThing, IriString } from '@openhps/rdf';
 import type { QueryStringContext } from '@comunica/types';
 import { QueryEngine } from './QueryEngine';
 
@@ -17,8 +17,8 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
         this.engine = new QueryEngine(this.options.engine);
         this.options.lenient = true;
         this.options.uriPrefix = this.options.uriPrefix || '/openhps';
-        this.options.serialize = this.options.serialize || defaultThingSerializer;
-        this.options.deserialize = this.options.deserialize || defaultThingDeserializer;
+        this.options.serialize = defaultThingSerializer;
+        this.options.deserialize = defaultThingDeserializer;
 
         this.once('build', this._initService.bind(this));
     }
@@ -125,21 +125,48 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
     insert(_, object: T): Promise<T> {
         return new Promise((resolve, reject) => {
             if (!object.webId) {
-                return reject(new Error(`Unable to store data object or frame without WebID!`));
+                if (this.service.session) {
+                    object.webId = this.service.session.info.webId;
+                } else {
+                    return reject(new Error(`Unable to store data object or frame without WebID!`));
+                }
             }
             this.service
                 .findSessionByWebId(object.webId)
-                .then((session) => {
+                .then(async (session) => {
                     if (!session) {
                         reject(new Error(`Unable to find solid session for ${object.webId}!`));
                         return;
                     }
+                    if (!session.info.isLoggedIn) {
+                        reject(new Error(`Solid session is not logged in!`));
+                        return;
+                    }
                     // Link the object
                     this.service.linkSession(object, session.info.sessionId);
-                    const item: Thing = this.options.serialize(object);
-                    return this.service.setThing(session, item);
+                    if (object.rdf && object.rdf.uri && !object.rdf.uri.startsWith("http")) {
+                        object.rdf.uri = (await this.service.getPodUrl(session)) + object.rdf.uri as IriString;
+                    }
+                    const items: Thing[] = this.options.serialize(object);
+                    const documentURL = new URL(items[0].url);
+                    documentURL.hash = '';
+                    this.service.getDataset(session, documentURL.href).then(dataset => {
+                        let promise = Promise.resolve(dataset);
+                        for (let i = 0 ; i < items.length ; i ++) {
+                            promise = promise.then((dataset) => new Promise((resolve, reject) => {
+                                this.service.setThing(session, items[i], dataset).then(dataset => {
+                                    resolve(dataset);
+                                }).catch(reject);
+                            }));
+                        }
+                        return promise
+                    }).then(dataset => {
+                        console.log(dataset);
+                        return this.service.saveDataset(session, dataset, documentURL.href);
+                    }).then(() => {
+                        resolve(object);
+                    }).catch(reject);
                 })
-                .then(() => resolve(object))
                 .catch(reject);
         });
     }
@@ -180,7 +207,7 @@ export interface SolidDataDriverOptions<T> extends SPARQLDriverOptions {
     /**
      * Serialize the object to an RDF thing
      */
-    serialize?: (obj: T) => Thing;
+    serialize?: (obj: T) => Thing[];
     /**
      * Deserialize the RDF thing to instance
      */
@@ -195,20 +222,20 @@ export interface SolidDataDriverOptions<T> extends SPARQLDriverOptions {
 /**
  * @param object
  */
-export function defaultThingSerializer<T extends DataObject | DataFrame>(object: T): Thing {
-    const rdfThing = RDFSerializer.serialize(object);
-    return {
-        type: 'Subject',
-        predicates: {},
-        url: rdfThing.value,
-    };
+export function defaultThingSerializer<T extends DataObject | DataFrame>(object: T): Thing[] {
+    return RDFSerializer.serializeToSubjects(object);
 }
 
 /**
  * @param thing
  */
 export function defaultThingDeserializer<T extends DataObject | DataFrame>(thing: Thing): T {
-    return undefined;
+    const rdfThing: RDFThing = {
+        termType: 'NamedNode',
+        value: thing.url,
+        predicates: {},
+    };
+    return RDFSerializer.deserialize(rdfThing);
 }
 
 export interface SolidFilterQuery<T> {

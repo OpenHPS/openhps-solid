@@ -9,15 +9,17 @@ import {
     PullOptions,
     PushOptions,
 } from '@openhps/core';
-import type { Session as BrowserSession } from '@inrupt/solid-client-authn-browser';
+import { getClientAuthenticationWithDependencies, Session as BrowserSession } from '@inrupt/solid-client-authn-browser';
 import type { Session as NodeSession } from '@inrupt/solid-client-authn-node';
-import type { IStorage } from '@inrupt/solid-client-authn-core';
+import type { IStorage, ClientAuthentication } from '@inrupt/solid-client-authn-core';
 import { SolidProfileObject } from './SolidProfileObject';
 import {
     getSolidDataset,
     getStringNoLocale,
     getThing,
     saveSolidDatasetAt,
+    saveSolidDatasetInContainer,
+    createContainerAt,
     deleteSolidDataset,
     setStringNoLocale,
     setThing,
@@ -28,14 +30,18 @@ import {
     FetchError,
 } from '@inrupt/solid-client';
 import { fetch } from 'cross-fetch';
-import { vcard, Quad_Subject, DataFactory, Quad_Object, Quad, Store } from '@openhps/rdf';
+import { vcard, Quad_Subject, DataFactory, Quad_Object, Quad, Store, IriString } from '@openhps/rdf';
 import { DatasetSubscription } from './DatasetSubscription';
+import { ISessionOptions } from '@inrupt/solid-client-authn-node';
+import { ISessionOptions as ISessionBrowserOptions } from '@inrupt/solid-client-authn-browser';
+import { getPodUrlAll } from '@inrupt/solid-client';
 
 export abstract class SolidService extends RemoteService implements IStorage {
     protected options: SolidDataServiceOptions;
     protected driver: DataServiceDriver<string, string>;
     model: Model<any, any>;
     private static readonly PREFIX = 'OpenHPS:solid';
+    protected _session: SolidSession;
 
     constructor(options?: SolidDataServiceOptions) {
         super();
@@ -43,6 +49,14 @@ export abstract class SolidService extends RemoteService implements IStorage {
         this.driver = this.options.dataServiceDriver || new MemoryDataService<string, string>(String as unknown as any);
         this.uid = this.constructor.name;
         this.options.defaultOidcIssuer = this.options.defaultOidcIssuer || 'https://login.inrupt.com/';
+    }
+
+    get session(): SolidSession {
+        return this._session;
+    }
+
+    protected set session(value: SolidSession) {
+        this._session = value;
     }
 
     /**
@@ -69,6 +83,16 @@ export abstract class SolidService extends RemoteService implements IStorage {
             }
         }
         return documentURL;
+    }
+
+    getPodUrl(session: SolidSession): Promise<IriString> {
+        return new Promise((resolve, reject) => {
+            getPodUrlAll(session.info.webId, {
+                fetch: session.fetch
+            }).then(value => {
+                resolve(value[0] as IriString);
+            }).catch(reject);
+        });
     }
 
     /**
@@ -203,6 +227,18 @@ export abstract class SolidService extends RemoteService implements IStorage {
         });
     }
 
+    createContainer(session: SolidSession, url: IriString): Promise<void> {
+        return new Promise((resolve, reject) => {
+            createContainerAt(url,   session
+                ? {
+                      fetch: session.fetch,
+                  }
+                : undefined).then(() => {
+                    resolve();
+                }).catch(reject);
+        });
+    }
+
     /**
      * Delete a Solid dataset
      * @param {SolidSession} session Solid session to get a thing from
@@ -272,21 +308,34 @@ export abstract class SolidService extends RemoteService implements IStorage {
      * Set a thing in a session Pod
      * @param {SolidSession} session Solid session to set a thing to
      * @param {Thing} thing Non-persisted thing to store in the Pod
-     * @returns {Promise<void>} Promise if stored
+     * @param 
+     * @returns {Promise<SolidDataset>} Promise if stored
      */
-    setThing(session: SolidSession, thing: Thing): Promise<void> {
+    setThing(session: SolidSession, thing: Thing, dataset?: SolidDataset): Promise<SolidDataset> {
         return new Promise((resolve, reject) => {
             const documentURL = new URL(thing.url);
             documentURL.hash = '';
-            this.getDataset(session, documentURL.href)
-                .then((dataset) => {
-                    const existingThing = getThing(dataset, thing.url) ?? {};
-                    const newThing = this._mergeDeep(existingThing, thing);
-                    dataset = setThing(dataset, newThing);
-                    return this.saveDataset(session, dataset, documentURL.href);
-                })
-                .then(() => resolve())
-                .catch(reject);
+            function setThingInDataset(dataset: SolidDataset, persist = true): void {
+                const existingThing = getThing(dataset, thing.url) ?? {};
+                const newThing = this._mergeDeep(existingThing, thing);
+                dataset = setThing(dataset, newThing);
+                if (persist) {
+                    this.saveDataset(session, dataset, documentURL.href).then(() => {
+                        resolve(dataset);
+                    }).catch(reject);
+                } else {
+                    resolve(dataset);
+                }
+            }
+            if (dataset) {
+                setThingInDataset.bind(this)(dataset, false);
+            } else {
+                this.getDataset(session, documentURL.href)
+                    .then((dataset) => {
+                        setThingInDataset.bind(this)(dataset);
+                    })
+                    .catch(reject);
+            }
         });
     }
 
@@ -437,8 +486,12 @@ export abstract class SolidService extends RemoteService implements IStorage {
         return new Promise((resolve) => {
             this.driver
                 .findByUID(key)
-                .then((s) => resolve(s as string))
-                .catch(() => resolve(undefined));
+                .then((s) => {
+                    resolve(s as string);
+                })
+                .catch((err) => {
+                    resolve(undefined);
+                });
         });
     }
 
@@ -452,7 +505,9 @@ export abstract class SolidService extends RemoteService implements IStorage {
         return new Promise((resolve, reject) => {
             this.driver
                 .insert(key, value)
-                .then(() => resolve())
+                .then(() => {
+                    resolve();
+                })
                 .catch(reject);
         });
     }
@@ -476,7 +531,41 @@ export abstract class SolidService extends RemoteService implements IStorage {
      * @param {string} sessionId Session identifier
      * @returns {SolidSession} Browser or Node session
      */
-    abstract findSessionById(sessionId: string): Promise<SolidSession>;
+    findSessionById(sessionId: string): Promise<SolidSession> {
+        return new Promise((resolve, reject) => {
+            const clientAuth = this.getClientAuth();
+            clientAuth
+                .getSessionInfo(sessionId)
+                .then((sessionInfo) => {
+                    if (sessionInfo === undefined) {
+                        resolve(undefined);
+                        return;
+                    }
+                    const session = this.createSession({
+                        sessionInfo,
+                    });
+                    if (!sessionInfo.isLoggedIn && sessionInfo.issuer) {
+                        return new Promise((resolve, reject) => {
+                            session
+                                .login({
+                                    oidcIssuer: sessionInfo.issuer,
+                                    clientId: sessionInfo.clientAppId,
+                                    clientSecret: sessionInfo.clientAppSecret,
+                                })
+                                .then(() => {
+                                    resolve(session);
+                                })
+                                .catch(reject);
+                        });
+                    }
+                    return Promise.resolve(session);
+                })
+                .then((session: SolidSession) => {
+                    resolve(session);
+                })
+                .catch(reject);
+        });
+    }
 
     /**
      * Find session by WebID
@@ -494,7 +583,9 @@ export abstract class SolidService extends RemoteService implements IStorage {
                     }
                     return this.findSessionById(sessionId);
                 })
-                .then(resolve)
+                .then((session) => {
+                    resolve(session);
+                })
                 .catch(reject);
         });
     }
@@ -534,6 +625,15 @@ export abstract class SolidService extends RemoteService implements IStorage {
             this.delete(key).then(resolve).catch(reject);
         });
     }
+
+    protected getClientAuth(): ClientAuthentication {
+        return getClientAuthenticationWithDependencies({
+            insecureStorage: this,
+            secureStorage: this,
+        });
+    }
+
+    protected abstract createSession(options: Partial<ISessionOptions | ISessionBrowserOptions>): SolidSession;
 }
 
 export interface SolidDataServiceOptions {

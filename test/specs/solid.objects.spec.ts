@@ -25,15 +25,17 @@ describe('SolidDataDriver', () => {
     describe('insert', () => {
 
         it('should insert objects that contain a webId', (done) => {
+            const session = model.findService(SolidClientService).session;
+
             const sensor = new Accelerometer("mysensor");
             sensor.frequency = 50;
-            sensor.webId = "https://id.inrupt.com/maximvdw/profile/card#me";
+            sensor.webId = session.info.webId;
             sensor.rdf = {
-                uri: "https://id.inrupt.com/maximvdw/sensors/test.ttl#mysensor",
+                uri: `/sensors/test.ttl#mysensor` as any,
             };
             model.findDataService(DataObject)
                 .insert(sensor.uid, sensor).then(result => {
-                    console.log(result);
+                    done();
                 }).catch(done);
         });
 

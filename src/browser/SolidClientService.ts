@@ -1,19 +1,28 @@
-import {
-    getClientAuthenticationWithDependencies,
-    getDefaultSession,
-    Session,
-} from '@inrupt/solid-client-authn-browser';
-import { SolidService, SolidDataServiceOptions } from '../common/SolidService';
+import { getDefaultSession, ISessionOptions, Session } from '@inrupt/solid-client-authn-browser';
+import { SolidProfileObject } from '../common';
+import { SolidService, SolidDataServiceOptions, SolidSession } from '../common/SolidService';
 
 export class SolidClientService extends SolidService {
     protected options: SolidClientServiceOptions;
-    protected _session: Session;
 
     constructor(options?: SolidClientServiceOptions) {
         super(options);
         this.options.autoLogin = this.options.autoLogin ?? false;
 
         this.once('build', this._initialize.bind(this));
+    }
+
+    get session(): SolidSession {
+        return this._session;
+    }
+
+    protected set session(value: SolidSession) {
+        if (value && value.info.isLoggedIn) {
+            this.set('currentSession', value.info.sessionId);
+        } else {
+            this.delete('currentSession');
+        }
+        this._session = value;
     }
 
     private _initialize(): Promise<void> {
@@ -53,19 +62,6 @@ export class SolidClientService extends SolidService {
         });
     }
 
-    get session(): Session {
-        return this._session;
-    }
-
-    protected set session(value: Session) {
-        if (value && value.info.isLoggedIn) {
-            this.set('currentSession', value.info.sessionId);
-        } else {
-            this.delete('currentSession');
-        }
-        this._session = value;
-    }
-
     logout(session: Session): Promise<void> {
         return new Promise((resolve, reject) => {
             session
@@ -98,7 +94,27 @@ export class SolidClientService extends SolidService {
                     redirectUrl: this.options.redirectUrl ? this.options.redirectUrl : window.location.href,
                     handleRedirect: this.options.handleRedirect,
                 })
-                .then(() => resolve(session))
+                .then(() => {
+                    this.session = session;
+                    return this.get(`solidClientAuthenticationUser:${session.info.sessionId}`);
+                })
+                .then((data) => {
+                    const sessionData = JSON.parse(data);
+                    sessionData.webId = session.info.webId;
+                    sessionData.issuer = oidcIssuer;
+                    return this.set(
+                        `solidClientAuthenticationUser:${session.info.sessionId}`,
+                        JSON.stringify(sessionData),
+                    );
+                })
+                .then(() => {
+                    const object = new SolidProfileObject(session.info.webId);
+                    object.sessionId = session.info.sessionId;
+                    return Promise.all([session.info, this.storeProfile(object)]);
+                })
+                .then(() => {
+                    resolve(session);
+                })
                 .catch(reject);
         });
     }
@@ -123,34 +139,8 @@ export class SolidClientService extends SolidService {
         });
     }
 
-    findSessionById(sessionId: string): Promise<Session> {
-        return new Promise((resolve, reject) => {
-            const clientAuth = getClientAuthenticationWithDependencies({
-                secureStorage: this,
-                insecureStorage: this,
-            });
-            clientAuth
-                .getSessionInfo(sessionId)
-                .then((sessionInfo) => {
-                    if (sessionInfo === undefined) {
-                        return resolve(undefined);
-                    }
-                    const session = new Session({
-                        sessionInfo,
-                        clientAuthentication: clientAuth,
-                    });
-                    if (sessionInfo.refreshToken) {
-                        session.login({
-                            oidcIssuer: sessionInfo.issuer,
-                        });
-                    }
-                    return session;
-                })
-                .then((session: Session) => {
-                    resolve(session);
-                })
-                .catch(reject);
-        });
+    protected createSession(options: Partial<ISessionOptions>): Session {
+        return new Session(options);
     }
 }
 
