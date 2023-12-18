@@ -22,6 +22,7 @@ module.exports = {
         "@typescript-eslint/no-unused-vars": "warn",
         "@typescript-eslint/no-empty-interface": "off",
         "deprecation/deprecation": "warn",
+        "no-async-promise-executor": "off",
         "import/no-cycle": ["error", { "maxDepth": 15 }],
         "import/no-unresolved": "off",
         "prettier/prettier": ["error"],

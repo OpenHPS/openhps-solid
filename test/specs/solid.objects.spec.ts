@@ -22,6 +22,10 @@ describe('SolidDataDriver', () => {
             .build();
     });
 
+    after(() => {
+        model.destroy();
+    });
+
     describe('insert', () => {
 
         it('should insert objects that contain a webId', (done) => {
@@ -31,7 +35,7 @@ describe('SolidDataDriver', () => {
             sensor.frequency = 50;
             sensor.webId = session.info.webId;
             sensor.rdf = {
-                uri: `/sensors/test.ttl#mysensor` as any,
+                path: `sensors/abc.ttl` as any,
             };
             model.findDataService(DataObject)
                 .insert(sensor.uid, sensor).then(result => {

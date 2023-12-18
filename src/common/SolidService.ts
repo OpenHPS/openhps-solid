@@ -9,7 +9,11 @@ import {
     PullOptions,
     PushOptions,
 } from '@openhps/core';
-import { getClientAuthenticationWithDependencies, Session as BrowserSession } from '@inrupt/solid-client-authn-browser';
+import {
+    getClientAuthenticationWithDependencies,
+    Session as BrowserSession,
+    ISessionOptions as ISessionBrowserOptions,
+} from '@inrupt/solid-client-authn-browser';
 import type { Session as NodeSession } from '@inrupt/solid-client-authn-node';
 import type { IStorage, ClientAuthentication } from '@inrupt/solid-client-authn-core';
 import { SolidProfileObject } from './SolidProfileObject';
@@ -28,13 +32,12 @@ import {
     Thing,
     ThingPersisted,
     FetchError,
+    getPodUrlAll,
 } from '@inrupt/solid-client';
 import { fetch } from 'cross-fetch';
 import { vcard, Quad_Subject, DataFactory, Quad_Object, Quad, Store, IriString } from '@openhps/rdf';
 import { DatasetSubscription } from './DatasetSubscription';
 import { ISessionOptions } from '@inrupt/solid-client-authn-node';
-import { ISessionOptions as ISessionBrowserOptions } from '@inrupt/solid-client-authn-browser';
-import { getPodUrlAll } from '@inrupt/solid-client';
 
 export abstract class SolidService extends RemoteService implements IStorage {
     protected options: SolidDataServiceOptions;
@@ -65,22 +68,20 @@ export abstract class SolidService extends RemoteService implements IStorage {
      * @param {string}          [path]  Path to append to the document URL
      * @returns {URL}                    Document URL
      */
-    getDocumentURL(session: SolidSession, path?: string): URL {
-        const podURL = new URL(session.info.webId.replace('/profile/card#me', ''));
-        const documentURL = new URL(session.info.webId);
+    async getDocumentURL(session: SolidSession, path?: string): Promise<URL> {
+        const podURL = new URL(await this.getPodUrl(session));
+        const webIdURL = new URL(session.info.webId);
+        webIdURL.pathname = '';
+        webIdURL.hash = '';
+        const documentURL = new URL(podURL.href);
         if (path) {
-            const filteredPath = (podURL.pathname.length > 1 ? podURL.pathname : '') + path.replace(podURL.href, '');
-            if (filteredPath.startsWith('http')) {
-                // Treat as absolute path
-                documentURL.pathname = path;
-            } else {
-                const pathURL = new URL(
-                    (podURL.pathname.length > 1 ? podURL.pathname : '') + path.replace(podURL.href, ''),
-                    podURL.href,
-                );
-                documentURL.pathname = pathURL.pathname;
-                documentURL.hash = pathURL.hash;
-            }
+            const normalizedPath = path.replace(podURL.href, '').replace(webIdURL.href, '');
+            const pathURL = new URL(
+                (podURL.pathname.length > 1 ? podURL.pathname : '') + normalizedPath.replace(/^\//, ''),
+                podURL.href,
+            );
+            documentURL.pathname = pathURL.pathname;
+            documentURL.hash = pathURL.hash;
         }
         return documentURL;
     }
@@ -88,10 +89,12 @@ export abstract class SolidService extends RemoteService implements IStorage {
     getPodUrl(session: SolidSession): Promise<IriString> {
         return new Promise((resolve, reject) => {
             getPodUrlAll(session.info.webId, {
-                fetch: session.fetch
-            }).then(value => {
-                resolve(value[0] as IriString);
-            }).catch(reject);
+                fetch: session.fetch,
+            })
+                .then((value) => {
+                    resolve(value[0] as IriString);
+                })
+                .catch(reject);
         });
     }
 
@@ -177,8 +180,8 @@ export abstract class SolidService extends RemoteService implements IStorage {
      * @returns {Promise<SolidDataset>} Promise of a solid dataset
      */
     getDataset(session: SolidSession, uri: string): Promise<SolidDataset> {
-        return new Promise((resolve, reject) => {
-            const documentURL = this.getDocumentURL(session, uri);
+        return new Promise(async (resolve, reject) => {
+            const documentURL = uri.startsWith('http') ? new URL(uri) : await this.getDocumentURL(session, uri);
             documentURL.hash = '';
             getSolidDataset(
                 documentURL.href,
@@ -229,13 +232,18 @@ export abstract class SolidService extends RemoteService implements IStorage {
 
     createContainer(session: SolidSession, url: IriString): Promise<void> {
         return new Promise((resolve, reject) => {
-            createContainerAt(url,   session
-                ? {
-                      fetch: session.fetch,
-                  }
-                : undefined).then(() => {
+            createContainerAt(
+                url,
+                session
+                    ? {
+                          fetch: session.fetch,
+                      }
+                    : undefined,
+            )
+                .then(() => {
                     resolve();
-                }).catch(reject);
+                })
+                .catch(reject);
         });
     }
 
@@ -308,21 +316,29 @@ export abstract class SolidService extends RemoteService implements IStorage {
      * Set a thing in a session Pod
      * @param {SolidSession} session Solid session to set a thing to
      * @param {Thing} thing Non-persisted thing to store in the Pod
-     * @param 
+     * @param
+     * @param dataset
      * @returns {Promise<SolidDataset>} Promise if stored
      */
     setThing(session: SolidSession, thing: Thing, dataset?: SolidDataset): Promise<SolidDataset> {
         return new Promise((resolve, reject) => {
             const documentURL = new URL(thing.url);
             documentURL.hash = '';
+            /**
+             *
+             * @param dataset
+             * @param persist
+             */
             function setThingInDataset(dataset: SolidDataset, persist = true): void {
                 const existingThing = getThing(dataset, thing.url) ?? {};
                 const newThing = this._mergeDeep(existingThing, thing);
                 dataset = setThing(dataset, newThing);
                 if (persist) {
-                    this.saveDataset(session, dataset, documentURL.href).then(() => {
-                        resolve(dataset);
-                    }).catch(reject);
+                    this.saveDataset(session, dataset, documentURL.href)
+                        .then(() => {
+                            resolve(dataset);
+                        })
+                        .catch(reject);
                 } else {
                     resolve(dataset);
                 }

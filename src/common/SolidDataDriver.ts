@@ -1,7 +1,15 @@
 import { DataFrame, DataObject, Model, Constructor, FindOptions, FilterQuery } from '@openhps/core';
 import { SolidService, SolidSession } from './SolidService';
 import { getSolidDataset, removeThing, saveSolidDatasetAt, Thing } from '@inrupt/solid-client';
-import { RDFSerializer, Store, SPARQLDataDriver, SPARQLDriverOptions, Bindings, Thing as RDFThing, IriString } from '@openhps/rdf';
+import {
+    RDFSerializer,
+    Store,
+    SPARQLDataDriver,
+    SPARQLDriverOptions,
+    Bindings,
+    IriString,
+    Subject,
+} from '@openhps/rdf';
 import type { QueryStringContext } from '@comunica/types';
 import { QueryEngine } from './QueryEngine';
 
@@ -144,28 +152,40 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
                     }
                     // Link the object
                     this.service.linkSession(object, session.info.sessionId);
-                    if (object.rdf && object.rdf.uri && !object.rdf.uri.startsWith("http")) {
-                        object.rdf.uri = (await this.service.getPodUrl(session)) + object.rdf.uri as IriString;
+                    const podURL = await this.service.getPodUrl(session);
+                    const items: Thing[] = this.options.serialize(object, podURL);
+                    if (items.length === 0) {
+                        reject(new Error(`Unable to serialize object to RDF!`));
+                        return;
                     }
-                    const items: Thing[] = this.options.serialize(object);
                     const documentURL = new URL(items[0].url);
                     documentURL.hash = '';
-                    this.service.getDataset(session, documentURL.href).then(dataset => {
-                        let promise = Promise.resolve(dataset);
-                        for (let i = 0 ; i < items.length ; i ++) {
-                            promise = promise.then((dataset) => new Promise((resolve, reject) => {
-                                this.service.setThing(session, items[i], dataset).then(dataset => {
-                                    resolve(dataset);
-                                }).catch(reject);
-                            }));
-                        }
-                        return promise
-                    }).then(dataset => {
-                        console.log(dataset);
-                        return this.service.saveDataset(session, dataset, documentURL.href);
-                    }).then(() => {
-                        resolve(object);
-                    }).catch(reject);
+                    this.service
+                        .getDataset(session, documentURL.href)
+                        .then((dataset) => {
+                            let promise = Promise.resolve(dataset);
+                            for (let i = 0; i < items.length; i++) {
+                                promise = promise.then(
+                                    (dataset) =>
+                                        new Promise((resolve, reject) => {
+                                            this.service
+                                                .setThing(session, items[i], dataset)
+                                                .then((dataset) => {
+                                                    resolve(dataset);
+                                                })
+                                                .catch(reject);
+                                        }),
+                                );
+                            }
+                            return promise;
+                        })
+                        .then((dataset) => {
+                            return this.service.saveDataset(session, dataset, documentURL.href);
+                        })
+                        .then(() => {
+                            resolve(object);
+                        })
+                        .catch(reject);
                 })
                 .catch(reject);
         });
@@ -207,7 +227,7 @@ export interface SolidDataDriverOptions<T> extends SPARQLDriverOptions {
     /**
      * Serialize the object to an RDF thing
      */
-    serialize?: (obj: T) => Thing[];
+    serialize?: (obj: T, baseURI?: IriString) => Thing[];
     /**
      * Deserialize the RDF thing to instance
      */
@@ -221,21 +241,17 @@ export interface SolidDataDriverOptions<T> extends SPARQLDriverOptions {
 
 /**
  * @param object
+ * @param baseURI
  */
-export function defaultThingSerializer<T extends DataObject | DataFrame>(object: T): Thing[] {
-    return RDFSerializer.serializeToSubjects(object);
+export function defaultThingSerializer<T extends DataObject | DataFrame>(object: T, baseURI: IriString): Thing[] {
+    return RDFSerializer.serializeToSubjects(object, baseURI);
 }
 
 /**
  * @param thing
  */
 export function defaultThingDeserializer<T extends DataObject | DataFrame>(thing: Thing): T {
-    const rdfThing: RDFThing = {
-        termType: 'NamedNode',
-        value: thing.url,
-        predicates: {},
-    };
-    return RDFSerializer.deserialize(rdfThing);
+    return RDFSerializer.deserializeFromSubjects(thing.url as IriString, [thing as Subject]);
 }
 
 export interface SolidFilterQuery<T> {
