@@ -23,7 +23,7 @@ describe('SolidDataDriver', () => {
     });
 
     after(() => {
-        model.destroy();
+        model.emit('destroy');
     });
 
     describe('insert', () => {
@@ -35,7 +35,7 @@ describe('SolidDataDriver', () => {
             sensor.frequency = 50;
             sensor.webId = session.info.webId;
             sensor.rdf = {
-                path: `sensors/abc.ttl` as any,
+                path: `sensors/test.ttl` as any,
             };
             model.findDataService(DataObject)
                 .insert(sensor.uid, sensor).then(result => {
