@@ -1,4 +1,4 @@
-import * as express from 'express';
+import express from 'express';
 const cookieSession = require('cookie-session'); // eslint-disable-line
 import { Session, ISessionInfo, ISessionOptions } from '@inrupt/solid-client-authn-node';
 import { SolidDataServiceOptions, SolidService } from '../common/SolidService';
@@ -59,7 +59,7 @@ export class SolidClientService extends SolidService {
      * @returns {Promise<Session>} Session promise
      */
     login(oidcIssuer: string = this.options.defaultOidcIssuer, interactive: boolean = false): Promise<Session> {
-        const session = new Session({
+        const session = this.createSession({
             storage: this,
         });
         if (!interactive) {
@@ -106,7 +106,7 @@ export class SolidClientService extends SolidService {
     }
 
     protected onLogin(req: express.Request, res: express.Response): void {
-        const session = new Session({
+        const session = this.createSession({
             storage: this,
         });
         req.session!.sessionId = session.info.sessionId;

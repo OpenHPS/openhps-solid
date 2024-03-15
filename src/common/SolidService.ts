@@ -9,8 +9,7 @@ import {
     PullOptions,
     PushOptions,
 } from '@openhps/core';
-import {
-    getClientAuthenticationWithDependencies,
+import type {
     Session as BrowserSession,
     ISessionOptions as ISessionBrowserOptions,
 } from '@inrupt/solid-client-authn-browser';
@@ -22,7 +21,6 @@ import {
     getStringNoLocale,
     getThing,
     saveSolidDatasetAt,
-    saveSolidDatasetInContainer,
     createContainerAt,
     deleteSolidDataset,
     setStringNoLocale,
@@ -45,6 +43,7 @@ export abstract class SolidService extends RemoteService implements IStorage {
     model: Model<any, any>;
     private static readonly PREFIX = 'OpenHPS:solid';
     protected _session: SolidSession;
+    protected _clientAuthentication: ClientAuthentication;
 
     constructor(options?: SolidDataServiceOptions) {
         super();
@@ -60,6 +59,17 @@ export abstract class SolidService extends RemoteService implements IStorage {
 
     protected set session(value: SolidSession) {
         this._session = value;
+    }
+
+    get clientAuthentication(): ClientAuthentication {
+        if (this._clientAuthentication) {
+            return this._clientAuthentication;
+        }
+        const dummy = this.createSession({
+            storage: this,
+        });
+        this._clientAuthentication = (dummy as any).clientAuthentication;
+        return this._clientAuthentication;
     }
 
     /**
@@ -549,8 +559,7 @@ export abstract class SolidService extends RemoteService implements IStorage {
      */
     findSessionById(sessionId: string): Promise<SolidSession> {
         return new Promise((resolve, reject) => {
-            const clientAuth = this.getClientAuth();
-            clientAuth
+            this.clientAuthentication
                 .getSessionInfo(sessionId)
                 .then((sessionInfo) => {
                     if (sessionInfo === undefined) {
@@ -559,6 +568,7 @@ export abstract class SolidService extends RemoteService implements IStorage {
                     }
                     const session = this.createSession({
                         sessionInfo,
+                        storage: this,
                     });
                     if (!sessionInfo.isLoggedIn && sessionInfo.issuer) {
                         return new Promise((resolve, reject) => {
@@ -639,13 +649,6 @@ export abstract class SolidService extends RemoteService implements IStorage {
                 object instanceof DataObject || object instanceof DataFrame ? object.uid : object
             }`;
             this.delete(key).then(resolve).catch(reject);
-        });
-    }
-
-    protected getClientAuth(): ClientAuthentication {
-        return getClientAuthenticationWithDependencies({
-            insecureStorage: this,
-            secureStorage: this,
         });
     }
 
