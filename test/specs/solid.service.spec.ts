@@ -1,6 +1,7 @@
 import 'mocha';
 import { expect } from 'chai';
-import { SolidClientService } from '../../src';
+import { SolidClientService, SolidSession } from '../../src';
+import { IriString } from '@openhps/rdf';
 require('dotenv').config();
 
 describe('SolidService', () => {
@@ -54,4 +55,62 @@ describe('SolidService', () => {
         }).catch(done);
     });
     
+
+    describe('acl', () => {
+        let session: SolidSession;
+        let containerURL: string;
+
+        before((done) => {
+            const service = new SolidClientService({
+                clientName: "OpenHPS",
+                clientId: process.env.clientId,
+                clientSecret: process.env.clientSecret,
+            });
+            service.login("https://login.inrupt.com/").then(s => {
+                session = s;
+                expect(session).to.not.be.undefined;
+                expect(session.info.isLoggedIn).to.be.true;
+                return service.getDocumentURL(session, "/test/");
+            }).then(url => {
+                containerURL = url.href;
+                // Create container
+                return service.createContainer(session, containerURL as IriString);
+            }).then((dataset) => {
+                return service.createAcl(session, dataset as any);
+            }).then(acl => {
+                done();
+            }).catch(done);
+        });
+
+        after((done) => {
+            service.deleteContainer(session, containerURL as IriString).then(() => {
+                return session.logout();
+            }).then(() => {
+                done();
+            }).catch(done);
+        });
+
+        it('should set acl for itself', (done) => {
+            service.getDataset(session, containerURL).then(dataset => {
+                return service.setAccess(session, dataset, session.info.webId, {
+                    read: true,
+                    write: true,
+                    append: true,
+                    control: true,
+                });
+            }).then(() => {
+                done();
+            }).catch(done);
+        });
+
+        it('should be able to retrieve the acl of a document', (done) => {
+            service.getDataset(session, containerURL).then(dataset => {
+                return service.getAccess(dataset, session.info.webId);
+            }).then(access => {
+                console.log(access);
+                done();
+            }).catch(done);
+        });
+        
+    });
 });
