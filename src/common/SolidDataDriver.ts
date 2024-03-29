@@ -1,4 +1,4 @@
-import { DataFrame, DataObject, Model, Constructor, FindOptions, FilterQuery } from '@openhps/core';
+import { DataFrame, DataObject, Model, Constructor, FindOptions, FilterQuery, Serializable } from '@openhps/core';
 import { SolidService, SolidSession } from './SolidService';
 import { getSolidDataset, removeThing, saveSolidDatasetAt, Thing } from '@inrupt/solid-client';
 import {
@@ -12,6 +12,7 @@ import {
 } from '@openhps/rdf';
 import type { QueryStringContext } from '@comunica/types';
 import { QueryEngine } from './QueryEngine';
+import { object } from '@openhps/rdf/dist/types/vocab/schema';
 
 export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDataDriver<T> {
     public model: Model;
@@ -151,7 +152,7 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
                         return;
                     }
                     // Link the object
-                    this.service.linkSession(object, session.info.sessionId);
+                    this.service.linkSession(object, session.info.sessionId, this.dataType);
                     const podURL = await this.service.getPodUrl(session);
                     const items: Thing[] = this.options.serialize(object, podURL);
                     if (items.length === 0) {
@@ -160,6 +161,7 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
                     }
                     const documentURL = new URL(items[0].url);
                     documentURL.hash = '';
+                    await this.linkObjectToSession(object.uid, documentURL.href as IriString, session, this.dataType);
                     this.service
                         .getDataset(session, documentURL.href)
                         .then((dataset) => {
@@ -169,7 +171,7 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
                                     (dataset) =>
                                         new Promise((resolve, reject) => {
                                             this.service
-                                                .setThing(session, items[i], dataset)
+                                                .createThing(session, items[i], dataset)
                                                 .then((dataset) => {
                                                     resolve(dataset);
                                                 })
@@ -180,7 +182,7 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
                             return promise;
                         })
                         .then((dataset) => {
-                            return this.service.saveDataset(session, dataset, documentURL.href);
+                            return this.service.saveDataset(session, documentURL.href, dataset);
                         })
                         .then(() => {
                             resolve(object);
@@ -193,25 +195,30 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
 
     delete(id: string): Promise<void> {
         return new Promise((resolve, reject) => {
+            let uri: IriString;
+            let currentSession: SolidSession;
             this.service
                 .findSessionByObjectUID(this.dataType, id)
-                .then((session) => {
+                .then(async (session) => {
                     if (!session) {
                         reject(new Error(`Unable to find solid session for ${this.dataType.name} with id '${id}'!`));
                         return;
                     }
+                    currentSession = session as SolidSession;
+                    uri = await this.findObjectURI(id, session, this.dataType);
                     // Unlink the object
-                    this.service.unlinkSession(id);
+                    this.service.unlinkSession(id, this.dataType);
+                    await this.unlinkObjectFromSession(id, session, this.dataType);
                     // Delete from Pod
-                    const profileDocumentUrl = new URL(session.info.webId);
-                    profileDocumentUrl.hash = '';
-                    return getSolidDataset(profileDocumentUrl.href, {
+                    return getSolidDataset(uri, {
                         fetch: session.fetch,
                     });
                 })
                 .then((dataset) => {
-                    removeThing(dataset, '');
-                    return saveSolidDatasetAt('', dataset);
+                    dataset = removeThing(dataset, uri);
+                    return saveSolidDatasetAt(uri, dataset, {
+                        fetch: currentSession.fetch,
+                    });
                 })
                 .then(() => resolve())
                 .catch(reject);
@@ -220,6 +227,38 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
 
     deleteAll(): Promise<void> {
         throw new Error(`Not supported with SolidDataDriver!`);
+    }
+
+    protected findObjectURI(id: string, session: SolidSession, type: Serializable<any>): Promise<IriString> {
+        return new Promise((resolve, reject) => {
+            const prefix = `${SolidService.PREFIX}:${type.name}`;
+            const key = `${prefix}:${session.info.sessionId}:${id}`;
+            this.service
+                .get(key)
+                .then((value) => resolve(value as IriString))
+                .catch(reject);
+        });
+    }
+
+    protected linkObjectToSession(
+        id: string,
+        uri: IriString,
+        session: SolidSession,
+        type: Serializable<any>,
+    ): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const prefix = `${SolidService.PREFIX}:${type.name}`;
+            const key = `${prefix}:${session.info.sessionId}:${id}`;
+            this.service.set(key, uri).then(resolve).catch(reject);
+        });
+    }
+
+    protected unlinkObjectFromSession(id: string, session: SolidSession, type: Serializable<any>): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const prefix = `${SolidService.PREFIX}:${type.name}`;
+            const key = `${prefix}:${session.info.sessionId}:${id}`;
+            this.service.delete(key).then(resolve).catch(reject);
+        });
     }
 }
 

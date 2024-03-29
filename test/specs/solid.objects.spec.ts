@@ -35,10 +35,13 @@ describe('SolidDataDriver', () => {
             sensor.frequency = 50;
             sensor.webId = session.info.webId;
             sensor.rdf = {
-                path: `sensors/test.ttl` as any,
+                path: `sensors/test2.ttl` as any,
             };
             model.findDataService(DataObject)
                 .insert(sensor.uid, sensor).then(result => {
+                    // Delete again to make Inrupt happy <3
+                    return model.findDataService(DataObject).delete(sensor.uid);
+                }).then(() => {
                     done();
                 }).catch(done);
         });

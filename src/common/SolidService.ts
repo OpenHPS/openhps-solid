@@ -8,6 +8,7 @@ import {
     RemoteService,
     PullOptions,
     PushOptions,
+    Serializable,
 } from '@openhps/core';
 import type {
     Session as BrowserSession,
@@ -30,37 +31,21 @@ import {
     ThingPersisted,
     FetchError,
     getPodUrlAll,
-    deleteAclFor,
-    createAcl,
-    hasAcl,
-    getResourceAcl,
-    WithAcl,
-    WithResourceAcl,
-    getSolidDatasetWithAcl,
-    setAgentResourceAccess,
-    Access,
-    saveAclFor,
-    WithAccessibleAcl,
-    getAgentAccess,
     deleteContainer,
-    hasResourceAcl,
-    hasAccessibleAcl,
-    hasFallbackAcl,
-    createAclFromFallbackAcl,
-    AclDataset
+    universalAccess,
+    getSolidDataset,
 } from '@inrupt/solid-client';
 import { fetch } from 'cross-fetch';
 import { vcard, Quad_Subject, DataFactory, Quad_Object, Quad, Store, IriString, foaf } from '@openhps/rdf';
 import { DatasetSubscription } from './DatasetSubscription';
 import { ISessionOptions } from '@inrupt/solid-client-authn-node';
-import type { Resource, WithServerResourceInfo } from '@inrupt/solid-client/dist/interfaces';
-import { resolve } from 'path';
+import type { AccessModes } from '@inrupt/solid-client/dist/interfaces';
 
 export abstract class SolidService extends RemoteService implements IStorage {
     protected options: SolidDataServiceOptions;
     protected driver: DataServiceDriver<string, string>;
     model: Model<any, any>;
-    private static readonly PREFIX = 'OpenHPS:solid';
+    public static readonly PREFIX = 'OpenHPS:solid';
     protected _session: SolidSession;
     protected _clientAuthentication: ClientAuthentication;
 
@@ -206,13 +191,13 @@ export abstract class SolidService extends RemoteService implements IStorage {
      * Get a Solid dataset
      * @param {SolidSession} session Solid session to get a thing from
      * @param {string} uri URI of the thing in the Solid Pod
-     * @returns {Promise<SolidDataset & WithServerResourceInfo & WithAcl>} Promise of a solid dataset
+     * @returns {Promise<SolidDataset>} Promise of a solid dataset
      */
-    getDataset(session: SolidSession, uri: string): Promise<SolidDataset & WithServerResourceInfo & WithAcl> {
+    getDataset(session: SolidSession, uri: string): Promise<SolidDataset> {
         return new Promise(async (resolve, reject) => {
             const documentURL = uri.startsWith('http') ? new URL(uri) : await this.getDocumentURL(session, uri);
             documentURL.hash = '';
-            getSolidDatasetWithAcl(
+            getSolidDataset(
                 documentURL.href,
                 session
                     ? {
@@ -323,23 +308,23 @@ export abstract class SolidService extends RemoteService implements IStorage {
     /**
      * Save a Solid dataset
      * @param {SolidSession} session Solid session to get a thing from
-     * @param {SolidDataset} dataset Dataset to save at the uri
      * @param {string} uri URI of the thing in the Solid Pod
+     * @param {SolidDataset} dataset Dataset to save at the uri
      * @returns {Promise<SolidDataset>} Promise of a solid dataset
      */
-    saveDataset(session: SolidSession, dataset: SolidDataset, uri: string): Promise<void> {
+    saveDataset(session: SolidSession, uri: string, dataset?: SolidDataset): Promise<SolidDataset> {
         return new Promise((resolve, reject) => {
             saveSolidDatasetAt(
                 uri,
-                dataset,
+                dataset ? dataset : createSolidDataset(),
                 session
                     ? {
                           fetch: session.fetch,
                       }
                     : undefined,
             )
-                .then(() => {
-                    resolve();
+                .then((dataset) => {
+                    resolve(dataset);
                 })
                 .catch(reject);
         });
@@ -362,113 +347,61 @@ export abstract class SolidService extends RemoteService implements IStorage {
         });
     }
 
-    private _getAcl(object: SolidDataset & WithServerResourceInfo & WithAcl): AclDataset {
-        let resourceAcl: AclDataset;
-        if (!hasResourceAcl(object)) {
-            if (!hasAccessibleAcl(object)) {
-                throw new Error(
-                    "The current user does not have permission to change access rights to this Resource."
-                );
-            }
-            if (!hasFallbackAcl(object)) {
-                throw new Error(
-                    "The current user does not have permission to see who currently has access to this Resource."
-                );
-            }
-            resourceAcl = createAclFromFallbackAcl(object);
-        } else {
-            resourceAcl = getResourceAcl(object);
-        }
-        return resourceAcl;
-    }
-
-    createAcl(session: SolidSession, object: SolidDataset & WithServerResourceInfo & WithAcl): Promise<SolidDataset> {
-        return new Promise((resolve, reject) => {
-            let acl: AclDataset;
-            if (hasAcl(object)) {
-                acl = this._getAcl(object);
-            } else {
-                acl = createAcl(object);
-            }
-            const updatedAcl = setAgentResourceAccess(
-                acl,
-                session.info.webId,
-                { read: true, write: true, append: true, control: true}, 
-            );
-            saveAclFor(object as any, updatedAcl, {
-                fetch: session.fetch,
-            }).then((dataset) => {
-                resolve(dataset);
-            }).catch(reject); 
-        });
-    }
-
     /**
      * Set access control list for a specific object
-     * 
-     * @param {SolidSession} session Session to use
-     * @param object The object to set the access control list for
-     * @param webId WebID to set the access control list for
-     * @param access Access control list
+     * @param {IriString} uri URI of the object
+     * @param {Partial<AccessModes>} acces Access modes
+     * @param {string} [webId] WebID to set access for
+     * @param {SolidSession} [session] Session to use
      */
-    setAccess(session: SolidSession, object: SolidDataset & WithServerResourceInfo & WithAcl, webId: string, access: Access): Promise<void> {
+    setAccess(
+        uri: IriString,
+        acces: Partial<AccessModes>,
+        webId: string = foaf.Agent,
+        session?: SolidSession,
+    ): Promise<void> {
         return new Promise((resolve, reject) => {
-            let resourceAcl: AclDataset;
-            if (!hasResourceAcl(object)) {
-                if (!hasAccessibleAcl(object)) {
-                    return reject(new Error(
-                        "The current user does not have permission to change access rights to this Resource."
-                    ));
-                }
-                if (!hasFallbackAcl(object)) {
-                    return reject(new Error(
-                        "The current user does not have permission to see who currently has access to this Resource."
-                    ));
-                }
-                resourceAcl = createAclFromFallbackAcl(object);
-            } else {
-                resourceAcl = getResourceAcl(object);
-            }
-            const updatedAcl = setAgentResourceAccess(
-                resourceAcl,
-                webId,
-                access, 
-            );
-            saveAclFor(object as any, updatedAcl, {
-                fetch: session.fetch,
-            }).then(() => {
-                resolve();
-            }).catch(reject); 
+            universalAccess
+                .setAgentAccess(
+                    uri,
+                    webId,
+                    acces,
+                    session
+                        ? {
+                              fetch: session.fetch,
+                          }
+                        : undefined,
+                )
+                .then(() => {
+                    resolve();
+                })
+                .catch(reject);
         });
     }
 
     /**
-     * Get access control list for a specific object
-     * @param object Object to get access control list for
+     * Get access control list for a specific resource
+     * @param {SolidSession} session Session to use
+     * @param uri
      * @param webId WebID to get access control list for
      * @returns Access control list
      */
-    getAccess(object: SolidDataset & WithServerResourceInfo & WithAcl, webId: string = foaf.Agent): Access {
-        return getAgentAccess(object, webId);
-    }
-
-    /**
-     * Delete Access Control List for a specific object
-     * @param {SolidSession} session Session to use
-     * @param object 
-     * @returns 
-     */
-    deleteAcl(session: SolidSession, object: SolidDataset): Promise<void> {
+    getAccess(uri: IriString, webId: string = foaf.Agent, session?: SolidSession): Promise<AccessModes> {
         return new Promise((resolve, reject) => {
-            if (hasAcl(object)) {
-                deleteAclFor(object as any, {
-                    fetch: session.fetch,
-                }).then(() => {
-                    resolve();
-                }).catch(reject);
-            } else {
-                resolve();
-            }
+            universalAccess
+                .getAgentAccess(
+                    uri,
+                    webId,
+                    session
+                        ? {
+                              fetch: session.fetch,
+                          }
+                        : undefined,
+                )
+                .then((access) => {
+                    resolve(access);
+                })
+                .catch(reject);
         });
     }
 
@@ -476,11 +409,10 @@ export abstract class SolidService extends RemoteService implements IStorage {
      * Set a thing in a session Pod
      * @param {SolidSession} session Solid session to set a thing to
      * @param {Thing} thing Non-persisted thing to store in the Pod
-     * @param
-     * @param dataset
-     * @returns {Promise<SolidDataset & WithServerResourceInfo & WithAcl>} Promise if stored
+     * @param {SolidDataset} [dataset]
+     * @returns {Promise<SolidDataset>} Promise if stored
      */
-    setThing(session: SolidSession, thing: Thing, dataset?: SolidDataset): Promise<SolidDataset & WithServerResourceInfo & WithAcl> {
+    createThing(session: SolidSession, thing: Thing, dataset?: SolidDataset): Promise<SolidDataset> {
         return new Promise((resolve, reject) => {
             const documentURL = new URL(thing.url);
             documentURL.hash = '';
@@ -489,7 +421,7 @@ export abstract class SolidService extends RemoteService implements IStorage {
              * @param dataset
              * @param persist
              */
-            function setThingInDataset(dataset: SolidDataset & WithServerResourceInfo & WithAcl, persist = true): void {
+            function setThingInDataset(dataset: SolidDataset, persist = true): void {
                 const existingThing = getThing(dataset, thing.url) ?? {};
                 const newThing = this._mergeDeep(existingThing, thing);
                 dataset = setThing(dataset, newThing);
@@ -604,7 +536,7 @@ export abstract class SolidService extends RemoteService implements IStorage {
         return new Promise((resolve, reject) => {
             this.findSessionByWebId(object.webId)
                 .then((session) => {
-                    return getSolidDatasetWithAcl(
+                    return getSolidDataset(
                         object.profileDocumentUrl.href,
                         session
                             ? {
@@ -635,7 +567,7 @@ export abstract class SolidService extends RemoteService implements IStorage {
                     return this.findSessionByWebId(object.webId);
                 })
                 .then((session) => {
-                    return getSolidDatasetWithAcl(
+                    return getSolidDataset(
                         object.profileDocumentUrl.href,
                         session
                             ? {
@@ -785,16 +717,19 @@ export abstract class SolidService extends RemoteService implements IStorage {
         });
     }
 
-    linkSession(object: DataObject | DataFrame, sessionId: string): Promise<void> {
+    linkSession(object: DataObject | DataFrame, sessionId: string, type?: Serializable<any>): Promise<void> {
         return new Promise((resolve, reject) => {
-            const prefix = `${SolidService.PREFIX}:${object.constructor.name}`;
-            this.set(`${prefix}:${object.uid}`, sessionId).then(resolve).catch(reject);
+            const constructor = type ?? object.constructor;
+            const prefix = `${SolidService.PREFIX}:${constructor.name}`;
+            const key = `${prefix}:${object.uid}`;
+            this.set(key, sessionId).then(resolve).catch(reject);
         });
     }
 
-    unlinkSession(object: DataObject | DataFrame | string): Promise<void> {
+    unlinkSession(object: DataObject | DataFrame | string, type?: Serializable<any>): Promise<void> {
         return new Promise((resolve, reject) => {
-            const prefix = `${SolidService.PREFIX}:${object.constructor.name}`;
+            const constructor = type ?? object.constructor;
+            const prefix = `${SolidService.PREFIX}:${constructor.name}`;
             const key = `${prefix}:${
                 object instanceof DataObject || object instanceof DataFrame ? object.uid : object
             }`;

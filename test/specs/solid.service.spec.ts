@@ -56,9 +56,9 @@ describe('SolidService', () => {
     });
     
 
-    describe('acl', () => {
+    describe('access', () => {
         let session: SolidSession;
-        let containerURL: string;
+        let containerURL: IriString;
 
         before((done) => {
             const service = new SolidClientService({
@@ -72,11 +72,9 @@ describe('SolidService', () => {
                 expect(session.info.isLoggedIn).to.be.true;
                 return service.getDocumentURL(session, "/test/");
             }).then(url => {
-                containerURL = url.href;
+                containerURL = url.href as IriString;
                 // Create container
                 return service.createContainer(session, containerURL as IriString);
-            }).then((dataset) => {
-                return service.createAcl(session, dataset as any);
             }).then(acl => {
                 done();
             }).catch(done);
@@ -90,24 +88,20 @@ describe('SolidService', () => {
             }).catch(done);
         });
 
-        it('should set acl for itself', (done) => {
-            service.getDataset(session, containerURL).then(dataset => {
-                return service.setAccess(session, dataset, session.info.webId, {
-                    read: true,
-                    write: true,
-                    append: true,
-                    control: true,
-                });
-            }).then(() => {
+        it('should set access for itself', (done) => {
+            service.setAccess(containerURL, {
+                read: true,
+                write: true,
+                append: true,
+                controlRead: true,
+                controlWrite: true,
+            }, session.info.webId, session).then(() => {
                 done();
             }).catch(done);
         });
 
         it('should be able to retrieve the acl of a document', (done) => {
-            service.getDataset(session, containerURL).then(dataset => {
-                return service.getAccess(dataset, session.info.webId);
-            }).then(access => {
-                console.log(access);
+            service.getAccess(containerURL, session.info.webId, session).then(access => {
                 done();
             }).catch(done);
         });
