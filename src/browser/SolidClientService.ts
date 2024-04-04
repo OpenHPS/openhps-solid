@@ -1,4 +1,4 @@
-import { getDefaultSession, ISessionOptions, Session } from '@inrupt/solid-client-authn-browser';
+import { EVENTS, getDefaultSession, ISessionOptions, Session } from '@inrupt/solid-client-authn-browser';
 import { SolidProfileObject } from '../common';
 import { SolidService, SolidDataServiceOptions, SolidSession } from '../common/SolidService';
 
@@ -29,7 +29,10 @@ export class SolidClientService extends SolidService {
         return new Promise((resolve, reject) => {
             if (this.options.autoLogin) {
                 this.login(this.options.defaultOidcIssuer)
-                    .then(() => resolve())
+                    .then(() => {
+                        this.emitAsync('ready');
+                        resolve();
+                    })
                     .catch(reject);
             } else {
                 const session = new Session({
@@ -49,7 +52,10 @@ export class SolidClientService extends SolidService {
                         }
                         return this.onRedirect(session, new URL(window.location.href));
                     })
-                    .then(() => resolve())
+                    .then(() => {
+                        this.emitAsync('ready');
+                        resolve();
+                    })
                     .catch(() => {
                         const currentGlobalSession = getDefaultSession();
                         if (currentGlobalSession && currentGlobalSession.info.isLoggedIn) {
@@ -62,7 +68,7 @@ export class SolidClientService extends SolidService {
         });
     }
 
-    logout(session: Session): Promise<void> {
+    logout(session: SolidSession): Promise<void> {
         return new Promise((resolve, reject) => {
             session
                 .logout()
@@ -77,9 +83,10 @@ export class SolidClientService extends SolidService {
     /**
      * Login a Solid browser user
      * @param {string} oidcIssuer OpenID Issuer
+     * @param {boolean} remember Remember the session
      * @returns {Promise<Session>} Session promise
      */
-    login(oidcIssuer: string = this.options.defaultOidcIssuer): Promise<Session> {
+    login(oidcIssuer: string = this.options.defaultOidcIssuer, remember: boolean = false): Promise<Session> {
         return new Promise((resolve, reject) => {
             const session = new Session({
                 insecureStorage: this,
@@ -121,6 +128,9 @@ export class SolidClientService extends SolidService {
 
     protected onRedirect(session: Session, url: URL): Promise<Session> {
         return new Promise((resolve, reject) => {
+            session.events.on(EVENTS.SESSION_RESTORED, (url) => {
+                window.location.href = url;
+            });
             session
                 .handleIncomingRedirect({
                     url: url.toString(),
