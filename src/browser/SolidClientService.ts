@@ -41,12 +41,13 @@ export class SolidClientService extends SolidService {
                     return this.handleLogin(currentLocalSessionId);
                 })
                 .then(() => {
-                    this.emitAsync('ready');
                     resolve();
                 })
                 .catch((err) => {
                     this.emit('error', err);
                     resolve(); // A login error should not break the build process
+                }).finally(() => {
+                    this.emitAsync('ready');
                 });
         });
     }
@@ -106,7 +107,6 @@ export class SolidClientService extends SolidService {
             this.findSessionInfoById(sessionId)
                 .then((data) => {
                     storedSessionData = data;
-                    console.log('Stored info', storedSessionData);
                     session = this.createSession({
                         sessionInfo: {
                             sessionId,
