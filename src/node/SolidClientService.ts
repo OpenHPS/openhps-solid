@@ -60,7 +60,7 @@ export class SolidClientService extends SolidService {
      */
     login(oidcIssuer: string = this.options.defaultOidcIssuer, interactive: boolean = false): Promise<Session> {
         const session = this.createSession({
-            storage: this,
+            storage: this.storage,
         });
         if (!interactive) {
             return new Promise((resolve, reject) => {
@@ -73,13 +73,13 @@ export class SolidClientService extends SolidService {
                     })
                     .then(async () => {
                         this.session = session;
-                        return this.get(`solidClientAuthenticationUser:${session.info.sessionId}`);
+                        return this.storage.get(`solidClientAuthenticationUser:${session.info.sessionId}`);
                     })
                     .then((data) => {
                         const sessionData = JSON.parse(data);
                         sessionData.webId = session.info.webId;
                         sessionData.issuer = oidcIssuer;
-                        return this.set(
+                        return this.storage.set(
                             `solidClientAuthenticationUser:${session.info.sessionId}`,
                             JSON.stringify(sessionData),
                         );
@@ -107,7 +107,7 @@ export class SolidClientService extends SolidService {
 
     protected onLogin(req: express.Request, res: express.Response): void {
         const session = this.createSession({
-            storage: this,
+            storage: this.storage,
         });
         req.session!.sessionId = session.info.sessionId;
         session

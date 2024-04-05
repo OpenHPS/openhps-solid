@@ -1,6 +1,6 @@
-import { EVENTS, getDefaultSession, ISessionOptions, Session } from '@inrupt/solid-client-authn-browser';
+import { ISessionInfo, ISessionOptions, Session } from '@inrupt/solid-client-authn-browser';
 import { SolidProfileObject } from '../common';
-import { SolidService, SolidDataServiceOptions, SolidSession } from '../common/SolidService';
+import { SolidService, SolidDataServiceOptions, SolidSession, ISessionInternalInfo } from '../common/SolidService';
 
 export class SolidClientService extends SolidService {
     protected options: SolidClientServiceOptions;
@@ -17,54 +17,37 @@ export class SolidClientService extends SolidService {
     }
 
     protected set session(value: SolidSession) {
-        if (value && value.info.isLoggedIn) {
-            this.set('currentSession', value.info.sessionId);
-        } else {
-            this.delete('currentSession');
-        }
         this._session = value;
     }
 
     private _initialize(): Promise<void> {
         return new Promise((resolve, reject) => {
-            if (this.options.autoLogin) {
-                this.login(this.options.defaultOidcIssuer)
-                    .then(() => {
-                        this.emitAsync('ready');
+            // Default session (local storage)
+            this.storage
+                .get('currentSession')
+                .then((currentLocalSessionId) => {
+                    if (currentLocalSessionId) {
+                        // Ugly workaround for https://github.com/inrupt/solid-client-authn-js/issues/2095
+                        const CURRENT_SESSION_KEY = 'solidClientAuthn:currentSession';
+                        const currentGlobalSessionId = window.localStorage.getItem(CURRENT_SESSION_KEY);
+                        if (currentGlobalSessionId && currentLocalSessionId !== currentGlobalSessionId) {
+                            window.localStorage.setItem(CURRENT_SESSION_KEY, currentLocalSessionId);
+                        }
+                    }
+                    if (!currentLocalSessionId) {
                         resolve();
-                    })
-                    .catch(reject);
-            } else {
-                const session = new Session({
-                    insecureStorage: this,
-                    secureStorage: this,
+                        return;
+                    }
+                    return this.handleLogin(currentLocalSessionId);
+                })
+                .then(() => {
+                    this.emitAsync('ready');
+                    resolve();
+                })
+                .catch((err) => {
+                    this.emit('error', err);
+                    resolve(); // A login error should not break the build process
                 });
-                // Default session (local storage)
-                this.get('currentSession')
-                    .then((currentLocalSessionId) => {
-                        if (currentLocalSessionId) {
-                            // Ugly workaround for https://github.com/inrupt/solid-client-authn-js/issues/2095
-                            const CURRENT_SESSION_KEY = 'solidClientAuthn:currentSession';
-                            const currentGlobalSessionId = window.localStorage.getItem(CURRENT_SESSION_KEY);
-                            if (currentGlobalSessionId && currentLocalSessionId !== currentGlobalSessionId) {
-                                window.localStorage.setItem(CURRENT_SESSION_KEY, currentLocalSessionId);
-                            }
-                        }
-                        return this.onRedirect(session, new URL(window.location.href));
-                    })
-                    .then(() => {
-                        this.emitAsync('ready');
-                        resolve();
-                    })
-                    .catch(() => {
-                        const currentGlobalSession = getDefaultSession();
-                        if (currentGlobalSession && currentGlobalSession.info.isLoggedIn) {
-                            this.session = currentGlobalSession;
-                            this.emitAsync('login', this.session);
-                        }
-                        resolve();
-                    });
-            }
         });
     }
 
@@ -74,6 +57,9 @@ export class SolidClientService extends SolidService {
                 .logout()
                 .then(() => {
                     this.session = undefined;
+                    return this.storage.delete('currentSession');
+                })
+                .then(() => {
                     resolve();
                 })
                 .catch(reject);
@@ -84,66 +70,73 @@ export class SolidClientService extends SolidService {
      * Login a Solid browser user
      * @param {string} oidcIssuer OpenID Issuer
      * @param {boolean} remember Remember the session
-     * @returns {Promise<Session>} Session promise
+     * @returns {Promise<void>} Session promise
      */
-    login(oidcIssuer: string = this.options.defaultOidcIssuer, remember: boolean = false): Promise<Session> {
+    login(oidcIssuer: string = this.options.defaultOidcIssuer, remember: boolean = false): Promise<void> {
         return new Promise((resolve, reject) => {
-            const session = new Session({
-                insecureStorage: this,
-                secureStorage: this,
+            const session = this.createSession({
+                insecureStorage: this.storage,
+                secureStorage: this.storage,
             });
-            session
-                .login({
-                    oidcIssuer,
-                    clientName: this.options.clientName,
-                    clientId: this.options.clientId,
-                    clientSecret: this.options.clientSecret,
-                    redirectUrl: this.options.redirectUrl ? this.options.redirectUrl : window.location.href,
-                    handleRedirect: this.options.handleRedirect,
+            // Set the current session or at least override it
+            this.storage
+                .set('currentSession', session.info.sessionId)
+                .then(() => {
+                    return session.login({
+                        oidcIssuer,
+                        clientName: this.options.clientName,
+                        clientId: this.options.clientId,
+                        clientSecret: this.options.clientSecret,
+                        redirectUrl: this.options.redirectUrl ? this.options.redirectUrl : window.location.href,
+                        handleRedirect: this.options.handleRedirect,
+                    });
                 })
                 .then(() => {
-                    this.session = session;
-                    return this.get(`solidClientAuthenticationUser:${session.info.sessionId}`);
-                })
-                .then((data) => {
-                    const sessionData = JSON.parse(data);
-                    sessionData.webId = session.info.webId;
-                    sessionData.issuer = oidcIssuer;
-                    return this.set(
-                        `solidClientAuthenticationUser:${session.info.sessionId}`,
-                        JSON.stringify(sessionData),
-                    );
-                })
-                .then(() => {
-                    const object = new SolidProfileObject(session.info.webId);
-                    object.sessionId = session.info.sessionId;
-                    return Promise.all([session.info, this.storeProfile(object)]);
-                })
-                .then(() => {
-                    resolve(session);
+                    resolve();
                 })
                 .catch(reject);
         });
     }
 
-    protected onRedirect(session: Session, url: URL): Promise<Session> {
+    protected handleLogin(sessionId: string): Promise<SolidSession> {
         return new Promise((resolve, reject) => {
-            session.events.on(EVENTS.SESSION_RESTORED, (url) => {
-                window.location.href = url;
-            });
-            session
-                .handleIncomingRedirect({
-                    url: url.toString(),
-                    restorePreviousSession: this.options.restorePreviousSession,
+            let storedSessionData: ISessionInfo & ISessionInternalInfo = undefined;
+            let session: SolidSession = undefined;
+            // Check if we have some information stored about this session
+            this.findSessionInfoById(sessionId)
+                .then((data) => {
+                    storedSessionData = data;
+                    console.log('Stored info', storedSessionData);
+                    session = this.createSession({
+                        sessionInfo: {
+                            sessionId,
+                            ...storedSessionData,
+                        } as any,
+                        insecureStorage: this.storage,
+                        secureStorage: this.storage,
+                    });
+                    // Check if the stored session data can be used to do a silent login
+                    return session.handleIncomingRedirect({
+                        url: new URL(window.location.href).toString(),
+                        restorePreviousSession: this.options.restorePreviousSession,
+                    });
                 })
-                .then((sessionInfo) => {
-                    if (sessionInfo.isLoggedIn) {
+                .then(async (sessionInfo) => {
+                    if (sessionInfo && sessionInfo.isLoggedIn) {
                         this.session = session;
-                        this.emitAsync('login', session);
-                        resolve(session);
+                        await this.storage.set('currentSession', sessionInfo.sessionId);
+                        const object = new SolidProfileObject(this.session.info.webId);
+                        object.sessionId = this.session.info.sessionId;
+                        return this.storeProfile(object);
                     } else {
-                        reject(new Error(`Unable to log in!`));
+                        // Session is not logged in
+                        await this.storage.delete('currentSession');
+                        reject(new Error(`Unable to log in to Solid Pod!`));
                     }
+                })
+                .then(() => {
+                    this.emit('login', this.session);
+                    resolve(this.session);
                 })
                 .catch(reject);
         });
@@ -156,9 +149,18 @@ export class SolidClientService extends SolidService {
 
 export interface SolidClientServiceOptions extends SolidDataServiceOptions {
     /**
+     * Auto login is not possible in browser
+     */
+    autoLogin?: false;
+    /**
      * Automatically restore a previous session.
      * @default false
      */
     restorePreviousSession?: boolean;
+    /**
+     * Handle redirect URL. In a mobile app such as CapacitorJS you can use `@capacitor/browser` to open the URL.
+     * @param redirectUrl
+     * @returns
+     */
     handleRedirect?: (redirectUrl: string) => void;
 }

@@ -233,7 +233,7 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
         return new Promise((resolve, reject) => {
             const prefix = `${SolidService.PREFIX}:${type.name}`;
             const key = `${prefix}:${session.info.sessionId}:${id}`;
-            this.service
+            this.service.storage
                 .get(key)
                 .then((value) => resolve(value as IriString))
                 .catch(reject);
@@ -249,7 +249,7 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
         return new Promise((resolve, reject) => {
             const prefix = `${SolidService.PREFIX}:${type.name}`;
             const key = `${prefix}:${session.info.sessionId}:${id}`;
-            this.service.set(key, uri).then(resolve).catch(reject);
+            this.service.storage.set(key, uri).then(resolve).catch(reject);
         });
     }
 
@@ -257,7 +257,7 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
         return new Promise((resolve, reject) => {
             const prefix = `${SolidService.PREFIX}:${type.name}`;
             const key = `${prefix}:${session.info.sessionId}:${id}`;
-            this.service.delete(key).then(resolve).catch(reject);
+            this.service.storage.delete(key).then(resolve).catch(reject);
         });
     }
 }

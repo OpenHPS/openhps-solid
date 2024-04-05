@@ -47,7 +47,7 @@ describe('SolidService', () => {
             clientId: process.env.clientId,
             clientSecret: process.env.clientSecret,
         });
-        service.login("https://login.inrupt.com/").then(session => {
+        service.login("https://solid.maximvdw.be/").then(session => {
             expect(session).to.not.be.undefined;
             expect(session.info.isLoggedIn).to.be.true;
             session.logout();
@@ -66,11 +66,11 @@ describe('SolidService', () => {
                 clientId: process.env.clientId,
                 clientSecret: process.env.clientSecret,
             });
-            service.login("https://login.inrupt.com/").then(s => {
+            service.login("https://solid.maximvdw.be/").then(s => {
                 session = s;
                 expect(session).to.not.be.undefined;
                 expect(session.info.isLoggedIn).to.be.true;
-                return service.getDocumentURL(session, "/test/");
+                return service.getDocumentURL(session, "/test/abc/");
             }).then(url => {
                 containerURL = url.href as IriString;
                 // Create container

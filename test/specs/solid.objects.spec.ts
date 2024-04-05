@@ -12,7 +12,7 @@ describe('SolidDataDriver', () => {
                 clientName: "OpenHPS",
                 clientId: process.env.clientId,
                 clientSecret: process.env.clientSecret,
-                defaultOidcIssuer: "https://login.inrupt.com/",
+                defaultOidcIssuer: "https://solid.maximvdw.be/",
                 autoLogin: true
             }))
             .addService(new DataObjectService(new SolidDataDriver(DataObject)))
