@@ -155,125 +155,130 @@ export class SolidClientService extends SolidService {
     }
 
     protected async handleRedirect(session?: SolidSession): Promise<ISessionInfo> {
-        const url = new URL(window.location.href);
-        // Check if can process
-        if (url.searchParams.get('code') === null && url.searchParams.get('state') === null) {
-            if (!session) {
-                return undefined;
-            }
-            // First check if tokens in memory
-            const tokensString = await this.storage.get(
-                `solidClientAuthenticationUser:${session.info.sessionId}:tokens`,
-            );
-            if (tokensString) {
-                const tokens = JSON.parse(tokensString);
-                const authFetch = await buildAuthenticatedFetch(fetch, tokens.accessToken, {
-                    dpopKey: tokens.dpopKey,
-                    refreshOptions: undefined,
-                    eventEmitter: undefined,
-                    expiresIn: tokens.expiresIn,
-                });
-                const sessionInfo = await this.findSessionInfoById(session.info.sessionId);
-                if (!sessionInfo) {
-                    throw new Error(`Could not retrieve session: [${session.info.sessionId}].`);
+        try {
+            const url = new URL(window.location.href);
+            // Check if can process
+            if (url.searchParams.get('code') === null && url.searchParams.get('state') === null) {
+                if (!session) {
+                    return undefined;
                 }
-                const { issuerConfig } = await loadOidcContextFromStorage(
-                    session.info.sessionId,
-                    this.storageUtility,
-                    this.issuerConfigFetcher,
+                // First check if tokens in memory
+                const tokensString = await this.storage.get(
+                    `solidClientAuthenticationUser:${session.info.sessionId}:tokens`,
                 );
-                return Object.assign(sessionInfo, {
-                    fetch: authFetch,
-                    getLogoutUrl: maybeBuildRpInitiatedLogout({
-                        idTokenHint: tokens.idToken,
-                        endSessionEndpoint: issuerConfig.endSessionEndpoint,
-                    }),
-                    expirationDate: tokens.expirationDate,
-                } as IncomingRedirectResult);
+                if (tokensString) {
+                    const tokens = JSON.parse(tokensString);
+                    const authFetch = await buildAuthenticatedFetch(fetch, tokens.accessToken, {
+                        dpopKey: tokens.dpopKey,
+                        refreshOptions: undefined,
+                        eventEmitter: undefined,
+                        expiresIn: tokens.expiresIn,
+                    });
+                    const sessionInfo = await this.findSessionInfoById(session.info.sessionId);
+                    if (!sessionInfo) {
+                        throw new Error(`Could not retrieve session: [${session.info.sessionId}].`);
+                    }
+                    const { issuerConfig } = await loadOidcContextFromStorage(
+                        session.info.sessionId,
+                        this.storageUtility,
+                        this.issuerConfigFetcher,
+                    );
+                    return Object.assign(sessionInfo, {
+                        fetch: authFetch,
+                        getLogoutUrl: maybeBuildRpInitiatedLogout({
+                            idTokenHint: tokens.idToken,
+                            endSessionEndpoint: issuerConfig.endSessionEndpoint,
+                        }),
+                        expirationDate: tokens.expirationDate,
+                    } as IncomingRedirectResult);
+                }
+                return session.handleIncomingRedirect(url.href);
             }
-            return session.handleIncomingRedirect(url.href);
-        }
-        // Get OAuth state
-        const oauthState = url.searchParams.get('state');
-        const storedSessionId = (await this.storageUtility.getForUser(oauthState, 'sessionId', {
-            errorIfNull: true,
-        })) as string;
+            // Get OAuth state
+            const oauthState = url.searchParams.get('state');
+            const storedSessionId = (await this.storageUtility.getForUser(oauthState, 'sessionId', {
+                errorIfNull: true,
+            })) as string;
 
-        // Get stored data for session
-        const {
-            issuerConfig,
-            codeVerifier,
-            redirectUrl: storedRedirectIri,
-            dpop: isDpop,
-        } = await loadOidcContextFromStorage(storedSessionId, this.storageUtility, this.issuerConfigFetcher);
-        const iss = url.searchParams.get('iss');
-        if (typeof iss === 'string' && iss !== issuerConfig.issuer) {
-            throw new Error(
-                `The value of the iss parameter (${iss}) does not match the issuer identifier of the authorization server (${issuerConfig.issuer}). See [rfc9207](https://www.rfc-editor.org/rfc/rfc9207.html#section-2.3-3.1.1)`,
-            );
-        }
-
-        if (codeVerifier === undefined) {
-            throw new Error(`The code verifier for session ${storedSessionId} is missing from storage.`);
-        }
-
-        if (storedRedirectIri === undefined) {
-            throw new Error(`The redirect URL for session ${storedSessionId} is missing from storage.`);
-        }
-
-        const client = await this.clientRegistrar.getClient({ sessionId: storedSessionId }, issuerConfig);
-        const tokenCreatedAt = Date.now();
-        const tokens = await getTokens(
-            issuerConfig,
-            client as any,
-            {
-                grantType: 'authorization_code',
-                code: url.searchParams.get('code') as string,
-                codeVerifier: codeVerifier,
+            // Get stored data for session
+            const {
+                issuerConfig,
+                codeVerifier,
                 redirectUrl: storedRedirectIri,
-            },
-            isDpop,
-        );
+                dpop: isDpop,
+            } = await loadOidcContextFromStorage(storedSessionId, this.storageUtility, this.issuerConfigFetcher);
+            const iss = url.searchParams.get('iss');
+            if (typeof iss === 'string' && iss !== issuerConfig.issuer) {
+                throw new Error(
+                    `The value of the iss parameter (${iss}) does not match the issuer identifier of the authorization server (${issuerConfig.issuer}). See [rfc9207](https://www.rfc-editor.org/rfc/rfc9207.html#section-2.3-3.1.1)`,
+                );
+            }
 
-        const expirationDate =
-            typeof tokens.expiresIn === 'number' ? tokenCreatedAt + tokens.expiresIn * 1000 : undefined;
-        await this.storage.set(
-            `solidClientAuthenticationUser:${storedSessionId}:tokens`,
-            JSON.stringify({
-                ...tokens,
+            if (codeVerifier === undefined) {
+                throw new Error(`The code verifier for session ${storedSessionId} is missing from storage.`);
+            }
+
+            if (storedRedirectIri === undefined) {
+                throw new Error(`The redirect URL for session ${storedSessionId} is missing from storage.`);
+            }
+
+            const client = await this.clientRegistrar.getClient({ sessionId: storedSessionId }, issuerConfig);
+            const tokenCreatedAt = Date.now();
+            const tokens = await getTokens(
+                issuerConfig,
+                client as any,
+                {
+                    grantType: 'authorization_code',
+                    code: url.searchParams.get('code') as string,
+                    codeVerifier: codeVerifier,
+                    redirectUrl: storedRedirectIri,
+                },
+                isDpop,
+            );
+
+            const expirationDate =
+                typeof tokens.expiresIn === 'number' ? tokenCreatedAt + tokens.expiresIn * 1000 : undefined;
+            await this.storage.set(
+                `solidClientAuthenticationUser:${storedSessionId}:tokens`,
+                JSON.stringify({
+                    ...tokens,
+                    expirationDate,
+                }),
+            );
+            const authFetch = await buildAuthenticatedFetch(fetch, tokens.accessToken, {
+                dpopKey: tokens.dpopKey,
+                refreshOptions: undefined,
+                eventEmitter: undefined,
+                expiresIn: tokens.expiresIn,
+            });
+            await this.storageUtility.setForUser(
+                storedSessionId,
+                {
+                    webId: tokens.webId,
+                    isLoggedIn: 'true',
+                },
+                { secure: true },
+            );
+
+            const sessionInfo = await this.findSessionInfoById(storedSessionId);
+            if (!sessionInfo) {
+                throw new Error(`Could not retrieve session: [${storedSessionId}].`);
+            }
+
+            window.history.replaceState({}, document.title, storedRedirectIri);
+
+            return Object.assign(sessionInfo, {
+                fetch: authFetch,
+                getLogoutUrl: maybeBuildRpInitiatedLogout({
+                    idTokenHint: tokens.idToken,
+                    endSessionEndpoint: issuerConfig.endSessionEndpoint,
+                }),
                 expirationDate,
-            }),
-        );
-        const authFetch = await buildAuthenticatedFetch(fetch, tokens.accessToken, {
-            dpopKey: tokens.dpopKey,
-            refreshOptions: undefined,
-            eventEmitter: undefined,
-            expiresIn: tokens.expiresIn,
-        });
-        await this.storageUtility.setForUser(
-            storedSessionId,
-            {
-                webId: tokens.webId,
-                isLoggedIn: 'true',
-            },
-            { secure: true },
-        );
-
-        const sessionInfo = await this.findSessionInfoById(storedSessionId);
-        if (!sessionInfo) {
-            throw new Error(`Could not retrieve session: [${storedSessionId}].`);
+            } as IncomingRedirectResult);
+        } catch (error) {
+            this.emit('error', error);
+            return undefined;
         }
-
-        window.history.replaceState({}, document.title, storedRedirectIri);
-
-        return Object.assign(sessionInfo, {
-            fetch: authFetch,
-            getLogoutUrl: maybeBuildRpInitiatedLogout({
-                idTokenHint: tokens.idToken,
-                endSessionEndpoint: issuerConfig.endSessionEndpoint,
-            }),
-            expirationDate,
-        } as IncomingRedirectResult);
     }
 
     protected createSession(options: Partial<ISessionOptions>): Session {
