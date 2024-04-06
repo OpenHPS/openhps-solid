@@ -30,27 +30,11 @@ export class SolidClientService extends SolidService {
     }
 
     private _initialize(): Promise<void> {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             this.issuerConfigFetcher = new IssuerConfigFetcher(this.storageUtility);
 
             // Default session (local storage)
-            this.storage
-                .get('currentSession')
-                .then((currentLocalSessionId) => {
-                    if (currentLocalSessionId) {
-                        // Ugly workaround for https://github.com/inrupt/solid-client-authn-js/issues/2095
-                        const CURRENT_SESSION_KEY = 'solidClientAuthn:currentSession';
-                        const currentGlobalSessionId = window.localStorage.getItem(CURRENT_SESSION_KEY);
-                        if (currentGlobalSessionId && currentLocalSessionId !== currentGlobalSessionId) {
-                            window.localStorage.setItem(CURRENT_SESSION_KEY, currentLocalSessionId);
-                        }
-                    }
-                    if (!currentLocalSessionId) {
-                        resolve();
-                        return;
-                    }
-                    return this.handleLogin(currentLocalSessionId);
-                })
+            this.handleLogin()
                 .then(() => {
                     resolve();
                 })
@@ -111,12 +95,32 @@ export class SolidClientService extends SolidService {
         });
     }
 
-    protected handleLogin(sessionId: string): Promise<SolidSession> {
+    handleLogin(): Promise<SolidSession> {
         return new Promise((resolve, reject) => {
             let storedSessionData: ISessionInfo & ISessionInternalInfo = undefined;
             let session: SolidSession = undefined;
-            // Check if we have some information stored about this session
-            this.findSessionInfoById(sessionId)
+            let sessionId: string = undefined;
+
+            // Get the current session if any
+            this.storage
+                .get('currentSession')
+                .then((currentLocalSessionId) => {
+                    if (currentLocalSessionId) {
+                        // Ugly workaround for https://github.com/inrupt/solid-client-authn-js/issues/2095
+                        const CURRENT_SESSION_KEY = 'solidClientAuthn:currentSession';
+                        const currentGlobalSessionId = window.localStorage.getItem(CURRENT_SESSION_KEY);
+                        if (currentGlobalSessionId && currentLocalSessionId !== currentGlobalSessionId) {
+                            window.localStorage.setItem(CURRENT_SESSION_KEY, currentLocalSessionId);
+                        }
+                    }
+                    if (!currentLocalSessionId) {
+                        resolve(undefined); // No user logged in so no error
+                        return;
+                    }
+                    sessionId = currentLocalSessionId;
+                    // Check if we have some information stored about this session
+                    return this.findSessionInfoById(currentLocalSessionId);
+                })
                 .then(async (data) => {
                     storedSessionData = data;
                     session = this.createSession({
@@ -127,10 +131,9 @@ export class SolidClientService extends SolidService {
                         insecureStorage: this.storage,
                         secureStorage: this.storage,
                     });
-                    return this.handleSession(session);
+                    return this.handleRedirect(session);
                 })
                 .then(async (sessionInfo) => {
-                    console.log('HANDLE', sessionInfo);
                     if (sessionInfo && sessionInfo.isLoggedIn) {
                         this.session = session;
                         await this.storage.set('currentSession', sessionInfo.sessionId);
@@ -151,10 +154,13 @@ export class SolidClientService extends SolidService {
         });
     }
 
-    protected async handleSession(session: SolidSession): Promise<ISessionInfo> {
+    protected async handleRedirect(session?: SolidSession): Promise<ISessionInfo> {
         const url = new URL(window.location.href);
         // Check if can process
         if (url.searchParams.get('code') === null && url.searchParams.get('state') === null) {
+            if (!session) {
+                return undefined;
+            }
             // First check if tokens in memory
             const tokensString = await this.storage.get(
                 `solidClientAuthenticationUser:${session.info.sessionId}:tokens`,
@@ -232,7 +238,7 @@ export class SolidClientService extends SolidService {
         const expirationDate =
             typeof tokens.expiresIn === 'number' ? tokenCreatedAt + tokens.expiresIn * 1000 : undefined;
         await this.storage.set(
-            `solidClientAuthenticationUser:${session.info.sessionId}:tokens`,
+            `solidClientAuthenticationUser:${storedSessionId}:tokens`,
             JSON.stringify({
                 ...tokens,
                 expirationDate,
