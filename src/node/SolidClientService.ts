@@ -1,7 +1,7 @@
 import express from 'express';
 const cookieSession = require('cookie-session'); // eslint-disable-line
 import { Session, ISessionInfo, ISessionOptions } from '@inrupt/solid-client-authn-node';
-import { SolidDataServiceOptions, SolidService } from '../common/SolidService';
+import { SolidDataServiceOptions, SolidService, SolidSession } from '../common/SolidService';
 import { SolidProfileObject } from '../common';
 import { interactiveLogin } from 'solid-node-interactive-auth';
 
@@ -52,6 +52,21 @@ export class SolidClientService extends SolidService {
         });
     }
 
+    logout(session: SolidSession): Promise<void> {
+        return new Promise((resolve, reject) => {
+            session
+                .logout()
+                .then(() => {
+                    this.session = undefined;
+                    return this.storage.delete('currentSession');
+                })
+                .then(() => {
+                    resolve();
+                })
+                .catch(reject);
+        });
+    }
+
     /**
      * Login a Solid user
      * @param {string} oidcIssuer OpenID Issuer
@@ -73,6 +88,7 @@ export class SolidClientService extends SolidService {
                     })
                     .then(async () => {
                         this.session = session;
+                        await this.storage.set('currentSession', session.info.sessionId);
                         return this.storage.get(`solidClientAuthenticationUser:${session.info.sessionId}`);
                     })
                     .then((data) => {
@@ -85,9 +101,9 @@ export class SolidClientService extends SolidService {
                         );
                     })
                     .then(() => {
-                        const object = new SolidProfileObject(session.info.webId);
-                        object.sessionId = session.info.sessionId;
-                        return Promise.all([session.info, this.storeProfile(object)]);
+                        const object = new SolidProfileObject(this.session.info.webId);
+                        object.sessionId = this.session.info.sessionId;
+                        return Promise.all([this.session.info, this.storeProfile(object)]);
                     })
                     .then(() => {
                         resolve(session);

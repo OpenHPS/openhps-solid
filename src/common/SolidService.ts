@@ -16,7 +16,7 @@ import type {
     ISessionInfo,
 } from '@inrupt/solid-client-authn-browser';
 import type { Session as NodeSession } from '@inrupt/solid-client-authn-node';
-import type { IStorage, ClientAuthentication } from '@inrupt/solid-client-authn-core';
+import type { IStorage, ClientAuthentication, IClient } from '@inrupt/solid-client-authn-core';
 import { SolidProfileObject } from './SolidProfileObject';
 import {
     getStringNoLocale,
@@ -41,8 +41,17 @@ import { vcard, Quad_Subject, DataFactory, Quad_Object, Quad, Store, IriString, 
 import { DatasetSubscription } from './DatasetSubscription';
 import { ISessionOptions } from '@inrupt/solid-client-authn-node';
 import type { AccessModes } from '@inrupt/solid-client/dist/interfaces';
+import { StorageUtility } from '@inrupt/solid-client-authn-core';
+import { ClientRegistrar } from './ClientRegistrar';
+import { SessionManager } from './SessionManager';
 
-export class SolidStorage implements IStorage {
+class StorageUtilityWrapper extends StorageUtility {
+    constructor(secureStorage: IStorage, insecureStorage: IStorage) {
+        super(secureStorage, insecureStorage);
+    }
+}
+
+class SolidStorage implements IStorage {
     protected driver: DataServiceDriver<string, string>;
     constructor(driver: DataServiceDriver<string, string>) {
         this.driver = driver;
@@ -101,6 +110,9 @@ export class SolidStorage implements IStorage {
 export abstract class SolidService extends RemoteService {
     protected options: SolidDataServiceOptions;
     storage: IStorage;
+    protected storageUtility: StorageUtility;
+    readonly clientRegistrar: ClientRegistrar;
+    readonly sessionManager: SessionManager;
     model: Model<any, any>;
     public static readonly PREFIX = 'OpenHPS:solid';
     protected driver: DataServiceDriver<string, string>;
@@ -113,6 +125,9 @@ export abstract class SolidService extends RemoteService {
         // Storage
         this.driver = this.options.dataServiceDriver || new MemoryDataService<string, string>(String as unknown as any);
         this.storage = new SolidStorage(this.driver);
+        this.storageUtility = new StorageUtilityWrapper(this.storage, this.storage);
+
+        this.clientRegistrar = new ClientRegistrar(this.storageUtility);
 
         this.uid = this.constructor.name;
         this.options.defaultOidcIssuer = this.options.defaultOidcIssuer || 'https://login.inrupt.com/';
@@ -688,21 +703,30 @@ export abstract class SolidService extends RemoteService {
      */
     findSessionById(sessionId: string): Promise<SolidSession> {
         return new Promise((resolve, reject) => {
+            let session: SolidSession = undefined;
             this.findSessionInfoById(sessionId)
                 .then((sessionInfo) => {
                     if (sessionInfo === undefined) {
                         resolve(undefined);
                         return;
                     }
-                    const session = this.createSession({
+                    session = this.createSession({
                         sessionInfo,
                         storage: this.storage,
                         insecureStorage: this.storage,
                         secureStorage: this.storage,
                     });
-                    return Promise.resolve(session);
+                    // Validate session
+                    if (!sessionInfo.isLoggedIn && sessionInfo.issuer) {
+                        return session.login({
+                            oidcIssuer: sessionInfo.issuer,
+                            clientId: sessionInfo.clientAppId,
+                            clientSecret: sessionInfo.clientAppSecret,
+                            handleRedirect: () => {},
+                        });
+                    }
                 })
-                .then((session: SolidSession) => {
+                .then(() => {
                     resolve(session);
                 })
                 .catch(reject);
