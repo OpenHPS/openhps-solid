@@ -11,7 +11,7 @@ export class SolidPropertyService extends DataService<string, any> {
     constructor() {
         super(
             new SolidDataDriver(undefined, {
-                sources: [],
+                sources: [undefined],
                 lenient: true,
             }),
         );
