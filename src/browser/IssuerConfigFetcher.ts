@@ -158,9 +158,10 @@ export default class IssuerConfigFetcher implements IIssuerConfigFetcher {
             // includes the full issuer path. See https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderConfig.
             issuer.endsWith('/') ? issuer : `${issuer}/`,
         ).href;
-        const issuerConfigRequestBody = await fetch(openIdConfigUrl);
+
         // Check the validity of the fetched config
         try {
+            const issuerConfigRequestBody = await fetch(openIdConfigUrl);
             issuerConfig = processConfig(await issuerConfigRequestBody.json());
         } catch (err) {
             throw new ConfigurationError(
