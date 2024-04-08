@@ -661,8 +661,13 @@ export abstract class SolidService extends RemoteService {
                     return this.findSessionByWebId(object.webId);
                 })
                 .then((session) => {
+                    const profileDocumentUrl = object.profileDocumentUrl;
+                    if (!profileDocumentUrl) {
+                        resolve(undefined);
+                        return;
+                    }
                     return getSolidDataset(
-                        object.profileDocumentUrl.href,
+                        profileDocumentUrl.href,
                         session
                             ? {
                                   fetch: session.fetch,

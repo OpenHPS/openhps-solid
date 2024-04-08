@@ -135,9 +135,10 @@ export class SolidClientService extends SolidService {
                 })
                 .then(async (sessionInfo) => {
                     if (sessionInfo && sessionInfo.isLoggedIn) {
+                        console.log(sessionInfo);
                         this.session = session;
                         await this.storage.set('currentSession', sessionInfo.sessionId);
-                        const object = new SolidProfileObject(this.session.info.webId);
+                        const object = new SolidProfileObject(sessionInfo.webId);
                         object.sessionId = this.session.info.sessionId;
                         return this.storeProfile(object);
                     } else {
