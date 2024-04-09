@@ -135,11 +135,10 @@ export class SolidClientService extends SolidService {
                 })
                 .then(async (sessionInfo) => {
                     if (sessionInfo && sessionInfo.isLoggedIn) {
-                        console.log(sessionInfo);
                         this.session = session;
                         await this.storage.set('currentSession', sessionInfo.sessionId);
                         const object = new SolidProfileObject(sessionInfo.webId);
-                        object.sessionId = this.session.info.sessionId;
+                        object.sessionId = sessionInfo.sessionId;
                         return this.storeProfile(object);
                     } else {
                         // Session is not logged in
@@ -184,7 +183,7 @@ export class SolidClientService extends SolidService {
                         this.storageUtility,
                         this.issuerConfigFetcher,
                     );
-                    return Object.assign(sessionInfo, {
+                    return Object.assign(session.info, {
                         fetch: authFetch,
                         getLogoutUrl: maybeBuildRpInitiatedLogout({
                             idTokenHint: tokens.idToken,
@@ -268,7 +267,7 @@ export class SolidClientService extends SolidService {
 
             window.history.replaceState({}, document.title, storedRedirectIri);
 
-            return Object.assign(sessionInfo, {
+            return Object.assign(session.info, {
                 fetch: authFetch,
                 getLogoutUrl: maybeBuildRpInitiatedLogout({
                     idTokenHint: tokens.idToken,
