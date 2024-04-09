@@ -136,6 +136,7 @@ export class SolidClientService extends SolidService {
                 .then(async (sessionInfo) => {
                     if (sessionInfo && sessionInfo.isLoggedIn) {
                         this.session = session;
+                        console.log(sessionInfo, session);
                         await this.storage.set('currentSession', sessionInfo.sessionId);
                         const object = new SolidProfileObject(sessionInfo.webId);
                         object.sessionId = sessionInfo.sessionId;
@@ -183,7 +184,7 @@ export class SolidClientService extends SolidService {
                         this.storageUtility,
                         this.issuerConfigFetcher,
                     );
-                    return Object.assign(session.info, {
+                    Object.assign(sessionInfo, {
                         fetch: authFetch,
                         getLogoutUrl: maybeBuildRpInitiatedLogout({
                             idTokenHint: tokens.idToken,
@@ -191,6 +192,7 @@ export class SolidClientService extends SolidService {
                         }),
                         expirationDate: tokens.expirationDate,
                     } as IncomingRedirectResult);
+                    return Object.assign(session.info, sessionInfo);
                 }
                 return session.handleIncomingRedirect(url.href);
             }
@@ -267,7 +269,7 @@ export class SolidClientService extends SolidService {
 
             window.history.replaceState({}, document.title, storedRedirectIri);
 
-            return Object.assign(session.info, {
+            Object.assign(sessionInfo, {
                 fetch: authFetch,
                 getLogoutUrl: maybeBuildRpInitiatedLogout({
                     idTokenHint: tokens.idToken,
@@ -275,6 +277,7 @@ export class SolidClientService extends SolidService {
                 }),
                 expirationDate,
             } as IncomingRedirectResult);
+            return Object.assign(session.info, sessionInfo);
         } catch (error) {
             this.emit('error', error);
             return undefined;
