@@ -1,9 +1,10 @@
 import { DataService } from '@openhps/core';
-import { Property, RDFSerializer, ssn } from '@openhps/rdf';
+import { Property, RDFSerializer, sosa, ssn } from '@openhps/rdf';
 import { SolidProfileObject } from './SolidProfileObject';
 import { SolidDataDriver } from './SolidDataDriver';
 import { SolidService, SolidSession } from './SolidService';
 import { IriString } from '@inrupt/solid-client';
+import { Observation } from '../models/sosa';
 
 export class SolidPropertyService extends DataService<string, any> {
     protected driver: SolidDataDriver<any>;
@@ -68,6 +69,36 @@ export class SolidPropertyService extends DataService<string, any> {
                     resolve(thing.value);
                 })
                 .catch(reject);
+        });
+    }
+
+    /**
+     * Add an observation to a property
+     * @param session 
+     * @param property 
+     * @param observation 
+     * @returns 
+     */
+    addObservation(session: SolidSession, property: Property, observation: Observation): Promise<void> {
+        return new Promise((resolve, reject) => {
+            
+        });
+    }
+
+    /**
+     * Fetch all observations for a property
+     * @param session 
+     * @param property 
+     * @param after 
+     * @returns 
+     */
+    fetchObservations(session: SolidSession, property: Property, after?: Date): Promise<Observation[]> {
+        return new Promise((resolve, reject) => {
+            const query = `
+                SELECT ?observation WHERE {
+                    ?observation <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <${sosa.Observation}>
+                }
+            `;
         });
     }
 }
