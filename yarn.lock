@@ -3795,10 +3795,10 @@
     read-package-json-fast "^3.0.0"
     which "^3.0.0"
 
-"@openhps/core@>=0.7.7":
-  version "0.7.7"
-  resolved "https://registry.yarnpkg.com/@openhps/core/-/core-0.7.7.tgz#7e4926a8db970b0b9c458726c82d5be1fdd1d9e0"
-  integrity sha512-gST/THTgHm3qSqW5ETpc9zAhYZ1neEcKzjYCVAoLE6IOCxbijHWNM1O2vuDJINJlkfFcK25gc4xMdV8quiNpSg==
+"@openhps/core@>=0.7.8":
+  version "0.7.8"
+  resolved "https://registry.yarnpkg.com/@openhps/core/-/core-0.7.8.tgz#8d5858cff60a7d22c40382131bee1a77f635a8c2"
+  integrity sha512-CL8xSFYCvcuB5NoBrj8pyrlvVC4LOZaeuAWD+lvxw23fuDykkhuN/H7yKE0PDEx7NXUpMVu7O+SOnkDh4uatOA==
   dependencies:
     lodash.clonedeep "^4.5.0"
     reflect-metadata ">=0.2.2"
@@ -3823,10 +3823,10 @@
     robust-predicates "^3.0.2"
     wkt "^0.1.1"
 
-"@openhps/rdf@>=0.4.68":
-  version "0.4.68"
-  resolved "https://registry.yarnpkg.com/@openhps/rdf/-/rdf-0.4.68.tgz#f3b829567fece5d7f6cb611bde2ae07d8f1273de"
-  integrity sha512-yrcP3lEaXQnbCSQmwEnPRhlKgK3Yo1Cwy7abunxHQ8PJFgL2p7jDGnEqeSYCYZQJPHmVa2DgMVqsTVGiQ/ygNg==
+"@openhps/rdf@>=0.4.69":
+  version "0.4.69"
+  resolved "https://registry.yarnpkg.com/@openhps/rdf/-/rdf-0.4.69.tgz#8e46eaf354860e0bd7e5d1d05bcfd79b3b784cfb"
+  integrity sha512-UScTODqlK+Ghv/jhMVDbs2xk05fIUFp/oVV8SZtolL5ympw2QiXDgXecJByOcYwDqkmJ9Aalxt3UiFLitAMJYA==
   dependencies:
     "@comunica/query-sparql" "^3.1.2"
     "@inquirer/prompts" "^5.0.6"
@@ -4246,7 +4246,7 @@
     "@rdfjs/types" "^1.1.0"
     "@types/node" "*"
 
-"@types/node@*", "@types/node@^20.14.6", "@types/node@^20.14.8":
+"@types/node@*", "@types/node@^20.14.6":
   version "20.14.8"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-20.14.8.tgz#45c26a2a5de26c3534a9504530ddb3b27ce031ac"
   integrity sha512-DO+2/jZinXfROG7j7WKFn/3C6nFwxy2lLpgLjEXJz+0XKphZlTLJ14mo8Vfg8X5BWN6XjyESXq+LcYdT7tR3bA==
@@ -4262,6 +4262,13 @@
   version "18.19.39"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-18.19.39.tgz#c316340a5b4adca3aee9dcbf05de385978590593"
   integrity sha512-nPwTRDKUctxw3di5b4TfT3I0sWDiWoPQCZjXhvdkINntwr8lcoVCKsTgnXeRubKIlfnV+eN/HYk6Jb40tbcEAQ==
+  dependencies:
+    undici-types "~5.26.4"
+
+"@types/node@^20.14.9":
+  version "20.14.9"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.14.9.tgz#12e8e765ab27f8c421a1820c99f5f313a933b420"
+  integrity sha512-06OCtnTXtWOZBJlRApleWndH4JsRVs1pDCc8dLSQp+7PpUpX3ePdHyeNSFTeSe7FtKyQkrlPvHwJOW3SLd8Oyg==
   dependencies:
     undici-types "~5.26.4"
 
@@ -8846,10 +8853,10 @@ mocha-junit-reporter@^2.2.1:
     strip-ansi "^6.0.1"
     xml "^1.0.1"
 
-mocha@^10.5.0:
-  version "10.5.0"
-  resolved "https://registry.yarnpkg.com/mocha/-/mocha-10.5.0.tgz#a8872b2404883792102d78f584ad0e10b35d900d"
-  integrity sha512-KoCXMKfW2OMsvCbaJJFPdzg36lI9+tMH7yyXCoKh6PpFo7BAC/xqG7Ct/aitJDrGbIGcN2IT3cx3bZ6PDGaXmA==
+mocha@^10.5.1:
+  version "10.5.1"
+  resolved "https://registry.yarnpkg.com/mocha/-/mocha-10.5.1.tgz#54cfa5212ffc9e04ee68b27aa0f36519919ae877"
+  integrity sha512-eq5tEnaz2kM9ade8cuGJBMh5fBb9Ih/TB+ddlmPR+wLQmwLhUwa0ovqDlg7OTfKquW0BI7NUcNWX7DH8sC+3gw==
   dependencies:
     ansi-colors "4.1.1"
     browser-stdout "1.3.1"

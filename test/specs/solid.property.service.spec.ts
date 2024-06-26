@@ -27,7 +27,19 @@ describe('SolidPropertyService', () => {
         it('should fetch properties from a profile', (done) => {
             const profile = new SolidProfileObject("https://maximvdw.solidweb.org/profile/card#me");
             service.fetchProperties(session, profile).then(properties => {
-                expect(properties).to.have.lengthOf(0);
+                expect(properties).to.have.lengthOf(3);
+                done();
+            }).catch(done);
+        });
+    });
+
+    describe('fetching observations', () => {
+        it('should fetch observations from a property', (done) => {
+            const profile = new SolidProfileObject("https://maximvdw.solidweb.org/profile/card#me");
+            service.fetchProperties(session, profile).then(properties => {
+                return service.fetchObservations(session, properties[1]);
+            }).then(observations => {
+                console.log(observations);
                 done();
             }).catch(done);
         });
@@ -35,10 +47,11 @@ describe('SolidPropertyService', () => {
     
     describe('creating properties', () => {
         it('should create a new property', (done) => {
-            // service.createProperty(session, new Property()).then(property => {
-            //     expect(property).to.be.a('string');
-            //     done();
-            // }).catch(done);
+            const property = new Property();
+            service.createProperty(session, new Property()).then(property => {
+                expect(property).to.be.a('string');
+                done();
+            }).catch(done);
         });
     });
 });

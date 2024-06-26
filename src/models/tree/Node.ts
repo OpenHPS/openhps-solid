@@ -1,12 +1,12 @@
-import { SerializableArrayMember, SerializableObject } from "@openhps/core";
-import { tree } from "../../terms";
-import { SerializableThing } from "@openhps/rdf";
-import { Relation } from "./Relation";
+import { SerializableArrayMember, SerializableObject } from '@openhps/core';
+import { tree } from '../../terms';
+import { SerializableThing } from '@openhps/rdf';
+import { Relation } from './Relation';
 
 @SerializableObject({
     rdf: {
         type: tree.Node,
-    }
+    },
 })
 export class Node extends SerializableThing {
     @SerializableArrayMember(Relation, {

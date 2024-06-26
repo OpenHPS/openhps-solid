@@ -12,7 +12,6 @@ import {
 } from '@openhps/rdf';
 import type { QueryStringContext } from '@comunica/types';
 import { QueryEngine } from './QueryEngine';
-import { object } from '@openhps/rdf/dist/types/vocab/schema';
 
 export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDataDriver<T> {
     public model: Model;
@@ -22,8 +21,10 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
 
     constructor(dataType: Constructor<T>, options?: SolidDataDriverOptions<T>) {
         super(dataType, options);
-        this.options.engine = require('./engine-default'); // eslint-disable-line
-        this.engine = new QueryEngine(this.options.engine);
+        this.options.engine = this.options.engine ?? require('./engine-default')(); // eslint-disable-line
+        if (this.options.engine) {
+            this.engine = new QueryEngine(this.options.engine);
+        }
         this.options.lenient = true;
         this.options.uriPrefix = this.options.uriPrefix || '/openhps';
         this.options.serialize = defaultThingSerializer;
