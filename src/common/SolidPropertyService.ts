@@ -1,5 +1,5 @@
 import { DataService } from '@openhps/core';
-import { Property, RDFSerializer, dcterms, rdfs, sosa, ssn, IriString } from '@openhps/rdf';
+import { Property, RDFSerializer, dcterms, rdfs, sosa, ssn, IriString, RDFBuilder } from '@openhps/rdf';
 import { SolidProfileObject } from './SolidProfileObject';
 import { SolidDataDriver } from './SolidDataDriver';
 import { SolidService, SolidSession } from './SolidService';
@@ -67,7 +67,9 @@ export class SolidPropertyService extends DataService<string, any> {
      */
     createProperty(session: SolidSession, property: Property): Promise<IriString> {
         return new Promise((resolve, reject) => {
-            const thing = RDFSerializer.serialize(property);
+            this.service.getThing(session, session.info.webId).then((thing) => {
+                RDFBuilder.fromSerialized(thing)
+            });
             // this.service.createThing(session, thing).then(() => {
             //     resolve(property.id as IriString);
             // }).catch(reject);

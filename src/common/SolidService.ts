@@ -16,7 +16,7 @@ import type {
     ISessionInfo,
 } from '@inrupt/solid-client-authn-browser';
 import type { Session as NodeSession } from '@inrupt/solid-client-authn-node';
-import type { IStorage, ClientAuthentication, IClient } from '@inrupt/solid-client-authn-core';
+import type { IStorage, ClientAuthentication } from '@inrupt/solid-client-authn-core';
 import { SolidProfileObject } from './SolidProfileObject';
 import {
     getStringNoLocale,
@@ -28,8 +28,6 @@ import {
     setThing,
     SolidDataset,
     createSolidDataset,
-    Thing,
-    ThingPersisted,
     FetchError,
     getPodUrlAll,
     deleteContainer,
@@ -40,7 +38,7 @@ import { fetch } from 'cross-fetch';
 import { vcard, Quad_Subject, DataFactory, Quad_Object, Quad, Store, IriString, foaf } from '@openhps/rdf';
 import { DatasetSubscription } from './DatasetSubscription';
 import { ISessionOptions } from '@inrupt/solid-client-authn-node';
-import type { AccessModes } from '@inrupt/solid-client/dist/interfaces';
+import type { AccessModes, Thing, ThingPersisted } from '@inrupt/solid-client/dist/interfaces';
 import { StorageUtility } from '@inrupt/solid-client-authn-core';
 import { ClientRegistrar } from './ClientRegistrar';
 import { SessionManager } from './SessionManager';
@@ -427,7 +425,7 @@ export abstract class SolidService extends RemoteService {
      * Get a thing from a session Pod
      * @param {SolidSession} session Solid session to get a thing from
      * @param {string} uri URI of the thing in the Solid Pod
-     * @returns {Promise<ThingPersisted>} Persisted thing
+     * @returns {Promise<Thing>} Persisted thing
      */
     getThing(session: SolidSession, uri: string): Promise<ThingPersisted> {
         return new Promise((resolve, reject) => {
