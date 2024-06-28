@@ -1,7 +1,7 @@
 import { DataService } from '@openhps/core';
 import { Property, RDFSerializer, dcterms, rdfs, sosa, ssn, IriString, RDFBuilder } from '@openhps/rdf';
 import { SolidProfileObject } from './SolidProfileObject';
-import { SolidDataDriver } from './SolidDataDriver';
+import { SolidDataDriver, SolidFilterQuery } from './SolidDataDriver';
 import { SolidService, SolidSession } from './SolidService';
 import { Observation } from '@openhps/rdf/models';
 
@@ -17,7 +17,11 @@ export class SolidPropertyService extends DataService<string, any> {
         );
     }
 
-    protected get service(): SolidService {
+    set service(service: SolidService) {
+        this.driver.service = service;
+    }
+
+    get service(): SolidService {
         return this.driver.service;
     }
 
@@ -68,11 +72,12 @@ export class SolidPropertyService extends DataService<string, any> {
     createProperty(session: SolidSession, property: Property): Promise<IriString> {
         return new Promise((resolve, reject) => {
             this.service.getThing(session, session.info.webId).then((thing) => {
-                RDFBuilder.fromSerialized(thing)
-            });
-            // this.service.createThing(session, thing).then(() => {
-            //     resolve(property.id as IriString);
-            // }).catch(reject);
+                const builder = RDFBuilder.fromSerialized(RDFSerializer.subjectsToThing([thing], thing.url as IriString));
+                builder.add(ssn.hasProperty, property.id);
+                const changelog = builder.build(true);
+                console.log(changelog);
+                resolve(property.id as IriString);
+            }).catch(reject);
         });
     }
 
@@ -84,7 +89,9 @@ export class SolidPropertyService extends DataService<string, any> {
      * @returns
      */
     addObservation(session: SolidSession, property: Property, observation: Observation): Promise<void> {
-        return new Promise((resolve, reject) => {});
+        return new Promise((resolve, reject) => {
+
+        });
     }
 
     /**
@@ -96,37 +103,15 @@ export class SolidPropertyService extends DataService<string, any> {
      */
     fetchObservations(session: SolidSession, property: Property, after?: Date): Promise<Observation[]> {
         return new Promise((resolve, reject) => {
-            this.driver
-                .queryBindings(
-                    `SELECT ?observation ?date ?result WHERE {
-                        ?observation a <${sosa.Observation}> .
-                        OPTIONAL {
-                            ?observation <${sosa.resultTime}> ?date .
-                        }
-                        OPTIONAL {
-                            ?observation <${dcterms.created}> ?date .
-                        }
-                        ?observation <${sosa.Result}> ?result .
-                    }`,
-                    session,
-                    {
-                        sources: [property.id],
-                        lenient: true,
-                    },
-                )
-                .then((bindings) => {
-                    const observations: Observation[] = [];
-                    bindings.forEach((binding) => {
-                        const url = binding.get('observation').value as IriString;
-                        const date = binding.has('date') ? new Date(binding.get('date').value) : undefined;
-                        const result = binding.has('result') ? binding.get('result').value : undefined;
-                        const observation = new Observation();
-                        observation.id = url;
-                        observations.push(observation);
-                    });
-                    resolve(observations);
-                })
-                .catch(reject);
+            this.findAll({
+                query: {
+                    
+                },
+                uri: property.id,
+                webId: session.info.webId,
+            } as SolidFilterQuery<Observation>).then((observations) => {
+                console.log(observations);
+            }).catch(reject);
         });
     }
 }

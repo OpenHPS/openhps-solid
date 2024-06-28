@@ -46,7 +46,7 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
         });
     }
 
-    queryQuads(query: string, session?: SolidSession, options?: Partial<QueryStringContext>): Promise<Store> {
+    queryQuads(query: string, options?: Partial<QueryStringContext>, session?: SolidSession): Promise<Store> {
         if (session) {
             return super.queryQuads(query, {
                 '@comunica/actor-http-inrupt-solid-client-authn:session': session,
@@ -93,8 +93,8 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
             .then((session) => {
                 return this.service.getThing(session, query.uri);
             })
-            .then((thing) => {
-                const quads = RDFSerializer.serializeToQuads(thing);
+            .then((thingPersisted) => {
+                const quads = RDFSerializer.subjectsToQuads([thingPersisted as Subject]);
                 const store = new Store(quads);
                 return super.findOne(query.query, options, {
                     source: store,
@@ -108,8 +108,8 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
             .then((session) => {
                 return this.service.getThing(session, query.uri);
             })
-            .then((thing) => {
-                const quads = RDFSerializer.serializeToQuads(thing);
+            .then((thingPersisted) => {
+                const quads = RDFSerializer.subjectsToQuads([thingPersisted as Subject]);
                 const store = new Store(quads);
                 return super.findAll(query.query, options, {
                     source: store,
@@ -123,8 +123,8 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
             .then((session) => {
                 return this.service.getThing(session, query.uri);
             })
-            .then((thing) => {
-                const quads = RDFSerializer.serializeToQuads(thing);
+            .then((thingPersisted) => {
+                const quads = RDFSerializer.subjectsToQuads([thingPersisted as Subject]);
                 const store = new Store(quads);
                 return super.count(query.query, {
                     source: store,

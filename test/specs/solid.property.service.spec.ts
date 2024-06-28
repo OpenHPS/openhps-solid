@@ -19,6 +19,9 @@ describe('SolidPropertyService', () => {
             expect(s).to.not.be.undefined;
             expect(s.info.isLoggedIn).to.be.true;
             session = s;
+            return service.emitAsync('build');
+        }).then(() => {
+            service.service = clientService;
             done();
         }).catch(done);
     });
