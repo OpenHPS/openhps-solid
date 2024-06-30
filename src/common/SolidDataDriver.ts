@@ -91,13 +91,15 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
         return this.service
             .findSessionByWebId(query.webId)
             .then((session) => {
-                return this.service.getThing(session, query.uri);
+                return this.service.getDataset(session, query.uri);
             })
-            .then((thingPersisted) => {
-                const quads = RDFSerializer.subjectsToQuads([thingPersisted as Subject]);
+            .then((dataset) => {
+                const subjects = Object.values(dataset.graphs.default);
+                const quads = RDFSerializer.subjectsToQuads(subjects);
                 const store = new Store(quads);
                 return super.findOne(query.query, options, {
-                    source: store,
+                    sources: [store],
+                    lenient: true,
                 });
             });
     }
@@ -106,13 +108,15 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
         return this.service
             .findSessionByWebId(query.webId)
             .then((session) => {
-                return this.service.getThing(session, query.uri);
+                return this.service.getDataset(session, query.uri);
             })
-            .then((thingPersisted) => {
-                const quads = RDFSerializer.subjectsToQuads([thingPersisted as Subject]);
+            .then((dataset) => {
+                const subjects = Object.values(dataset.graphs.default);
+                const quads = RDFSerializer.subjectsToQuads(subjects);
                 const store = new Store(quads);
                 return super.findAll(query.query, options, {
-                    source: store,
+                    sources: [store],
+                    lenient: true,
                 });
             });
     }
@@ -121,13 +125,15 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
         return this.service
             .findSessionByWebId(query.webId)
             .then((session) => {
-                return this.service.getThing(session, query.uri);
+                return this.service.getDataset(session, query.uri);
             })
-            .then((thingPersisted) => {
-                const quads = RDFSerializer.subjectsToQuads([thingPersisted as Subject]);
+            .then((dataset) => {
+                const subjects = Object.values(dataset.graphs.default);
+                const quads = RDFSerializer.subjectsToQuads(subjects);
                 const store = new Store(quads);
                 return super.count(query.query, {
-                    source: store,
+                    sources: [store],
+                    lenient: true,
                 });
             });
     }

@@ -109,8 +109,10 @@ export class SolidPropertyService extends DataService<string, any> {
                 },
                 uri: property.id,
                 webId: session.info.webId,
-            } as SolidFilterQuery<Observation>).then((observations) => {
-                console.log(observations);
+            } as SolidFilterQuery<Observation>, {
+                dataType: Observation,
+            }).then((observations) => {
+                resolve(observations);
             }).catch(reject);
         });
     }
