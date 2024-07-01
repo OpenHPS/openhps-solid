@@ -233,7 +233,7 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
                         dataset = removeThing(dataset, uri);
                         return saveSolidDatasetAt(uri, dataset, {
                             fetch: currentSession.fetch,
-                        }) as Promise<any>;                    
+                        }) as Promise<any>;
                     }
                 })
                 .then(() => resolve())

@@ -1,6 +1,6 @@
 import { SerializableMember, SerializableObject } from '@openhps/core';
 import { tree } from '../../terms';
-import { SerializableNamedNode } from '@openhps/rdf';
+import { SerializableNamedNode, SerializableThing } from '@openhps/rdf';
 
 @SerializableObject({
     rdf: {
@@ -20,7 +20,7 @@ export class Relation {
             predicate: tree.value,
         },
     })
-    value: Object;
+    value: SerializableThing;
 }
 
 @SerializableObject({

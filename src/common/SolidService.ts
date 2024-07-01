@@ -35,14 +35,30 @@ import {
     getSolidDataset,
 } from '@inrupt/solid-client';
 import { fetch } from 'cross-fetch';
-import { vcard, Quad, Store, IriString, foaf, RDFSerializer, NamedNode, Subject } from '@openhps/rdf';
+import {
+    vcard,
+    Quad,
+    Store,
+    IriString,
+    foaf,
+    RDFSerializer,
+    NamedNode,
+    Subject,
+    RDFChangeLog,
+    createChangeLog,
+} from '@openhps/rdf';
 import { DatasetSubscription } from './DatasetSubscription';
 import { ISessionOptions } from '@inrupt/solid-client-authn-node';
-import type { AccessModes, Thing, ThingPersisted, WithChangeLog, WithResourceInfo } from '@inrupt/solid-client/dist/interfaces';
+import type {
+    AccessModes,
+    Thing,
+    ThingPersisted,
+    WithChangeLog,
+    WithResourceInfo,
+} from '@inrupt/solid-client/dist/interfaces';
 import { StorageUtility } from '@inrupt/solid-client-authn-core';
 import { ClientRegistrar } from './ClientRegistrar';
 import { SessionManager } from './SessionManager';
-import { RDFChangeLog, createChangeLog } from '@openhps/rdf';
 
 class StorageUtilityWrapper extends StorageUtility {
     constructor(secureStorage: IStorage, insecureStorage: IStorage) {
@@ -214,15 +230,10 @@ export abstract class SolidService extends RemoteService {
         return new Promise((resolve, reject) => {
             this.getDataset(session, uri)
                 .then((dataset) => {
-                    console.dir(dataset, {depth: null});
                     const quads: Quad[] = Object.keys(dataset.graphs)
                         .map((key) => {
                             const graph = dataset.graphs[key];
-                            return Object.values(graph)
-                                .map((thing) => {
-                                    return RDFSerializer.subjectsToQuads([thing]);
-                                })
-                                .reduce((a, b) => a.concat(b), []);
+                            return RDFSerializer.subjectsToQuads(Object.values(graph));
                         })
                         .reduce((a, b) => a.concat(b), []);
                     const store = new Store(quads);
@@ -254,7 +265,7 @@ export abstract class SolidService extends RemoteService {
                 .catch((ex: FetchError) => {
                     if (ex.response.status === 404) {
                         // Create dataset when 404 (not found)
-                        resolve(createSolidDataset() as any);
+                        resolve(createSolidDataset());
                     } else {
                         reject(ex);
                     }
@@ -378,31 +389,37 @@ export abstract class SolidService extends RemoteService {
 
     /**
      * Save a Solid dataset store
-     * @param session 
-     * @param uri 
-     * @param store 
-     * @returns 
+     * @param session
+     * @param uri
+     * @param store
+     * @returns
      */
     saveDatasetStore(session: SolidSession, uri: string, store: Store & RDFChangeLog): Promise<SolidDataset> {
         return new Promise((resolve, reject) => {
             const additions = store.additions;
             const deletions = store.deletions;
-            const dummyDataset: SolidDataset & WithChangeLog = {
+            const documentURL = new URL(uri);
+            documentURL.hash = '';
+            const dummyDataset: SolidDataset & WithChangeLog & Partial<WithResourceInfo> = {
                 ...(this.storeToDataset(store) as SolidDataset),
                 internal_changeLog: {
                     additions,
                     deletions,
-                }
+                },
             };
-            saveSolidDatasetAt(
-                uri,
-                dummyDataset,
-                session
-                    ? {
-                          fetch: session.fetch,
-                      }
-                    : undefined,
-            )
+            this.getDataset(session, documentURL.href)
+                .then((dataset: SolidDataset & WithResourceInfo) => {
+                    dummyDataset.internal_resourceInfo = dataset.internal_resourceInfo;
+                    return saveSolidDatasetAt(
+                        documentURL.href,
+                        dummyDataset,
+                        session
+                            ? {
+                                  fetch: session.fetch,
+                              }
+                            : undefined,
+                    );
+                })
                 .then((dataset) => {
                     resolve(dataset);
                 })
@@ -795,7 +812,7 @@ export abstract class SolidService extends RemoteService {
         const dataset: {
             graphs: Record<IriString, Graph> & {
                 default: Graph;
-            },
+            };
             type: 'Dataset';
         } = {
             graphs: {
@@ -804,14 +821,15 @@ export abstract class SolidService extends RemoteService {
             type: 'Dataset',
         };
         const subjects = store.getSubjects(undefined, undefined, undefined);
-        subjects.filter(s => s.termType !== 'BlankNode').forEach((subject) => {
-            const thing = RDFSerializer.quadsToThing(subject as NamedNode, store);
-            const subjects = RDFSerializer.thingToSubjects(thing);
-            subjects.forEach((subject) => {
-                dataset.graphs.default[subject.url] = subject;
+        subjects
+            .filter((s) => s.termType !== 'BlankNode')
+            .forEach((subject) => {
+                const thing = RDFSerializer.quadsToThing(subject as NamedNode, store);
+                const subjects = RDFSerializer.thingToSubjects(thing);
+                subjects.forEach((subject) => {
+                    dataset.graphs.default[subject.url] = subject;
+                });
             });
-        });
-        console.dir(dataset, {depth: null});
         return dataset;
     }
 }

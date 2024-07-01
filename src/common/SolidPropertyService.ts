@@ -73,47 +73,49 @@ export class SolidPropertyService extends DataService<string, any> {
      */
     createProperty(session: SolidSession, property: Property): Promise<IriString> {
         return new Promise((resolve, reject) => {
-            this.service.getDatasetStore(session, session.info.webId).then((store) => {
-                const thing = RDFSerializer.quadsToThing(DataFactory.namedNode(session.info.webId), store);
-                const builder = RDFBuilder.fromSerialized(thing);
-                builder.add(ssn.hasProperty, property.id);
-                const changelog = builder.build(true);
-                let dirty = false;
-                if (changelog.additions.length > 0) {
-                    dirty = true;   
-                    store.addQuads(changelog.additions);
-                }
-                if (changelog.deletions.length > 0) {
-                    dirty = true;
-                    store.removeQuads(changelog.deletions);
-                }
-                // Update thing when modified
-                if (dirty) {
-                    return this.service.saveDatasetStore(session, session.info.webId, store);
-                } else {
+            this.service
+                .getDatasetStore(session, session.info.webId)
+                .then((store) => {
+                    const thing = RDFSerializer.quadsToThing(DataFactory.namedNode(session.info.webId), store);
+                    const builder = RDFBuilder.fromSerialized(thing);
+                    builder.add(ssn.hasProperty, property.id);
+                    const changelog = builder.build(true);
+                    let dirty = false;
+                    if (changelog.additions.length > 0) {
+                        dirty = true;
+                        store.addQuads(changelog.additions);
+                    }
+                    if (changelog.deletions.length > 0) {
+                        dirty = true;
+                        store.removeQuads(changelog.deletions);
+                    }
+                    // Update thing when modified
+                    if (dirty) {
+                        return this.service.saveDatasetStore(session, session.info.webId, store) as Promise<any>;
+                    } else {
+                        return Promise.resolve();
+                    }
+                })
+                .then(() => {
+                    // Create a new property dataset
+                    return this.service.getDatasetStore(session, property.id);
+                })
+                .then((store) => {
+                    const eventStreamURL = new URL(property.id);
+                    eventStreamURL.hash = 'EventStream';
+                    const viewURL = new URL(property.id);
+                    viewURL.hash = 'Node';
+                    const stream = new EventStream(eventStreamURL.href as IriString);
+                    stream.setTimestampPath(sosa.resultTime);
+                    stream.view = new Node(viewURL.href as IriString);
+                    store.addQuads(RDFSerializer.serializeToQuads(property));
+                    store.addQuads(RDFSerializer.serializeToQuads(stream));
+                    return this.service.saveDatasetStore(session, property.id, store);
+                })
+                .then(() => {
                     resolve(property.id as IriString);
-                }
-            }).then(() => {
-                resolve(property.id as IriString);
-            }).catch(reject);
-        });
-    }
-
-    createEventStream(session: SolidSession, property: Property): Promise<IriString> {
-        return new Promise((resolve, reject) => {
-            const eventStreamURL = new URL(property.id);
-            eventStreamURL.hash = 'EventStream';
-            const viewURL = new URL(property.id);
-            viewURL.hash = 'Node';
-            const stream = new EventStream(eventStreamURL.href as IriString);
-            stream.setTimestampPath(sosa.resultTime);
-            stream.view = new Node(viewURL.href as IriString);
-            this.service.getDatasetStore(session, property.id).then((store) => {
-                store.addQuads(RDFSerializer.serializeToQuads(stream));
-                return this.service.saveDatasetStore(session, property.id, store);
-            }).then(() => {
-                resolve(stream.id as IriString);
-            }).catch(reject);
+                })
+                .catch(reject);
         });
     }
 
@@ -125,9 +127,7 @@ export class SolidPropertyService extends DataService<string, any> {
      * @returns
      */
     addObservation(session: SolidSession, property: Property, observation: Observation): Promise<void> {
-        return new Promise((resolve, reject) => {
-
-        });
+        return new Promise((resolve, reject) => {});
     }
 
     /**
@@ -139,21 +139,28 @@ export class SolidPropertyService extends DataService<string, any> {
      */
     fetchObservations(session: SolidSession, property: Property, after?: Date): Promise<Observation[]> {
         return new Promise((resolve, reject) => {
-            this.findAll({
-                query: {
-                    ...(after ? {
-                        resultTime: {
-                            $gte: after,
-                        }
-                    } : {})
+            this.findAll(
+                {
+                    query: {
+                        ...(after
+                            ? {
+                                  resultTime: {
+                                      $gte: after,
+                                  },
+                              }
+                            : {}),
+                    },
+                    uri: property.id,
+                    webId: session.info.webId,
+                } as SolidFilterQuery<Observation>,
+                {
+                    dataType: Observation,
                 },
-                uri: property.id,
-                webId: session.info.webId,
-            } as SolidFilterQuery<Observation>, {
-                dataType: Observation,
-            }).then((observations) => {
-                resolve(observations);
-            }).catch(reject);
+            )
+                .then((observations) => {
+                    resolve(observations);
+                })
+                .catch(reject);
         });
     }
 }

@@ -16,10 +16,10 @@ export class Node extends SerializableThing {
     })
     relations: Relation[] = [];
 
-    @SerializableArrayMember(Object, {
+    @SerializableArrayMember(SerializableThing, {
         rdf: {
             predicate: tree.member,
         },
     })
-    members?: Object[];
+    members?: SerializableThing[];
 }
