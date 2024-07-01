@@ -105,7 +105,11 @@ export class SolidPropertyService extends DataService<string, any> {
         return new Promise((resolve, reject) => {
             this.findAll({
                 query: {
-                    
+                    ...(after ? {
+                        resultTime: {
+                            $gte: after,
+                        }
+                    } : {})
                 },
                 uri: property.id,
                 webId: session.info.webId,

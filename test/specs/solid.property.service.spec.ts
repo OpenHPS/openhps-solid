@@ -42,7 +42,17 @@ describe('SolidPropertyService', () => {
             service.fetchProperties(session, profile).then(properties => {
                 return service.fetchObservations(session, properties[1]);
             }).then(observations => {
-                console.log(observations);
+                expect(observations).to.have.lengthOf.greaterThan(1);
+                done();
+            }).catch(done);
+        });
+
+        it('should fetch observations from a property after a specific time', (done) => {
+            const profile = new SolidProfileObject("https://maximvdw.solidweb.org/profile/card#me");
+            service.fetchProperties(session, profile).then(properties => {
+                return service.fetchObservations(session, properties[1], new Date(1660049151686));
+            }).then(observations => {
+                expect(observations).to.have.lengthOf.greaterThan(1);
                 done();
             }).catch(done);
         });
