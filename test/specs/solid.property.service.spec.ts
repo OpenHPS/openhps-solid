@@ -60,9 +60,8 @@ describe('SolidPropertyService', () => {
     
     describe('creating properties', () => {
         it('should create a new property', (done) => {
-            const property = new Property();
-            service.createProperty(session, new Property()).then(property => {
-                expect(property).to.be.a('string');
+            const property = new Property("https://solid.maximvdw.be/properties/test");
+            service.createProperty(session, property).then(property => {
                 done();
             }).catch(done);
         });

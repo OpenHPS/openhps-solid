@@ -1,0 +1,71 @@
+@prefix : <https://solid.maximvdw.be/profile/card#>.
+@prefix foaf: <http://xmlns.com/foaf/0.1/>.
+@prefix schema: <http://schema.org/>.
+@prefix solid: <http://www.w3.org/ns/solid/terms#>.
+@prefix space: <http://www.w3.org/ns/pim/space#>.
+@prefix vcard: <http://www.w3.org/2006/vcard/ns#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix profile: <https://solid.maximvdw.be/profile/>.
+@prefix dbo: <http://dbpedia.org/ontology/>.
+@prefix org: <http://www.w3.org/ns/org#>.
+@prefix dbp: <http://dbpedia.org/resource/>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix pim: <http://www.w3.org/ns/pim/space#>.
+
+# Profile document
+profile:card a foaf:PersonalProfileDocument;
+    foaf:maker :me;
+    foaf:primaryTopic :me.
+
+# Personal Details
+:me a foaf:Person;
+    # Name
+    rdfs:label "Maxim Van de Wynckel";
+    vcard:fn "Maxim Van de Wynckel";
+    foaf:name "Maxim Van de Wynckel";
+    foaf:givenname "Maxim";
+    foaf:surname "Van de Wynckel";
+    foaf:nick "Maximvdw";
+    # Languages
+    schema:knowsLanguage [
+        rdf:first [ solid:publicId <https://www.w3.org/ns/iana/language-code/nl> ];
+        rdf:rest [
+            rdf:first [ solid:publicId <https://www.w3.org/ns/iana/language-code/en> ];
+            rdf:rest rdf:nil
+        ]
+    ];
+    vcard:bday "1995-03-10"^^xsd:date;
+    dbo:birthDate "1995-03-10"^^xsd:date;
+    foaf:publications <https://solid.maximvdw.be/publications/>;
+    dbo:location dbp:Auderghem;
+    foaf:gender "male"@en;
+    foaf:mbox <mailto:maxim.van.de.wynckel@vub.be>;
+    foaf:homepage <https://maximvdw.be/>;
+    dbo:orcidId "0000-0003-0314-7107";
+    foaf:account <https://github.com/Maximvdw>,
+                 <https://x.com/MVdWSoftware>,
+                 <https://www.linkedin.com/in/maximvdw/>;
+    foaf:workplaceHomepage <http://wise.vub.ac.be/>;
+    org:memberOf dbp:Vrije_Universiteit_Brussel;
+    vcard:hasEmail :work_email;
+    vcard:hasPhoto <https://solid.maximvdw.be/profile/picture.jpg>;
+    foaf:img <https://solid.maximvdw.be/profile/picture.jpg>;
+    vcard:hasTelephone :private_phone;
+    vcard:note "Maxim was born in Belgium in 1995. After graduating from his Bachelor in Applied Computer Science at the Erasmushogeschool Brussels (2016), he earned his Master of Science in Applied Computer Science at the Vrije Universiteit Brussel (2019). His Master's thesis was on Indoor Navigation by Centralized Tracking and led to his further career as a PhD student researching Hybrid Positioning and Implicit Human-Computer Interaction under the supervision of Prof. Dr. Beat Signer. Maxim is actively involved in the development of the open source hybrid positioning system OpenHPS, which was released in 2020.\n\nApart from his PhD research, Maxim is the teaching assistant of various bachelor and master courses such as: Web Technologies, Databases, Next Generation User Interfaces and Advanced Topics in Big Data. He is also involved in the supervision of Bachelor and Master theses related to his research domain.";
+    vcard:organization-name "Vrije Universiteit Brussel";
+    vcard:role "Teaching Assistant and Researcher on Interoperable and Discoverable Indoor Positioning Systems"@en;
+    space:preferencesFile <https://solid.maximvdw.be/Settings/Preferences.ttl>;
+    solid:oidcIssuer <https://solid.maximvdw.be/>;
+    space:storage <https://solid.maximvdw.be/>;
+    solid:account <https://solid.maximvdw.be/>;
+    pim:storage <https://solid.maximvdw.be/>;
+    solid:publicTypeIndex <https://solid.maximvdw.be/profile/publicTypeIndex.ttl>.
+
+:work_email a vcard:Work;
+    vcard:value <mailto:maxim.van.de.wynckel@vub.be>.
+:private_phone a vcard:Cell;
+    vcard:value <tel:+32489861848>.
+
+<https://www.w3.org/ns/iana/language-code/nl> schema:name "Dutch"@en.
+<https://www.w3.org/ns/iana/language-code/en> schema:name "English"@en.

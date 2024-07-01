@@ -1,9 +1,11 @@
 import { DataService } from '@openhps/core';
-import { Property, RDFSerializer, dcterms, rdfs, sosa, ssn, IriString, RDFBuilder } from '@openhps/rdf';
+import { Property, RDFSerializer, dcterms, rdfs, sosa, ssn, IriString, RDFBuilder, DataFactory } from '@openhps/rdf';
 import { SolidProfileObject } from './SolidProfileObject';
 import { SolidDataDriver, SolidFilterQuery } from './SolidDataDriver';
 import { SolidService, SolidSession } from './SolidService';
 import { Observation } from '@openhps/rdf/models';
+import { EventStream } from '../models/ldes';
+import { Node } from '../models/tree';
 
 export class SolidPropertyService extends DataService<string, any> {
     protected driver: SolidDataDriver<any>;
@@ -71,12 +73,46 @@ export class SolidPropertyService extends DataService<string, any> {
      */
     createProperty(session: SolidSession, property: Property): Promise<IriString> {
         return new Promise((resolve, reject) => {
-            this.service.getThing(session, session.info.webId).then((thing) => {
-                const builder = RDFBuilder.fromSerialized(RDFSerializer.subjectsToThing([thing], thing.url as IriString));
+            this.service.getDatasetStore(session, session.info.webId).then((store) => {
+                const thing = RDFSerializer.quadsToThing(DataFactory.namedNode(session.info.webId), store);
+                const builder = RDFBuilder.fromSerialized(thing);
                 builder.add(ssn.hasProperty, property.id);
                 const changelog = builder.build(true);
-                console.log(changelog);
+                let dirty = false;
+                if (changelog.additions.length > 0) {
+                    dirty = true;   
+                    store.addQuads(changelog.additions);
+                }
+                if (changelog.deletions.length > 0) {
+                    dirty = true;
+                    store.removeQuads(changelog.deletions);
+                }
+                // Update thing when modified
+                if (dirty) {
+                    return this.service.saveDatasetStore(session, session.info.webId, store);
+                } else {
+                    resolve(property.id as IriString);
+                }
+            }).then(() => {
                 resolve(property.id as IriString);
+            }).catch(reject);
+        });
+    }
+
+    createEventStream(session: SolidSession, property: Property): Promise<IriString> {
+        return new Promise((resolve, reject) => {
+            const eventStreamURL = new URL(property.id);
+            eventStreamURL.hash = 'EventStream';
+            const viewURL = new URL(property.id);
+            viewURL.hash = 'Node';
+            const stream = new EventStream(eventStreamURL.href as IriString);
+            stream.setTimestampPath(sosa.resultTime);
+            stream.view = new Node(viewURL.href as IriString);
+            this.service.getDatasetStore(session, property.id).then((store) => {
+                store.addQuads(RDFSerializer.serializeToQuads(stream));
+                return this.service.saveDatasetStore(session, property.id, store);
+            }).then(() => {
+                resolve(stream.id as IriString);
             }).catch(reject);
         });
     }

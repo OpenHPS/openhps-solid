@@ -3795,10 +3795,10 @@
     read-package-json-fast "^3.0.0"
     which "^3.0.0"
 
-"@openhps/core@>=0.7.9":
-  version "0.7.9"
-  resolved "https://registry.yarnpkg.com/@openhps/core/-/core-0.7.9.tgz#72ae98f8190a5c29ae26060ce3386a302473b153"
-  integrity sha512-CF99GrlU+4j7S6qOZt2PqE1MHkS+wq9+XFM9gl8s7tWUttC6bpdpckWKUR6mQ7+02sr1WzOXjTiVm8vnKsBKBw==
+"@openhps/core@>=0.7.10":
+  version "0.7.10"
+  resolved "https://registry.yarnpkg.com/@openhps/core/-/core-0.7.10.tgz#0d00685fb786bad7ad97e093d41ce4d061aed41d"
+  integrity sha512-CY9G4/kGT2Tvvv/bxbPrenwcpe+4UlwMTHbT2p0ScReWdp5d31rkDtoBVANCdAGzz9m8NbyXZkztdmndHITpQA==
   dependencies:
     lodash.clonedeep "^4.5.0"
     reflect-metadata ">=0.2.2"
@@ -3823,10 +3823,10 @@
     robust-predicates "^3.0.2"
     wkt "^0.1.1"
 
-"@openhps/rdf@>=0.4.74":
-  version "0.4.74"
-  resolved "https://registry.yarnpkg.com/@openhps/rdf/-/rdf-0.4.74.tgz#71e431b45dd3788cbf95f6e5e1eea5416d95a2bd"
-  integrity sha512-EmLp8JTLkXO+nc+8H/plzXkyFKzo6ahmvGqAdz0W73p9wwK2aTgIimbkq/dKcX0XwwAnABttqK28RhoFYqeE4g==
+"@openhps/rdf@>=0.4.80":
+  version "0.4.80"
+  resolved "https://registry.yarnpkg.com/@openhps/rdf/-/rdf-0.4.80.tgz#e938aa16fd094a672d13bb4153f195b1130bd146"
+  integrity sha512-4jbya7TaMOPGgVqm/LINPEtd/YCZUNSJUcLdLZqOWSJY0zmCpy+M78PG0baaWADdcoMCewJKIirmO2hV0kVwuQ==
   dependencies:
     "@comunica/query-sparql" "^3.1.2"
     "@inquirer/prompts" "^5.0.6"

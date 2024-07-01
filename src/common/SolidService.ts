@@ -35,13 +35,14 @@ import {
     getSolidDataset,
 } from '@inrupt/solid-client';
 import { fetch } from 'cross-fetch';
-import { vcard, Quad_Subject, DataFactory, Quad_Object, Quad, Store, IriString, foaf } from '@openhps/rdf';
+import { vcard, Quad, Store, IriString, foaf, RDFSerializer, NamedNode, Subject } from '@openhps/rdf';
 import { DatasetSubscription } from './DatasetSubscription';
 import { ISessionOptions } from '@inrupt/solid-client-authn-node';
-import type { AccessModes, Thing, ThingPersisted } from '@inrupt/solid-client/dist/interfaces';
+import type { AccessModes, Thing, ThingPersisted, WithChangeLog, WithResourceInfo } from '@inrupt/solid-client/dist/interfaces';
 import { StorageUtility } from '@inrupt/solid-client-authn-core';
 import { ClientRegistrar } from './ClientRegistrar';
 import { SessionManager } from './SessionManager';
+import { RDFChangeLog, createChangeLog } from '@openhps/rdf';
 
 class StorageUtilityWrapper extends StorageUtility {
     constructor(secureStorage: IStorage, insecureStorage: IStorage) {
@@ -207,72 +208,25 @@ export abstract class SolidService extends RemoteService {
      * Get a Solid dataset as an N3 Quads dataset
      * @param {SolidSession} session Solid session to get a thing from
      * @param {string} uri URI of the thing in the Solid Pod
-     * @returns {Promise<Store>} Promise of a solid dataset store
+     * @returns {Promise<Store & RDFChangeLog>} Promise of a solid dataset store
      */
-    getDatasetStore(session: SolidSession, uri: string): Promise<Store> {
+    getDatasetStore(session: SolidSession, uri: string): Promise<Store & RDFChangeLog> {
         return new Promise((resolve, reject) => {
-            /**
-             *
-             * @param subject
-             * @param predicates
-             */
-            function convertPredicates(subject: Quad_Subject, predicates: any): Quad[] {
-                return Object.keys(predicates)
-                    .map((key) => {
-                        const predicate = DataFactory.namedNode(key);
-                        const objects: Quad_Object[] = [];
-                        objects.push(
-                            ...Object.keys(predicates[key].literals ?? {})
-                                .map((dataTypeIRI) => {
-                                    return predicates[key].literals[dataTypeIRI].map((val: string) => {
-                                        return DataFactory.literal(val, dataTypeIRI);
-                                    });
-                                })
-                                .reduce((a, b) => a.concat(b), []),
-                        );
-                        objects.push(
-                            ...Object.keys(predicates[key].langStrings ?? {})
-                                .map((locale) => {
-                                    return predicates[key].langStrings[locale].map((val: string) => {
-                                        return DataFactory.literal(val, locale);
-                                    });
-                                })
-                                .reduce((a, b) => a.concat(b), []),
-                        );
-                        objects.push(
-                            ...(predicates[key].namedNodes ?? []).map((uri: string) => {
-                                return DataFactory.namedNode(uri);
-                            }),
-                        );
-                        return objects
-                            .map((object) => new Quad(subject, predicate, object))
-                            .concat(
-                                ...Object.keys(predicates[key].blankNodes ?? {})
-                                    .map((blankNode: string) => {
-                                        return convertPredicates(
-                                            DataFactory.blankNode(blankNode),
-                                            predicates[key].blankNodes[blankNode],
-                                        );
-                                    })
-                                    .reduce((a, b) => a.concat(b), []),
-                            );
-                    })
-                    .reduce((a, b) => a.concat(b), []);
-            }
             this.getDataset(session, uri)
                 .then((dataset) => {
+                    console.dir(dataset, {depth: null});
                     const quads: Quad[] = Object.keys(dataset.graphs)
                         .map((key) => {
                             const graph = dataset.graphs[key];
                             return Object.values(graph)
                                 .map((thing) => {
-                                    const subject = DataFactory.namedNode(thing.url);
-                                    return convertPredicates(subject, thing.predicates);
+                                    return RDFSerializer.subjectsToQuads([thing]);
                                 })
                                 .reduce((a, b) => a.concat(b), []);
                         })
                         .reduce((a, b) => a.concat(b), []);
-                    resolve(new Store(quads));
+                    const store = new Store(quads);
+                    resolve(createChangeLog(store));
                 })
                 .catch(reject);
         });
@@ -299,6 +253,7 @@ export abstract class SolidService extends RemoteService {
                 .then(resolve)
                 .catch((ex: FetchError) => {
                     if (ex.response.status === 404) {
+                        // Create dataset when 404 (not found)
                         resolve(createSolidDataset() as any);
                     } else {
                         reject(ex);
@@ -408,6 +363,40 @@ export abstract class SolidService extends RemoteService {
             saveSolidDatasetAt(
                 uri,
                 dataset ? dataset : createSolidDataset(),
+                session
+                    ? {
+                          fetch: session.fetch,
+                      }
+                    : undefined,
+            )
+                .then((dataset) => {
+                    resolve(dataset);
+                })
+                .catch(reject);
+        });
+    }
+
+    /**
+     * Save a Solid dataset store
+     * @param session 
+     * @param uri 
+     * @param store 
+     * @returns 
+     */
+    saveDatasetStore(session: SolidSession, uri: string, store: Store & RDFChangeLog): Promise<SolidDataset> {
+        return new Promise((resolve, reject) => {
+            const additions = store.additions;
+            const deletions = store.deletions;
+            const dummyDataset: SolidDataset & WithChangeLog = {
+                ...(this.storeToDataset(store) as SolidDataset),
+                internal_changeLog: {
+                    additions,
+                    deletions,
+                }
+            };
+            saveSolidDatasetAt(
+                uri,
+                dummyDataset,
                 session
                     ? {
                           fetch: session.fetch,
@@ -801,7 +790,33 @@ export abstract class SolidService extends RemoteService {
     }
 
     protected abstract createSession(options: Partial<ISessionOptions | ISessionBrowserOptions>): SolidSession;
+
+    protected storeToDataset(store: Store): SolidDataset {
+        const dataset: {
+            graphs: Record<IriString, Graph> & {
+                default: Graph;
+            },
+            type: 'Dataset';
+        } = {
+            graphs: {
+                default: {},
+            },
+            type: 'Dataset',
+        };
+        const subjects = store.getSubjects(undefined, undefined, undefined);
+        subjects.filter(s => s.termType !== 'BlankNode').forEach((subject) => {
+            const thing = RDFSerializer.quadsToThing(subject as NamedNode, store);
+            const subjects = RDFSerializer.thingToSubjects(thing);
+            subjects.forEach((subject) => {
+                dataset.graphs.default[subject.url] = subject;
+            });
+        });
+        console.dir(dataset, {depth: null});
+        return dataset;
+    }
 }
+
+type Graph = Record<string, Subject>;
 
 export interface SolidDataServiceOptions {
     /**

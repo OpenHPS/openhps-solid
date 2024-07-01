@@ -1,6 +1,6 @@
 import { DataFrame, DataObject, Model, Constructor, FindOptions, FilterQuery, Serializable } from '@openhps/core';
 import { SolidService, SolidSession } from './SolidService';
-import { getSolidDataset, removeThing, saveSolidDatasetAt, Thing } from '@inrupt/solid-client';
+import { deleteSolidDataset, getSolidDataset, removeThing, saveSolidDatasetAt, Thing } from '@inrupt/solid-client';
 import {
     RDFSerializer,
     Store,
@@ -222,10 +222,19 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
                     });
                 })
                 .then((dataset) => {
-                    dataset = removeThing(dataset, uri);
-                    return saveSolidDatasetAt(uri, dataset, {
-                        fetch: currentSession.fetch,
-                    });
+                    const graphs = Object.values(dataset.graphs.default);
+                    if (graphs[0].url === uri) {
+                        // Delete complete graph when url is the dataset
+                        return deleteSolidDataset(uri, {
+                            fetch: currentSession.fetch,
+                        }) as Promise<any>;
+                    } else {
+                        // Delete a thing within the dataset when URL is not the dataset
+                        dataset = removeThing(dataset, uri);
+                        return saveSolidDatasetAt(uri, dataset, {
+                            fetch: currentSession.fetch,
+                        }) as Promise<any>;                    
+                    }
                 })
                 .then(() => resolve())
                 .catch(reject);

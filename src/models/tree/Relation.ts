@@ -10,13 +10,6 @@ import { SerializableNamedNode } from '@openhps/rdf';
 export class Relation {
     @SerializableMember({
         rdf: {
-            predicate: tree.node,
-        },
-    })
-    node?: Node;
-
-    @SerializableMember({
-        rdf: {
             predicate: tree.path,
         },
     })
