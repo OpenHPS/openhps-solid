@@ -1,4 +1,4 @@
-import { ISessionInfo, ISessionOptions, IStorage, Session } from '@inrupt/solid-client-authn-browser';
+import { ISessionInfo, ISessionOptions, Session } from '@inrupt/solid-client-authn-browser';
 import { SolidProfileObject } from '../common';
 import { SolidService, SolidDataServiceOptions, SolidSession, ISessionInternalInfo } from '../common/SolidService';
 import {
