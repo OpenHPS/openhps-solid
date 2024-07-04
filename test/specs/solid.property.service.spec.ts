@@ -1,7 +1,7 @@
 import 'mocha';
 import { expect } from 'chai';
 import { SolidClientService, SolidProfileObject, SolidPropertyService, SolidSession } from '../../src';
-import { Property } from '@openhps/rdf';
+import { Observation, Property } from '@openhps/rdf';
 require('dotenv').config();
 
 describe('SolidPropertyService', () => {
@@ -62,6 +62,17 @@ describe('SolidPropertyService', () => {
         it('should create a new property', (done) => {
             const property = new Property("https://solid.maximvdw.be/properties/test");
             service.createProperty(session, property).then(property => {
+                done();
+            }).catch(done);
+        });
+    });
+
+    describe('creating observations', () => {
+        it('should create a new observation', (done) => {
+            const property = new Property("https://solid.maximvdw.be/properties/test");
+            const observation = new Observation();
+            observation.resultTime = new Date();
+            service.addObservation(session, property, observation).then(observation => {
                 done();
             }).catch(done);
         });

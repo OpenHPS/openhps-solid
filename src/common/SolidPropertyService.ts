@@ -6,6 +6,8 @@ import { SolidService, SolidSession } from './SolidService';
 import { Observation } from '@openhps/rdf/models';
 import { EventStream } from '../models/ldes';
 import { Node } from '../models/tree';
+import { tree } from '../terms';
+import { GreaterThanOrEqualToRelation } from '../models/tree/Relation';
 
 export class SolidPropertyService extends DataService<string, any> {
     protected driver: SolidDataDriver<any>;
@@ -98,24 +100,40 @@ export class SolidPropertyService extends DataService<string, any> {
                 })
                 .then(() => {
                     // Create a new property dataset
-                    return this.service.getDatasetStore(session, property.id);
+                    return  Promise.all([
+                        this.service.getDatasetStore(session, `${property.id}`),
+                        this.service.getDatasetStore(session, `${property.id}.meta`),
+                    ]);
                 })
-                .then((store) => {
+                .then(([store, meta]) => {
+                    // Add the property
+                    store.addQuads(RDFSerializer.serializeToQuads(property));
+                    // Add the eventstream to the metadata
                     const eventStreamURL = new URL(property.id);
                     eventStreamURL.hash = 'EventStream';
                     const viewURL = new URL(property.id);
-                    viewURL.hash = 'Node';
+                    viewURL.hash = 'root';
                     const stream = new EventStream(eventStreamURL.href as IriString);
                     stream.setTimestampPath(sosa.resultTime);
                     stream.view = new Node(viewURL.href as IriString);
-                    store.addQuads(RDFSerializer.serializeToQuads(property));
-                    store.addQuads(RDFSerializer.serializeToQuads(stream));
-                    return this.service.saveDatasetStore(session, property.id, store);
+                    meta.addQuads(RDFSerializer.serializeToQuads(stream));
+                    return this.service.saveDatasetStore(session, property.id, store).then(() => this.service.saveDatasetStore(session, `${property.id}.meta`, meta));
                 })
                 .then(() => {
                     resolve(property.id as IriString);
                 })
                 .catch(reject);
+        });
+    }
+
+    protected createTreeNode(session: SolidSession, node: Node): Promise<Node> {
+        return new Promise((resolve, reject) => {
+            const nodeURL = new URL(node.id);
+            nodeURL.hash = '';
+            this.service.getDatasetStore(session, `${nodeURL.href}.meta`).then(meta => {
+                meta.addQuads(RDFSerializer.serializeToQuads(node));
+                return this.service.saveDatasetStore(session, `${nodeURL.href}.meta`, meta);
+            }).then(() => resolve(node)).catch(reject);
         });
     }
 
@@ -127,7 +145,44 @@ export class SolidPropertyService extends DataService<string, any> {
      * @returns
      */
     addObservation(session: SolidSession, property: Property, observation: Observation): Promise<void> {
-        return new Promise((resolve, reject) => {});
+        return new Promise((resolve, reject) => {
+            Promise.all([
+                this.service.getDatasetStore(session, `${property.id}`),
+                this.service.getDatasetStore(session, `${property.id}.meta`),
+            ])
+                .then(async ([store, meta]) => {
+                    // Get the root node of the dataset
+                    const bindings = await this.driver.queryBindings(`SELECT DISTINCT ?node WHERE {
+                        ?node a <${tree.Node}> .   
+                    }`, undefined, {
+                        sources: [meta]
+                    });
+                    if (bindings.length === 0) {
+                        // No root node
+                        return reject(new Error('No root node found'));
+                    } 
+                    const rootNode: Node = RDFSerializer.deserializeFromStore(DataFactory.namedNode(bindings[0].get('node').value as IriString), meta);
+                    let childNode = rootNode.getChildNode(observation.resultTime);
+                    if (!childNode) {
+                        // Create node
+                        childNode = new Node();
+                        childNode.id = `${property.id}/${observation.resultTime.getTime()}` as IriString;
+                        rootNode.relations.push(new GreaterThanOrEqualToRelation(observation.resultTime));
+                        // Save root node
+                        await this.createTreeNode(session, rootNode);
+                    }
+
+                    observation.id = `${childNode.id}/${this.generateUUID()}` as IriString;
+                    console.log(childNode);
+                    childNode.members.push(observation);
+                    // Save child node
+                    await this.createTreeNode(session, childNode);
+                    // Save observation
+                    
+                    resolve();
+                })
+                .catch(reject);
+        });
     }
 
     /**

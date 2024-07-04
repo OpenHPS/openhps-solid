@@ -30,10 +30,18 @@ export class EventStream extends SerializableThing {
     })
     view: Node;
 
+    /**
+     * Set the timestamp path
+     * @param {IriString} path Timestamp path (predicate)
+     */
     setTimestampPath(path: IriString) {
         this.timestampPath = new SerializableNamedNode(path);
     }
 
+    /**
+     * Set the version path
+     * @param {IriString} path Version path (predicate)
+     */
     setVersionOfPath(path: IriString) {
         this.versionOfPath = new SerializableNamedNode(path);
     }

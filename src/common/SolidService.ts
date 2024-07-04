@@ -410,6 +410,7 @@ export abstract class SolidService extends RemoteService {
             this.getDataset(session, documentURL.href)
                 .then((dataset: SolidDataset & WithResourceInfo) => {
                     dummyDataset.internal_resourceInfo = dataset.internal_resourceInfo;
+                    console.log('Saving dataset', dataset);
                     return saveSolidDatasetAt(
                         documentURL.href,
                         dummyDataset,

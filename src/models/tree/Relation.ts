@@ -1,13 +1,16 @@
 import { SerializableMember, SerializableObject } from '@openhps/core';
 import { tree } from '../../terms';
-import { SerializableNamedNode, SerializableThing } from '@openhps/rdf';
+import { RDFSerializer, SerializableNamedNode, SerializableThing } from '@openhps/rdf';
 
 @SerializableObject({
     rdf: {
         type: tree.Relation,
     },
 })
-export class Relation {
+export abstract class Relation {
+    @SerializableMember()
+    node? : SerializableThing;
+
     @SerializableMember({
         rdf: {
             predicate: tree.path,
@@ -20,7 +23,13 @@ export class Relation {
             predicate: tree.value,
         },
     })
-    value: SerializableThing;
+    value: Object;
+
+    constructor(value: any) {
+        this.value = RDFSerializer.serialize(value);
+    }
+
+    abstract test(value: any): boolean;
 }
 
 @SerializableObject({
@@ -28,25 +37,41 @@ export class Relation {
         type: tree.GreaterThanOrEqualToRelation,
     },
 })
-export class GreaterThanOrEqualToRelation extends Relation {}
+export class GreaterThanOrEqualToRelation extends Relation {
+    test(value: any): boolean {
+        return value >= this.value;
+    }
+}
 
 @SerializableObject({
     rdf: {
         type: tree.GreaterThanRelation,
     },
 })
-export class GreaterThanRelation extends Relation {}
+export class GreaterThanRelation extends Relation {
+    test(value: any): boolean {
+        return value > this.value;
+    }
+}
 
 @SerializableObject({
     rdf: {
         type: tree.LessThanOrEqualToRelation,
     },
 })
-export class LessThanOrEqualToRelation extends Relation {}
+export class LessThanOrEqualToRelation extends Relation {
+    test(value: any): boolean {
+        return value <= this.value;
+    }
+}
 
 @SerializableObject({
     rdf: {
         type: tree.LessThanRelation,
     },
 })
-export class LessThanRelation extends Relation {}
+export class LessThanRelation extends Relation {
+    test(value: any): boolean {
+        return value < this.value;
+    }
+}

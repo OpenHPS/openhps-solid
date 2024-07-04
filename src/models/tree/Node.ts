@@ -1,6 +1,6 @@
 import { SerializableArrayMember, SerializableObject } from '@openhps/core';
 import { tree } from '../../terms';
-import { SerializableThing } from '@openhps/rdf';
+import { SerializableThing, IriString } from '@openhps/rdf';
 import { Relation } from './Relation';
 
 @SerializableObject({
@@ -22,4 +22,12 @@ export class Node extends SerializableThing {
         },
     })
     members?: SerializableThing[];
+
+    getChildNodes(): Node[] {
+        return this.relations.map(r => r.node as Node);
+    }
+
+    getChildNode(value: Object): Node {
+        return this.relations.find(r => r.test(value))?.node as Node;
+    }
 }
