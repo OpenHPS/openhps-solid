@@ -396,10 +396,29 @@ export abstract class SolidService extends RemoteService {
      */
     saveDatasetStore(session: SolidSession, uri: string, store: Store & RDFChangeLog): Promise<SolidDataset> {
         return new Promise((resolve, reject) => {
-            const additions = store.additions;
-            const deletions = store.deletions;
             const documentURL = new URL(uri);
             documentURL.hash = '';
+            // Clear quads from store that do not match the URI
+            const quads = store.getQuads(null, null, null, null);
+            quads.forEach((quad) => {
+                if (quad.subject.termType === 'NamedNode') {
+                    // Remove quads that do not start with the URI
+                    const subjectURL = new URL(quad.subject.value);
+                    subjectURL.hash = '';
+                    if (subjectURL.href !== documentURL.href &&
+                        subjectURL.href !== documentURL.href.replace(".meta", "")) {
+                        store.removeQuad(quad);
+                        console.log('Removed quad', quad.subject.value);
+                    }
+                }
+            });
+
+            const additions = store.additions;
+            const deletions = store.deletions;
+
+            console.log('Additions', additions.map((a) => a.subject.value));
+            console.log('Deletions', deletions.map((a) => a.subject.value));
+
             const dummyDataset: SolidDataset & WithChangeLog & Partial<WithResourceInfo> = {
                 ...(this.storeToDataset(store) as SolidDataset),
                 internal_changeLog: {
@@ -410,7 +429,6 @@ export abstract class SolidService extends RemoteService {
             this.getDataset(session, documentURL.href)
                 .then((dataset: SolidDataset & WithResourceInfo) => {
                     dummyDataset.internal_resourceInfo = dataset.internal_resourceInfo;
-                    console.log('Saving dataset', dataset);
                     return saveSolidDatasetAt(
                         documentURL.href,
                         dummyDataset,

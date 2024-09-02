@@ -94,6 +94,15 @@ export const versionMaterializationUntil: Property = 'https://w3id.org/ldes#vers
 export const EventStream: Class = 'https://w3id.org/ldes#EventStream';
 
 /**
+ * Retention Policy
+ * 
+ * The abstract concept of a retention policy.
+ *
+ * https://w3id.org/ldes#RetentionPolicy
+ */
+export const RetentionPolicy: Class = 'https://w3id.org/ldes#RetentionPolicy';
+
+/**
  * The Linked Data Event Streams specification
  * 
  * A hypermedia specification for maintaining a collection with immutable members.
@@ -101,15 +110,6 @@ export const EventStream: Class = 'https://w3id.org/ldes#EventStream';
  * https://w3id.org/ldes#Vocabulary
  */
 export const Vocabulary: OtherIndividual = 'https://w3id.org/ldes#Vocabulary';
-
-/**
- * Retention Policy
- * 
- * The abstract concept of a retention policy.
- *
- * https://w3id.org/ldes#RetentionPolicy
- */
-export const RetentionPolicy: OtherIndividual = 'https://w3id.org/ldes#RetentionPolicy';
 
 export const _BASE: IriString = 'https://w3id.org/ldes#';
 export const _PREFIX: string = 'ldes';

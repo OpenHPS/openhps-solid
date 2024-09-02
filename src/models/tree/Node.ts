@@ -21,13 +21,15 @@ export class Node extends SerializableThing {
             predicate: tree.member,
         },
     })
-    members?: SerializableThing[];
+    members?: SerializableThing[] = [];
 
     getChildNodes(): Node[] {
         return this.relations.map(r => r.node as Node);
     }
 
     getChildNode(value: Object): Node {
-        return this.relations.find(r => r.test(value))?.node as Node;
+        return this.relations.find(r => {
+            return r ? r.value && r.test(value) : false
+        })?.node as Node;
     }
 }

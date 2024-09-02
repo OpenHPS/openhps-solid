@@ -99,25 +99,29 @@ export class SolidPropertyService extends DataService<string, any> {
                     }
                 })
                 .then(() => {
+                    // Create a new property container
+                    return this.service.createContainer(session, property.id as IriString);
+                }).then(() => {
                     // Create a new property dataset
                     return  Promise.all([
-                        this.service.getDatasetStore(session, `${property.id}`),
-                        this.service.getDatasetStore(session, `${property.id}.meta`),
+                        this.service.getDatasetStore(session, `${property.id}/root.ttl`),
+                        this.service.getDatasetStore(session, `${property.id}/.meta`),
                     ]);
                 })
                 .then(([store, meta]) => {
                     // Add the property
                     store.addQuads(RDFSerializer.serializeToQuads(property));
                     // Add the eventstream to the metadata
-                    const eventStreamURL = new URL(property.id);
+                    const eventStreamURL = new URL(`${property.id}/root.ttl`);
                     eventStreamURL.hash = 'EventStream';
-                    const viewURL = new URL(property.id);
+                    const viewURL = new URL(`${property.id}/root.ttl`);
                     viewURL.hash = 'root';
                     const stream = new EventStream(eventStreamURL.href as IriString);
                     stream.setTimestampPath(sosa.resultTime);
                     stream.view = new Node(viewURL.href as IriString);
                     meta.addQuads(RDFSerializer.serializeToQuads(stream));
-                    return this.service.saveDatasetStore(session, property.id, store).then(() => this.service.saveDatasetStore(session, `${property.id}.meta`, meta));
+                    return this.service.saveDatasetStore(session, `${property.id}/root.ttl`, store)
+                        .then(() => this.service.saveDatasetStore(session, `${property.id}/.meta`, meta));
                 })
                 .then(() => {
                     resolve(property.id as IriString);
@@ -147,8 +151,8 @@ export class SolidPropertyService extends DataService<string, any> {
     addObservation(session: SolidSession, property: Property, observation: Observation): Promise<void> {
         return new Promise((resolve, reject) => {
             Promise.all([
-                this.service.getDatasetStore(session, `${property.id}`),
-                this.service.getDatasetStore(session, `${property.id}.meta`),
+                this.service.getDatasetStore(session, `${property.id}/root.ttl`),
+                this.service.getDatasetStore(session, `${property.id}/.meta`),
             ])
                 .then(async ([store, meta]) => {
                     // Get the root node of the dataset
@@ -167,18 +171,20 @@ export class SolidPropertyService extends DataService<string, any> {
                         // Create node
                         childNode = new Node();
                         childNode.id = `${property.id}/${observation.resultTime.getTime()}` as IriString;
+                        await this.service.createContainer(session, childNode.id);
+
                         rootNode.relations.push(new GreaterThanOrEqualToRelation(observation.resultTime));
                         // Save root node
                         await this.createTreeNode(session, rootNode);
                     }
 
-                    observation.id = `${childNode.id}/${this.generateUUID()}` as IriString;
-                    console.log(childNode);
+                    observation.id = `${childNode.id}/${this.generateUUID()}.ttl` as IriString;
                     childNode.members.push(observation);
                     // Save child node
                     await this.createTreeNode(session, childNode);
                     // Save observation
-                    
+                    return this.service.saveDatasetStore(session, `${observation.id}`, RDFSerializer.serializeToStore(observation));
+                }).then(() => {
                     resolve();
                 })
                 .catch(reject);
