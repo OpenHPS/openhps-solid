@@ -33,6 +33,8 @@ import {
     deleteContainer,
     universalAccess,
     getSolidDataset,
+    getContainedResourceUrlAll,
+    deleteFile,
 } from '@inrupt/solid-client';
 import { fetch } from 'cross-fetch';
 import {
@@ -59,6 +61,7 @@ import type {
 import { StorageUtility } from '@inrupt/solid-client-authn-core';
 import { ClientRegistrar } from './ClientRegistrar';
 import { SessionManager } from './SessionManager';
+import { seeks } from '@openhps/rdf/dist/types/vocab/schema';
 
 class StorageUtilityWrapper extends StorageUtility {
     constructor(secureStorage: IStorage, insecureStorage: IStorage) {
@@ -340,6 +343,43 @@ export abstract class SolidService extends RemoteService {
     }
 
     /**
+     * Recursively delete a Solid dataset
+     * @param session Solid session to delete a dataset with
+     * @param dataset Dataset to delete
+     */
+    async deleteRecursively(session: SolidSession, dataset: SolidDataset & WithResourceInfo): Promise<void>
+    /**
+     * Recursively delete a Solid dataset
+     * @param {SolidSession} session Solid session to delete a dataset with
+     * @param url URL of the dataset
+     */
+    async deleteRecursively(session: SolidSession, url: IriString): Promise<void>
+    async deleteRecursively(session: SolidSession, dataset: IriString | SolidDataset & WithResourceInfo): Promise<void> {
+        if (typeof dataset === 'string') {
+            const fetchedDataset = await this.getDataset(session, dataset);
+            return await this.deleteRecursively(session, fetchedDataset as SolidDataset & WithResourceInfo);
+        }
+        const containedResourceUrls = getContainedResourceUrlAll(dataset as SolidDataset & WithResourceInfo);
+        const containedDatasets = await Promise.all(containedResourceUrls.map(async resourceUrl => {
+          try {
+            return await getSolidDataset(resourceUrl, session ? { fetch: session.fetch } : undefined);
+          } catch(e) {
+            // The Resource might not have been a SolidDataset;
+            // we can delete it directly:
+            await deleteFile(resourceUrl, session ? { fetch: session.fetch } : undefined);
+            return null;
+          }
+        }));
+        await Promise.all(containedDatasets.map(async containedDataset => {
+          if (containedDataset === null) {
+            return;
+          }
+          return await this.deleteRecursively(session, containedDataset);
+        }));
+        return await deleteSolidDataset(dataset, session ? { fetch: session.fetch } : undefined);
+    }
+
+    /**
      * Delete a Solid dataset
      * @param {SolidSession} session Solid session to get a thing from
      * @param {string} uri URI of the thing in the Solid Pod
@@ -408,16 +448,17 @@ export abstract class SolidService extends RemoteService {
                     if (subjectURL.href !== documentURL.href &&
                         subjectURL.href !== documentURL.href.replace(".meta", "")) {
                         store.removeQuad(quad);
-                        console.log('Removed quad', quad.subject.value);
                     }
                 }
             });
 
             const additions = store.additions;
             const deletions = store.deletions;
-
-            console.log('Additions', additions.map((a) => a.subject.value));
-            console.log('Deletions', deletions.map((a) => a.subject.value));
+            
+            if (additions.length === 0 && deletions.length === 0) {
+                resolve(this.storeToDataset(store));
+                return;
+            }
 
             const dummyDataset: SolidDataset & WithChangeLog & Partial<WithResourceInfo> = {
                 ...(this.storeToDataset(store) as SolidDataset),

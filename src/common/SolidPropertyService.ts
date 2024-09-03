@@ -75,12 +75,16 @@ export class SolidPropertyService extends DataService<string, any> {
      */
     createProperty(session: SolidSession, property: Property): Promise<IriString> {
         return new Promise((resolve, reject) => {
+            const propertyContainer = new URL(property.id);
+            propertyContainer.hash = '';
+            // Root dataset for the property
+            property.id = `${property.id}/property.ttl` as IriString;
             this.service
                 .getDatasetStore(session, session.info.webId)
                 .then((store) => {
                     const thing = RDFSerializer.quadsToThing(DataFactory.namedNode(session.info.webId), store);
                     const builder = RDFBuilder.fromSerialized(thing);
-                    builder.add(ssn.hasProperty, property.id);
+                    builder.add(ssn.hasProperty, `${propertyContainer.href}/property.ttl`);
                     const changelog = builder.build(true);
                     let dirty = false;
                     if (changelog.additions.length > 0) {
@@ -99,29 +103,36 @@ export class SolidPropertyService extends DataService<string, any> {
                     }
                 })
                 .then(() => {
+                    // Verify if the property container exists
+                    return this.service.getDataset(session, propertyContainer.href);
+                }).then((dataset) => {
+                    if (dataset) {
+                        resolve(property.id as IriString)
+                        return;
+                    }
                     // Create a new property container
-                    return this.service.createContainer(session, property.id as IriString);
+                    return this.service.createContainer(session, propertyContainer.href as IriString);
                 }).then(() => {
                     // Create a new property dataset
-                    return  Promise.all([
-                        this.service.getDatasetStore(session, `${property.id}/root.ttl`),
-                        this.service.getDatasetStore(session, `${property.id}/.meta`),
+                    return Promise.all([
+                        this.service.getDatasetStore(session, `${propertyContainer.href}/property.ttl`),
+                        this.service.getDatasetStore(session, `${propertyContainer.href}/.meta`),
                     ]);
                 })
                 .then(([store, meta]) => {
                     // Add the property
                     store.addQuads(RDFSerializer.serializeToQuads(property));
                     // Add the eventstream to the metadata
-                    const eventStreamURL = new URL(`${property.id}/root.ttl`);
+                    const eventStreamURL = new URL(`${propertyContainer.href}/property.ttl`);
                     eventStreamURL.hash = 'EventStream';
-                    const viewURL = new URL(`${property.id}/root.ttl`);
+                    const viewURL = new URL(`${propertyContainer.href}/property.ttl`);
                     viewURL.hash = 'root';
                     const stream = new EventStream(eventStreamURL.href as IriString);
                     stream.setTimestampPath(sosa.resultTime);
                     stream.view = new Node(viewURL.href as IriString);
                     meta.addQuads(RDFSerializer.serializeToQuads(stream));
-                    return this.service.saveDatasetStore(session, `${property.id}/root.ttl`, store)
-                        .then(() => this.service.saveDatasetStore(session, `${property.id}/.meta`, meta));
+                    return this.service.saveDatasetStore(session, `${propertyContainer.href}/property.ttl`, store)
+                        .then(() => this.service.saveDatasetStore(session, `${propertyContainer.href}/.meta`, meta));
                 })
                 .then(() => {
                     resolve(property.id as IriString);
@@ -134,9 +145,10 @@ export class SolidPropertyService extends DataService<string, any> {
         return new Promise((resolve, reject) => {
             const nodeURL = new URL(node.id);
             nodeURL.hash = '';
-            this.service.getDatasetStore(session, `${nodeURL.href}.meta`).then(meta => {
+            const isContainer = !nodeURL.href.endsWith('.ttl');
+            this.service.getDatasetStore(session, `${nodeURL.href}${isContainer ? '/' : ''}.meta`).then(meta => {
                 meta.addQuads(RDFSerializer.serializeToQuads(node));
-                return this.service.saveDatasetStore(session, `${nodeURL.href}.meta`, meta);
+                return this.service.saveDatasetStore(session, `${nodeURL.href}${isContainer ? '/' : ''}.meta`, meta);
             }).then(() => resolve(node)).catch(reject);
         });
     }
@@ -151,7 +163,7 @@ export class SolidPropertyService extends DataService<string, any> {
     addObservation(session: SolidSession, property: Property, observation: Observation): Promise<void> {
         return new Promise((resolve, reject) => {
             Promise.all([
-                this.service.getDatasetStore(session, `${property.id}/root.ttl`),
+                this.service.getDatasetStore(session, `${property.id}/property.ttl`),
                 this.service.getDatasetStore(session, `${property.id}/.meta`),
             ])
                 .then(async ([store, meta]) => {

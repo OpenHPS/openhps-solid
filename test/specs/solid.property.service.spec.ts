@@ -26,6 +26,14 @@ describe('SolidPropertyService', () => {
         }).catch(done);
     });
 
+    after((done) => {
+        service.service.deleteRecursively(session, "https://maximvdw.solidweb.org/properties/test/").then(() => {
+            return clientService.logout(session);
+        }).then(() => {
+            done();
+        }).catch(done);
+    });
+
     describe('fetching properties', () => {
         it('should fetch properties from a profile', (done) => {
             const profile = new SolidProfileObject("https://maximvdw.solidweb.org/profile/card#me");

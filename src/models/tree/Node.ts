@@ -23,6 +23,10 @@ export class Node extends SerializableThing {
     })
     members?: SerializableThing[] = [];
 
+    constructor(iri?: IriString) {
+        super(iri);
+    }
+    
     getChildNodes(): Node[] {
         return this.relations.map(r => r.node as Node);
     }
