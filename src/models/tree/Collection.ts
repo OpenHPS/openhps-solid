@@ -7,4 +7,11 @@ import { SerializableThing } from '@openhps/rdf';
         type: tree.Collection,
     },
 })
-export class Collection extends SerializableThing {}
+export class Collection extends SerializableThing {
+    @SerializableArrayMember(SerializableThing, {
+        rdf: {
+            predicate: tree.member,
+        },
+    })
+    members?: SerializableThing[] = [];
+}

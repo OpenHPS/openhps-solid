@@ -1,6 +1,8 @@
 import { SerializableMember, SerializableObject } from '@openhps/core';
 import { tree } from '../../terms';
-import { RDFSerializer, SerializableNamedNode, SerializableThing } from '@openhps/rdf';
+import { RDFSerializer, SerializableNamedNode, SerializableThing, Thing } from '@openhps/rdf';
+import { IriString } from '@inrupt/solid-client';
+import type { Node } from './Node';
 
 @SerializableObject({
     rdf: {
@@ -8,7 +10,17 @@ import { RDFSerializer, SerializableNamedNode, SerializableThing } from '@openhp
     },
 })
 export abstract class Relation {
-    @SerializableMember()
+    @SerializableMember({
+        rdf: {
+            predicate: tree.node,
+            serializer: (node: Node) => {
+                return node.id;
+            },
+            deserializer: (iri: IriString) => {
+                return new SerializableThing(iri as any);
+            }
+        }
+    })
     node? : SerializableThing;
 
     @SerializableMember({
@@ -21,12 +33,25 @@ export abstract class Relation {
     @SerializableMember({
         rdf: {
             predicate: tree.value,
+            serializer: (value: any) => {
+                return RDFSerializer.serialize(value);
+            },
+            deserializer: (thing: Thing) => {
+                console.log("Deserializing value of relation", thing)
+                return RDFSerializer.deserialize(thing);
+            }
         },
     })
     value: Object;
 
-    constructor(value: any) {
-        this.value = RDFSerializer.serialize(value);
+    constructor(value: any, node: Node) {
+        this.value = value;
+        this.node = node;
+    }
+
+    setPath(path: IriString): this {
+        this.path = new SerializableNamedNode(path);
+        return this;
     }
 
     abstract test(value: any): boolean;

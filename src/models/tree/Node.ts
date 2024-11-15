@@ -16,13 +16,6 @@ export class Node extends SerializableThing {
     })
     relations: Relation[] = [];
 
-    @SerializableArrayMember(SerializableThing, {
-        rdf: {
-            predicate: tree.member,
-        },
-    })
-    members?: SerializableThing[] = [];
-
     constructor(iri?: IriString) {
         super(iri);
     }
@@ -31,9 +24,19 @@ export class Node extends SerializableThing {
         return this.relations.map(r => r.node as Node);
     }
 
-    getChildNode(value: Object): Node {
-        return this.relations.find(r => {
+    /**
+     * Get child node
+     * @param value 
+     * @param [filter] Filter function 
+     * @returns Child node if found
+     */
+    getChildNode(value: Object, filter?: (node: Node) => boolean): Node {
+        const node = this.relations.find(r => {
             return r ? r.value && r.test(value) : false
         })?.node as Node;
+        if (node && filter && !filter(node)) {
+            return null;
+        }
+        return node;
     }
 }

@@ -359,6 +359,9 @@ export abstract class SolidService extends RemoteService {
             const fetchedDataset = await this.getDataset(session, dataset);
             return await this.deleteRecursively(session, fetchedDataset as SolidDataset & WithResourceInfo);
         }
+        if (!dataset) {
+            return Promise.resolve();
+        }
         const containedResourceUrls = getContainedResourceUrlAll(dataset as SolidDataset & WithResourceInfo);
         const containedDatasets = await Promise.all(containedResourceUrls.map(async resourceUrl => {
           try {
@@ -438,25 +441,12 @@ export abstract class SolidService extends RemoteService {
         return new Promise((resolve, reject) => {
             const documentURL = new URL(uri);
             documentURL.hash = '';
-            // Clear quads from store that do not match the URI
-            const quads = store.getQuads(null, null, null, null);
-            quads.forEach((quad) => {
-                if (quad.subject.termType === 'NamedNode') {
-                    // Remove quads that do not start with the URI
-                    const subjectURL = new URL(quad.subject.value);
-                    subjectURL.hash = '';
-                    if (subjectURL.href !== documentURL.href &&
-                        subjectURL.href !== documentURL.href.replace(".meta", "")) {
-                        store.removeQuad(quad);
-                    }
-                }
-            });
 
             const additions = store.additions;
             const deletions = store.deletions;
             
             if (additions.length === 0 && deletions.length === 0) {
-                resolve(this.storeToDataset(store));
+                resolve(this.getDataset(session, documentURL.href));
                 return;
             }
 
