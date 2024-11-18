@@ -15,7 +15,7 @@ type OtherIndividual = IriString; // eslint-disable-line
 /**
  * 
  * 
- * Links together a tree:Node with its description of this TREE structure
+ * Links together a tree:Node with a description of this search tree through the search tree itself or through a data service
  *
  * https://w3id.org/tree#viewDescription
  */
@@ -47,6 +47,15 @@ export const remainingItems: Property = 'https://w3id.org/tree#remainingItems';
  * https://w3id.org/tree#node
  */
 export const node: Property = 'https://w3id.org/tree#node';
+
+/**
+ * Has Root Node
+ * 
+ * A view has a root node that can be used to start traversing the search tree
+ *
+ * https://w3id.org/tree#rootNode
+ */
+export const rootNode: Property = 'https://w3id.org/tree#rootNode';
 
 /**
  * Value
@@ -168,13 +177,13 @@ export const timeQuery: Property = 'https://w3id.org/tree#timeQuery';
 export const Collection: Class = 'https://w3id.org/tree#Collection';
 
 /**
- * View Description
+ * Search Tree
  * 
- * Describes a specific TREE structure on top of the tree:Collection
+ * A tree:SearchTree publishes the members of a collection.
  *
- * https://w3id.org/tree#ViewDescription
+ * https://w3id.org/tree#SearchTree
  */
-export const ViewDescription: Class = 'https://w3id.org/tree#ViewDescription';
+export const SearchTree: Class = 'https://w3id.org/tree#SearchTree';
 
 /**
  * Node
@@ -184,6 +193,15 @@ export const ViewDescription: Class = 'https://w3id.org/tree#ViewDescription';
  * https://w3id.org/tree#Node
  */
 export const Node: Class = 'https://w3id.org/tree#Node';
+
+/**
+ * Root Node
+ * 
+ * A tree:RootNode is the access point into a search tree.
+ *
+ * https://w3id.org/tree#RootNode
+ */
+export const RootNode: Class = 'https://w3id.org/tree#RootNode';
 
 /**
  * Relation
@@ -276,7 +294,7 @@ export const LessThanOrEqualToRelation: Class = 'https://w3id.org/tree#LessThanO
 export const EqualToRelation: Class = 'https://w3id.org/tree#EqualToRelation';
 
 /**
- * Not equal To Relation
+ * Not Equal To Relation
  * 
  * 
  *
@@ -305,7 +323,7 @@ export const InBetweenRelation: Class = 'https://w3id.org/tree#InBetweenRelation
 /**
  * TREE
  * 
- * A hypermedia specification for fragmenting collections.
+ * A hypermedia specification for fragmenting collections of members.
  *
  * https://w3id.org/tree#Ontology
  */

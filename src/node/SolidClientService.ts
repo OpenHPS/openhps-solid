@@ -77,6 +77,9 @@ export class SolidClientService extends SolidService {
         const session = this.createSession({
             storage: this.storage,
         });
+        if (this.options.clientId === undefined || this.options.clientSecret === undefined) {
+            throw new Error('Client ID and Client Secret must be set');
+        }
         if (!interactive) {
             return new Promise((resolve, reject) => {
                 session

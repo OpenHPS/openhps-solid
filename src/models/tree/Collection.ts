@@ -1,4 +1,4 @@
-import { SerializableObject } from '@openhps/core';
+import { SerializableObject, SerializableArrayMember } from '@openhps/core';
 import { tree } from '../../terms';
 import { SerializableThing } from '@openhps/rdf';
 
@@ -11,6 +11,7 @@ export class Collection extends SerializableThing {
     @SerializableArrayMember(SerializableThing, {
         rdf: {
             predicate: tree.member,
+            serializer: false,
         },
     })
     members?: SerializableThing[] = [];

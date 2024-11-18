@@ -14,6 +14,7 @@
   },
   "transpileOnline": true,
   "include": [
-    "../test/specs/**/*.ts"
+    "../test/specs/**/*.ts",
+    "../test/scripts/**/*.ts"
   ]
 }

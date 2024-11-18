@@ -13,12 +13,10 @@ export abstract class Relation {
     @SerializableMember({
         rdf: {
             predicate: tree.node,
-            serializer: (node: Node) => {
-                return node.id;
-            },
+            serializer: false,
             deserializer: (iri: IriString) => {
                 return new SerializableThing(iri as any);
-            }
+            },
         }
     })
     node? : SerializableThing;
@@ -37,7 +35,6 @@ export abstract class Relation {
                 return RDFSerializer.serialize(value);
             },
             deserializer: (thing: Thing) => {
-                console.log("Deserializing value of relation", thing)
                 return RDFSerializer.deserialize(thing);
             }
         },
