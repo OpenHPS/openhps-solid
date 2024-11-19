@@ -6143,10 +6143,10 @@
     robust-predicates "^3.0.2"
     wkt "^0.1.1"
 
-"@openhps/rdf@>=0.4.90":
-  version "0.4.90"
-  resolved "https://registry.yarnpkg.com/@openhps/rdf/-/rdf-0.4.90.tgz#ec1313234e94d77afa9d293dd117f4c4228139cd"
-  integrity sha512-hawARHKeJZeyi4dAjTWvJxfy80J8UXza5VeQNT8qnf2QaYTBH0qBbyQONFUU1KM5RIfZzCAcYtYkDamEI4/Zvw==
+"@openhps/rdf@>=0.4.92":
+  version "0.4.92"
+  resolved "https://registry.yarnpkg.com/@openhps/rdf/-/rdf-0.4.92.tgz#8035be8e897fe85a40d10db9a750d9bfc01252eb"
+  integrity sha512-mChXVDVTJJhv0GfT/aIqpTuVtsR2d+GfJ56IejJ3rfihymFOWG3VgPG46mEDz1HieY87c+iacfLO+XdfZjJbSg==
   dependencies:
     "@comunica/query-sparql" "^3.1.2"
     "@inquirer/prompts" "^5.1.0"

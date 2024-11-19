@@ -1,5 +1,5 @@
 import { DataService } from '@openhps/core';
-import { Property, RDFSerializer, dcterms, rdfs, sosa, ssn, IriString, RDFBuilder, DataFactory } from '@openhps/rdf';
+import { Property, RDFSerializer, dcterms, rdfs, sosa, ssn, IriString, RDFBuilder, DataFactory, SerializableThing } from '@openhps/rdf';
 import { SolidProfileObject } from './SolidProfileObject';
 import { SolidDataDriver, SolidFilterQuery } from './SolidDataDriver';
 import { SolidService, SolidSession } from './SolidService';
@@ -148,7 +148,7 @@ export class SolidPropertyService extends DataService<string, any> {
             const nodeURL = new URL(node.id);
             nodeURL.hash = '';
             const isContainer = !nodeURL.href.endsWith('.ttl');
-            const datasetURL = `${nodeURL.href}${isContainer ? `${nodeURL.href.endsWith('/') ? '' : '/'}.meta` : ''}`
+            const datasetURL = `${nodeURL.href}${isContainer ? `${nodeURL.href.endsWith('/') ? '' : '/'}.meta` : ''}`;
             this.service.getDatasetStore(session, datasetURL).then(dataset => {
                 dataset.addQuads(RDFSerializer.serializeToQuads(node));
                 if (collection) {
@@ -156,6 +156,30 @@ export class SolidPropertyService extends DataService<string, any> {
                 }
                 return this.service.saveDatasetStore(session, datasetURL, dataset);
             }).then(() => resolve(node)).catch(reject);
+        });
+    }
+
+    protected fetchTreeNode(session: SolidSession, node: SerializableThing, collection?: IriString): Promise<Node> {
+        return new Promise((resolve, reject) => {
+            const nodeURL = new URL(node.id);
+            nodeURL.hash = '';
+            const isContainer = !nodeURL.href.endsWith('.ttl');
+            const datasetURL = `${nodeURL.href}${isContainer ? `${nodeURL.href.endsWith('/') ? '' : '/'}.meta` : ''}`
+            this.service.getDatasetStore(session, datasetURL).then(dataset => {
+                const nodeThing = RDFSerializer.quadsToThing(DataFactory.namedNode(node.id), dataset);
+                if (nodeThing) {
+                    const deserializedNode: Node = RDFSerializer.deserializeFromStore(DataFactory.namedNode(node.id), dataset);
+                    const deserializedCollection: Collection = collection ? RDFSerializer.deserializeFromStore(DataFactory.namedNode(collection), dataset) : undefined;
+                    if (deserializedNode) {
+                        deserializedNode.collection = deserializedCollection;
+                        resolve(deserializedNode);
+                    } else {
+                        reject(new Error('Node could not be deserialized'));
+                    }
+                } else {
+                    reject(new Error('Node not found'));
+                }
+            }).catch(reject);
         });
     }
 
@@ -188,7 +212,20 @@ export class SolidPropertyService extends DataService<string, any> {
                         // Root node not found
                         return reject(new Error('Root node not found, but it was in the query result'));
                     }
-                    let childNode = rootNode.getChildNode(observation.resultTime);
+                    // Child nodes are references and not stored in the dataset
+                    // Fetch each node
+                    for(let relation of rootNode.relations) {
+                        if (!relation.node) {
+                            throw new Error('Node is corrupted. Relation node is missing');
+                        }
+                        const node = await this.fetchTreeNode(session, relation.node, property.id as IriString);
+                        relation.node = node;
+                    }
+
+                    let childNode = rootNode.getChildNode(observation.resultTime, (node) => {
+                        // Filter false if node has 3 or more children
+                        return node.collection ? node.collection.members.length < 3 : true;
+                    });
                     if (!childNode) {
                         // Create node
                         childNode = new Node();

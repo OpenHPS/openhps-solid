@@ -21,4 +21,7 @@ clientService.login("https://solid.maximvdw.be/").then(s => {
 }).then(() => {
     console.log("Logging out...");
     return clientService.logout(session);
+}).then(() => {
+    console.log("Done!");
+    process.exit(0);
 }).catch(console.error);

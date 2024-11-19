@@ -1,6 +1,6 @@
 import { SerializableMember, SerializableObject } from '@openhps/core';
 import { tree } from '../../terms';
-import { RDFSerializer, SerializableNamedNode, SerializableThing, Thing } from '@openhps/rdf';
+import { NamedNode, RDFSerializer, SerializableNamedNode, SerializableThing, Thing } from '@openhps/rdf';
 import { IriString } from '@inrupt/solid-client';
 import type { Node } from './Node';
 
@@ -14,8 +14,8 @@ export abstract class Relation {
         rdf: {
             predicate: tree.node,
             serializer: false,
-            deserializer: (iri: IriString) => {
-                return new SerializableThing(iri as any);
+            deserializer: (node: NamedNode) => {
+                return new SerializableThing(node.value as any);
             },
         }
     })
@@ -29,6 +29,7 @@ export abstract class Relation {
     path?: SerializableNamedNode;
 
     @SerializableMember({
+        constructor: Object,
         rdf: {
             predicate: tree.value,
             serializer: (value: any) => {

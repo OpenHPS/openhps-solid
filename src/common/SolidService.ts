@@ -61,7 +61,6 @@ import type {
 import { StorageUtility } from '@inrupt/solid-client-authn-core';
 import { ClientRegistrar } from './ClientRegistrar';
 import { SessionManager } from './SessionManager';
-import { seeks } from '@openhps/rdf/dist/types/vocab/schema';
 
 class StorageUtilityWrapper extends StorageUtility {
     constructor(secureStorage: IStorage, insecureStorage: IStorage) {

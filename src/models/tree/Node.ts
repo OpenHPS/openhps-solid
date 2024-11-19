@@ -1,7 +1,8 @@
-import { SerializableArrayMember, SerializableObject } from '@openhps/core';
+import { SerializableArrayMember, SerializableMember, SerializableObject } from '@openhps/core';
 import { tree } from '../../terms';
 import { SerializableThing, IriString } from '@openhps/rdf';
 import { Relation } from './Relation';
+import { Collection } from './Collection';
 
 @SerializableObject({
     rdf: {
@@ -16,6 +17,13 @@ export class Node extends SerializableThing {
     })
     relations: Relation[] = [];
 
+    @SerializableMember({
+        rdf: {
+            
+        },
+    })
+    collection?: Collection;
+    
     constructor(iri?: IriString) {
         super(iri);
     }
