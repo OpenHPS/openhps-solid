@@ -1,6 +1,6 @@
-import { DataFrame, PushOptions, SinkNode, SinkNodeOptions } from "@openhps/core";
-import { Property } from "@openhps/rdf";
-import { SolidSession } from "../common";
+import { DataFrame, PushOptions, SinkNode, SinkNodeOptions } from '@openhps/core';
+import { Property } from '@openhps/rdf';
+import { SolidSession } from '../common';
 
 /**
  * Solid property sink is a sink node that writes data to a Solid pod.
@@ -27,9 +27,7 @@ export class SolidPropertySink<Out extends DataFrame> extends SinkNode<Out> {
     }
 
     protected prepareProperty(session: SolidSession): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-
-        });
+        return new Promise<void>((resolve, reject) => {});
     }
 
     protected writeProperty(frame: Out): Promise<void> {
@@ -41,7 +39,6 @@ export class SolidPropertySink<Out extends DataFrame> extends SinkNode<Out> {
                         const position = dataObject.getPosition();
                         if (position) {
                             // Write position to Solid pod
-                            
                         }
                     } else if (property === PropertyType.VELOCITY) {
                         // Write velocity

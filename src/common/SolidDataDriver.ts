@@ -114,12 +114,16 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
                 const subjects = Object.values(dataset.graphs.default);
                 const quads = RDFSerializer.subjectsToQuads(subjects);
                 const store = new Store(quads);
-                return super.findAll(query.query, {
-                    ...options,
-                }, {
-                    sources: [store],
-                    lenient: true,
-                });
+                return super.findAll(
+                    query.query,
+                    {
+                        ...options,
+                    },
+                    {
+                        sources: [store],
+                        lenient: true,
+                    },
+                );
             });
     }
 

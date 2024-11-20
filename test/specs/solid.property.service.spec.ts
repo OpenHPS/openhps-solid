@@ -32,6 +32,8 @@ describe('SolidPropertyService', () => {
         service.service.deleteRecursively(session, "https://solid.maximvdw.be/properties/test/").then(() => {
             return clientService.logout(session);
         }).then(() => {
+            return Promise.all([service.emitAsync('destroy'), clientService.emitAsync('destroy')]);
+        }).then(() => {
             done();
         }).catch(done);
     });
@@ -103,7 +105,7 @@ describe('SolidPropertyService', () => {
                 }
                 done();
             })().catch(done);
-        });
+        }).timeout(60000);
 
         it('should be able to fetch multiple observations', (done) => {
             const property = new Property("https://solid.maximvdw.be/properties/test");

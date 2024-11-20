@@ -50,6 +50,10 @@ export class SolidPropertyService extends DataService<string, any> {
             }),
         );
         this.filter = filter ?? defaultFilter;
+
+        this.once('destroy', () => {
+            this.driver.emit('destroy');
+        });
     }
 
     set service(service: SolidService) {
