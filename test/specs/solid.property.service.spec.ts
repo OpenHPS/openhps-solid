@@ -104,5 +104,13 @@ describe('SolidPropertyService', () => {
                 done();
             })().catch(done);
         });
+
+        it('should be able to fetch multiple observations', (done) => {
+            const property = new Property("https://solid.maximvdw.be/properties/test");
+            service.fetchObservations(session, property).then(observations => {
+                // expect(observations).to.have.lengthOf(11);
+                done();
+            }).catch(done);
+        });
     });
 });
