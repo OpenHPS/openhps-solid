@@ -7,6 +7,28 @@ import type { Node } from './Node';
 @SerializableObject({
     rdf: {
         type: tree.Relation,
+        serializer: (object: Relation, baseUri: IriString) => {
+            if (!object.value) {
+                return {};
+            }
+
+            // Serialize the value to a string that can be stored in RDF as URI
+            switch (object.value.constructor) {
+                case Date:
+                    // Convert the date to a string that can be used inside a URI
+                    // timestamp as epoch
+                    return {
+                        termType: 'NamedNode',
+                        value: baseUri + (object.value as Date).getTime().toString(),
+                    };
+                default:
+                    // URI encode the value assuming its a string
+                    return {
+                        termType: 'NamedNode',
+                        value: baseUri + encodeURIComponent(object.value.toString()),
+                    };
+            }
+        },
     },
 })
 export abstract class Relation {
@@ -17,9 +39,9 @@ export abstract class Relation {
             deserializer: (node: NamedNode) => {
                 return new SerializableThing(node.value as any);
             },
-        }
+        },
     })
-    node? : SerializableThing;
+    node?: SerializableThing;
 
     @SerializableMember({
         rdf: {
@@ -37,10 +59,10 @@ export abstract class Relation {
             },
             deserializer: (thing: Thing) => {
                 return RDFSerializer.deserialize(thing);
-            }
+            },
         },
     })
-    value: Object;
+    value: object;
 
     constructor(value: any, node: Node) {
         this.value = value;

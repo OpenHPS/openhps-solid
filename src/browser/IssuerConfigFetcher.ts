@@ -27,7 +27,6 @@ import { ConfigurationError } from '@inrupt/solid-client-authn-core';
 
 export const WELL_KNOWN_OPENID_CONFIG = '.well-known/openid-configuration';
 
-/* eslint-disable camelcase */
 const issuerConfigKeyMap: Record<string, { toKey: string; convertToUrl?: boolean }> = {
     issuer: {
         toKey: 'issuer',
@@ -115,7 +114,6 @@ const issuerConfigKeyMap: Record<string, { toKey: string; convertToUrl?: boolean
         convertToUrl: true,
     },
 };
-/* eslint-enable camelcase */
 
 /**
  *

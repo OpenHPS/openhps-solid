@@ -1,5 +1,16 @@
 import { DataService } from '@openhps/core';
-import { Property, RDFSerializer, dcterms, rdfs, sosa, ssn, IriString, RDFBuilder, DataFactory, SerializableThing } from '@openhps/rdf';
+import {
+    Property,
+    RDFSerializer,
+    dcterms,
+    rdfs,
+    sosa,
+    ssn,
+    IriString,
+    RDFBuilder,
+    DataFactory,
+    SerializableThing,
+} from '@openhps/rdf';
 import { SolidProfileObject } from './SolidProfileObject';
 import { SolidDataDriver, SolidFilterQuery } from './SolidDataDriver';
 import { SolidService, SolidSession } from './SolidService';
@@ -7,19 +18,38 @@ import { Observation } from '@openhps/rdf/models';
 import { EventStream } from '../models/ldes';
 import { Node } from '../models/tree';
 import { tree } from '../terms';
-import { GreaterThanOrEqualToRelation } from '../models/tree/Relation';
+import { GreaterThanOrEqualToRelation, Relation } from '../models/tree/Relation';
 import { Collection } from '../models/tree/Collection';
 
+/**
+ *
+ * @param node
+ */
+function defaultFilter(node: Node): boolean {
+    // Filter false if node has 50 or more children
+    return node.collection ? node.collection.members.length < 50 : true;
+}
+
+/**
+ * Solid property service
+ * @see {@link https://woutslabbinck.github.io/LDESinLDP/}
+ */
 export class SolidPropertyService extends DataService<string, any> {
     protected driver: SolidDataDriver<any>;
+    protected filter: (node: Node) => boolean;
 
-    constructor() {
+    /**
+     * Create a new Solid property service
+     * @param filter Filter function to determine if a node should be used as the parent node
+     */
+    constructor(filter?: (node: Node) => boolean) {
         super(
             new SolidDataDriver(undefined, {
                 sources: [undefined],
                 lenient: true,
             }),
         );
+        this.filter = filter ?? defaultFilter;
     }
 
     set service(service: SolidService) {
@@ -85,7 +115,7 @@ export class SolidPropertyService extends DataService<string, any> {
                 .then((store) => {
                     const thing = RDFSerializer.quadsToThing(DataFactory.namedNode(session.info.webId), store);
                     const builder = RDFBuilder.fromSerialized(thing);
-                    builder.add(ssn.hasProperty, `${propertyContainer.href}/property.ttl`);
+                    builder.add(ssn.hasProperty, property.id);
                     const changelog = builder.build(true);
                     let dirty = false;
                     if (changelog.additions.length > 0) {
@@ -106,14 +136,16 @@ export class SolidPropertyService extends DataService<string, any> {
                 .then(() => {
                     // Verify if the property container exists
                     return this.service.getDataset(session, propertyContainer.href);
-                }).then((dataset) => {
+                })
+                .then((dataset) => {
                     if (dataset) {
-                        resolve(property.id as IriString)
+                        resolve(property.id as IriString);
                         return;
                     }
                     // Create a new property container
                     return this.service.createContainer(session, propertyContainer.href as IriString);
-                }).then(() => {
+                })
+                .then(() => {
                     // Create a new property dataset
                     return Promise.all([
                         this.service.getDatasetStore(session, `${propertyContainer.href}/property.ttl`),
@@ -133,7 +165,8 @@ export class SolidPropertyService extends DataService<string, any> {
                     stream.view = new Node(viewURL.href as IriString);
                     meta.addQuads(RDFSerializer.serializeToQuads(stream));
                     store.addQuads(RDFSerializer.serializeToQuads(stream.view));
-                    return this.service.saveDatasetStore(session, `${propertyContainer.href}/property.ttl`, store)
+                    return this.service
+                        .saveDatasetStore(session, `${propertyContainer.href}/property.ttl`, store)
                         .then(() => this.service.saveDatasetStore(session, `${propertyContainer.href}/.meta`, meta));
                 })
                 .then(() => {
@@ -149,13 +182,17 @@ export class SolidPropertyService extends DataService<string, any> {
             nodeURL.hash = '';
             const isContainer = !nodeURL.href.endsWith('.ttl');
             const datasetURL = `${nodeURL.href}${isContainer ? `${nodeURL.href.endsWith('/') ? '' : '/'}.meta` : ''}`;
-            this.service.getDatasetStore(session, datasetURL).then(dataset => {
-                dataset.addQuads(RDFSerializer.serializeToQuads(node));
-                if (collection) {
-                    dataset.addQuads(RDFSerializer.serializeToQuads(collection));
-                }
-                return this.service.saveDatasetStore(session, datasetURL, dataset);
-            }).then(() => resolve(node)).catch(reject);
+            this.service
+                .getDatasetStore(session, datasetURL)
+                .then((dataset) => {
+                    dataset.addQuads(RDFSerializer.serializeToQuads(node, `${nodeURL.href}#` as IriString));
+                    if (collection) {
+                        dataset.addQuads(RDFSerializer.serializeToQuads(collection, `${nodeURL.href}#` as IriString));
+                    }
+                    return this.service.saveDatasetStore(session, datasetURL, dataset);
+                })
+                .then(() => resolve(node))
+                .catch(reject);
         });
     }
 
@@ -164,22 +201,30 @@ export class SolidPropertyService extends DataService<string, any> {
             const nodeURL = new URL(node.id);
             nodeURL.hash = '';
             const isContainer = !nodeURL.href.endsWith('.ttl');
-            const datasetURL = `${nodeURL.href}${isContainer ? `${nodeURL.href.endsWith('/') ? '' : '/'}.meta` : ''}`
-            this.service.getDatasetStore(session, datasetURL).then(dataset => {
-                const nodeThing = RDFSerializer.quadsToThing(DataFactory.namedNode(node.id), dataset);
-                if (nodeThing) {
-                    const deserializedNode: Node = RDFSerializer.deserializeFromStore(DataFactory.namedNode(node.id), dataset);
-                    const deserializedCollection: Collection = collection ? RDFSerializer.deserializeFromStore(DataFactory.namedNode(collection), dataset) : undefined;
-                    if (deserializedNode) {
-                        deserializedNode.collection = deserializedCollection;
-                        resolve(deserializedNode);
+            const datasetURL = `${nodeURL.href}${isContainer ? `${nodeURL.href.endsWith('/') ? '' : '/'}.meta` : ''}`;
+            this.service
+                .getDatasetStore(session, datasetURL)
+                .then((dataset) => {
+                    const nodeThing = RDFSerializer.quadsToThing(DataFactory.namedNode(node.id), dataset);
+                    if (nodeThing) {
+                        const deserializedNode: Node = RDFSerializer.deserializeFromStore(
+                            DataFactory.namedNode(node.id),
+                            dataset,
+                        );
+                        const deserializedCollection: Collection = collection
+                            ? RDFSerializer.deserializeFromStore(DataFactory.namedNode(collection), dataset)
+                            : undefined;
+                        if (deserializedNode) {
+                            deserializedNode.collection = deserializedCollection;
+                            resolve(deserializedNode);
+                        } else {
+                            reject(new Error('Node could not be deserialized'));
+                        }
                     } else {
-                        reject(new Error('Node could not be deserialized'));
+                        reject(new Error('Node not found'));
                     }
-                } else {
-                    reject(new Error('Node not found'));
-                }
-            }).catch(reject);
+                })
+                .catch(reject);
         });
     }
 
@@ -198,34 +243,49 @@ export class SolidPropertyService extends DataService<string, any> {
             ])
                 .then(async ([store, meta]) => {
                     // Get the root node of the dataset
-                    const bindings = await this.driver.queryBindings(`SELECT DISTINCT ?node WHERE {
+                    const bindings = await this.driver.queryBindings(
+                        `SELECT DISTINCT ?node WHERE {
                         ?node a <${tree.Node}> .   
-                    }`, undefined, {
-                        sources: [store]
-                    });
+                    }`,
+                        undefined,
+                        {
+                            sources: [store],
+                        },
+                    );
                     if (bindings.length === 0) {
                         // No root node
                         return reject(new Error('Root node not found'));
-                    } 
-                    const rootNode: Node = RDFSerializer.deserializeFromStore(DataFactory.namedNode(bindings[0].get('node').value as IriString), store);
+                    }
+                    const rootNode: Node = RDFSerializer.deserializeFromStore(
+                        DataFactory.namedNode(bindings[0].get('node').value as IriString),
+                        store,
+                    );
                     if (!rootNode) {
                         // Root node not found
                         return reject(new Error('Root node not found, but it was in the query result'));
                     }
-                    // Child nodes are references and not stored in the dataset
-                    // Fetch each node
-                    for(let relation of rootNode.relations) {
+
+                    // Check relations to make sure there is no issue
+                    for (const relation of rootNode.relations) {
                         if (!relation.node) {
-                            throw new Error('Node is corrupted. Relation node is missing');
+                            console.error(relation);
+                            throw new Error('Relation node not found');
                         }
-                        const node = await this.fetchTreeNode(session, relation.node, property.id as IriString);
-                        relation.node = node;
+                        if (!relation.value) {
+                            console.error(relation);
+                            throw new Error('Relation value not found');
+                        }
                     }
 
-                    let childNode = rootNode.getChildNode(observation.resultTime, (node) => {
-                        // Filter false if node has 3 or more children
-                        return node.collection ? node.collection.members.length < 3 : true;
-                    });
+                    // Child nodes are references and not stored in the dataset
+                    // Fetch the last node
+                    let childNode = rootNode.getChildNode(observation.resultTime);
+                    if (childNode) {
+                        // False when first node
+                        childNode = await this.fetchTreeNode(session, childNode, property.id as IriString);
+                        childNode = this.filter(childNode) ? childNode : undefined;
+                    }
+
                     if (!childNode) {
                         // Create node
                         childNode = new Node();
@@ -233,20 +293,28 @@ export class SolidPropertyService extends DataService<string, any> {
                         await this.service.createContainer(session, childNode.id);
 
                         // Add relation from root node to child node
-                        rootNode.relations.push(new GreaterThanOrEqualToRelation(observation.resultTime, childNode)
-                            .setPath(sosa.resultTime));
+                        rootNode.relations.push(
+                            new GreaterThanOrEqualToRelation(observation.resultTime, childNode).setPath(
+                                sosa.resultTime,
+                            ),
+                        );
                         // Save root node
                         await this.createTreeNode(session, rootNode);
                     }
 
-                    observation.id = `${childNode.id}/${this.generateUUID()}.ttl` as IriString;
+                    observation.id = `${childNode.id}${this.generateUUID()}.ttl` as IriString;
                     const collection = new Collection(property.id);
                     collection.members.push(observation);
                     // Save child node
                     await this.createTreeNode(session, childNode, collection);
                     // Save observation
-                    return this.service.saveDatasetStore(session, `${observation.id}`, RDFSerializer.serializeToStore(observation));
-                }).then(() => {
+                    return this.service.saveDatasetStore(
+                        session,
+                        `${observation.id}`,
+                        RDFSerializer.serializeToStore(observation),
+                    );
+                })
+                .then(() => {
                     resolve();
                 })
                 .catch(reject);

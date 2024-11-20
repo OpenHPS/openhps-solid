@@ -1,11 +1,15 @@
 module.exports = function(variables) {
+/**
+ *
+ * @param name
+ */
 function getVariableValue(name) {
   if (!variables || !(name in variables)) {
     throw new Error('Undefined variable: ' + name);
   }
   return variables[name];
 }
-const df_491_1 = new (require('@comunica/logger-void').LoggerVoid)();
+const df_487_1 = new (require('@comunica/logger-void').LoggerVoid)();
 const https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_init__3_0_0_components_ActorInit_jsonld_ActorInit_default_bus = new (require('@comunica/core').Bus)({
   'name': 'https://linkedsoftwaredependencies.org/bundles/npm/@comunica/bus-init/^3.0.0/components/ActorInit.jsonld#ActorInit_default_bus'
 });
@@ -99,16 +103,6 @@ const https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_http_inva
 const https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_merge_bindings_context__3_0_0_components_ActorMergeBindingsContext_jsonld_ActorMergeBindingsContext_default_bus = new (require('@comunica/core').Bus)({
   'name': 'https://linkedsoftwaredependencies.org/bundles/npm/@comunica/bus-merge-bindings-context/^3.0.0/components/ActorMergeBindingsContext.jsonld#ActorMergeBindingsContext_default_bus'
 });
-const urn_comunica_default_extract_links_actors_predicates_common = new (require('@comunica/actor-extract-links-predicates').ActorExtractLinksPredicates)({
-  'checkSubject': false,
-  'predicateRegexes': [
-  'http://www.w3.org/2000/01/rdf-schema#seeAlso',
-  'http://www.w3.org/2002/07/owl##sameAs',
-  'http://xmlns.com/foaf/0.1/isPrimaryTopicOf'
-],
-  'name': 'urn:comunica:default:extract-links/actors#predicates-common',
-  'bus': https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_extract_links__0_0_0_components_ActorExtractLinks_jsonld_ActorExtractLinks_default_bus
-});
 const urn_comunica_default_extract_links_actors_predicates_ldp = new (require('@comunica/actor-extract-links-predicates').ActorExtractLinksPredicates)({
   'checkSubject': true,
   'predicateRegexes': [
@@ -124,17 +118,27 @@ const urn_comunica_default_extract_links_actors_links_describedby = new (require
   'name': 'urn:comunica:default:extract-links/actors#links-describedby',
   'bus': https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_extract_links__0_0_0_components_ActorExtractLinks_jsonld_ActorExtractLinks_default_bus
 });
+const urn_comunica_default_extract_links_actors_predicates_common = new (require('@comunica/actor-extract-links-predicates').ActorExtractLinksPredicates)({
+  'checkSubject': false,
+  'predicateRegexes': [
+  'http://www.w3.org/2000/01/rdf-schema#seeAlso',
+  'http://www.w3.org/2002/07/owl##sameAs',
+  'http://xmlns.com/foaf/0.1/isPrimaryTopicOf'
+],
+  'name': 'urn:comunica:default:extract-links/actors#predicates-common',
+  'bus': https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_extract_links__0_0_0_components_ActorExtractLinks_jsonld_ActorExtractLinks_default_bus
+});
+const urn_comunica_default_extract_links_actors_quad_pattern_query = new (require('@comunica/actor-extract-links-quad-pattern-query').ActorExtractLinksQuadPatternQuery)({
+  'onlyVariables': true,
+  'name': 'urn:comunica:default:extract-links/actors#quad-pattern-query',
+  'bus': https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_extract_links__0_0_0_components_ActorExtractLinks_jsonld_ActorExtractLinks_default_bus
+});
 const urn_comunica_default_extract_links_actors_predicates_solid = new (require('@comunica/actor-extract-links-predicates').ActorExtractLinksPredicates)({
   'checkSubject': true,
   'predicateRegexes': [
   'http://www.w3.org/ns/pim/space#storage'
 ],
   'name': 'urn:comunica:default:extract-links/actors#predicates-solid',
-  'bus': https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_extract_links__0_0_0_components_ActorExtractLinks_jsonld_ActorExtractLinks_default_bus
-});
-const urn_comunica_default_extract_links_actors_quad_pattern_query = new (require('@comunica/actor-extract-links-quad-pattern-query').ActorExtractLinksQuadPatternQuery)({
-  'onlyVariables': true,
-  'name': 'urn:comunica:default:extract-links/actors#quad-pattern-query',
   'bus': https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_extract_links__0_0_0_components_ActorExtractLinks_jsonld_ActorExtractLinks_default_bus
 });
 const urn_comunica_default_extract_links_mediators_main = new (require('@comunica/mediator-combine-array').MediatorCombineArray)({
@@ -152,7 +156,7 @@ const urn_comunica_default_context_preprocess_actors_convert_shortcuts = new (re
   'bus': https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_context_preprocess__3_0_0_components_ActorContextPreprocess_jsonld_ActorContextPreprocess_default_bus
 });
 const urn_comunica_default_context_preprocess_actors_set_defaults = new (require('@comunica/actor-context-preprocess-set-defaults').ActorContextPreprocessSetDefaults)({
-  'logger': df_491_1,
+  'logger': df_487_1,
   'name': 'urn:comunica:default:context-preprocess/actors#set-defaults',
   'bus': https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_context_preprocess__3_0_0_components_ActorContextPreprocess_jsonld_ActorContextPreprocess_default_bus
 });
@@ -727,14 +731,14 @@ const urn_comunica_default_query_operation_actors_ask = new (require('@comunica/
   'name': 'urn:comunica:default:query-operation/actors#ask',
   'bus': https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_query_operation__3_0_0_components_ActorQueryOperation_jsonld_ActorQueryOperation_default_bus
 });
-const urn_comunica_default_query_operation_actors_bgp = new (require('@comunica/actor-query-operation-bgp-join').ActorQueryOperationBgpJoin)({
-  'mediatorQueryOperation': urn_comunica_default_query_operation_mediators_main,
-  'name': 'urn:comunica:default:query-operation/actors#bgp',
-  'bus': https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_query_operation__3_0_0_components_ActorQueryOperation_jsonld_ActorQueryOperation_default_bus
-});
 const urn_comunica_default_query_operation_actors_construct = new (require('@comunica/actor-query-operation-construct').ActorQueryOperationConstruct)({
   'mediatorQueryOperation': urn_comunica_default_query_operation_mediators_main,
   'name': 'urn:comunica:default:query-operation/actors#construct',
+  'bus': https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_query_operation__3_0_0_components_ActorQueryOperation_jsonld_ActorQueryOperation_default_bus
+});
+const urn_comunica_default_query_operation_actors_bgp = new (require('@comunica/actor-query-operation-bgp-join').ActorQueryOperationBgpJoin)({
+  'mediatorQueryOperation': urn_comunica_default_query_operation_mediators_main,
+  'name': 'urn:comunica:default:query-operation/actors#bgp',
   'bus': https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_query_operation__3_0_0_components_ActorQueryOperation_jsonld_ActorQueryOperation_default_bus
 });
 const urn_comunica_default_query_operation_actors_distinct = new (require('@comunica/actor-query-operation-distinct-hash').ActorQueryOperationDistinctHash)({
@@ -772,15 +776,15 @@ const urn_comunica_default_query_operation_actors_union = new (require('@comunic
   'name': 'urn:comunica:default:query-operation/actors#union',
   'bus': https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_query_operation__3_0_0_components_ActorQueryOperation_jsonld_ActorQueryOperation_default_bus
 });
+const urn_comunica_default_query_operation_actors_path_inv = new (require('@comunica/actor-query-operation-path-inv').ActorQueryOperationPathInv)({
+  'mediatorQueryOperation': urn_comunica_default_query_operation_mediators_main,
+  'name': 'urn:comunica:default:query-operation/actors#path-inv',
+  'bus': https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_query_operation__3_0_0_components_ActorQueryOperation_jsonld_ActorQueryOperation_default_bus
+});
 const urn_comunica_default_query_operation_actors_path_alt = new (require('@comunica/actor-query-operation-path-alt').ActorQueryOperationPathAlt)({
   'mediatorRdfMetadataAccumulate': urn_comunica_default_rdf_metadata_accumulate_mediators_main,
   'mediatorQueryOperation': urn_comunica_default_query_operation_mediators_main,
   'name': 'urn:comunica:default:query-operation/actors#path-alt',
-  'bus': https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_query_operation__3_0_0_components_ActorQueryOperation_jsonld_ActorQueryOperation_default_bus
-});
-const urn_comunica_default_query_operation_actors_path_inv = new (require('@comunica/actor-query-operation-path-inv').ActorQueryOperationPathInv)({
-  'mediatorQueryOperation': urn_comunica_default_query_operation_mediators_main,
-  'name': 'urn:comunica:default:query-operation/actors#path-inv',
   'bus': https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_query_operation__3_0_0_components_ActorQueryOperation_jsonld_ActorQueryOperation_default_bus
 });
 const urn_comunica_default_query_operation_actors_path_link = new (require('@comunica/actor-query-operation-path-link').ActorQueryOperationPathLink)({
@@ -964,16 +968,16 @@ const urn_comunica_default_query_source_identify_hypermedia_actors_none = new (r
   'name': 'urn:comunica:default:query-source-identify-hypermedia/actors#none',
   'bus': https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_query_source_identify_hypermedia__3_0_0_components_ActorQuerySourceIdentifyHypermedia_jsonld_ActorQuerySourceIdentifyHypermedia_default_bus
 });
-const urn_comunica_default_query_operation_actors_extend = new (require('@comunica/actor-query-operation-extend').ActorQueryOperationExtend)({
-  'mediatorMergeBindingsContext': urn_comunica_default_merge_bindings_context_mediators_main,
-  'mediatorQueryOperation': urn_comunica_default_query_operation_mediators_main,
-  'name': 'urn:comunica:default:query-operation/actors#extend',
-  'bus': https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_query_operation__3_0_0_components_ActorQueryOperation_jsonld_ActorQueryOperation_default_bus
-});
 const urn_comunica_default_query_operation_actors_filter = new (require('@comunica/actor-query-operation-filter').ActorQueryOperationFilter)({
   'mediatorMergeBindingsContext': urn_comunica_default_merge_bindings_context_mediators_main,
   'mediatorQueryOperation': urn_comunica_default_query_operation_mediators_main,
   'name': 'urn:comunica:default:query-operation/actors#filter',
+  'bus': https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_query_operation__3_0_0_components_ActorQueryOperation_jsonld_ActorQueryOperation_default_bus
+});
+const urn_comunica_default_query_operation_actors_extend = new (require('@comunica/actor-query-operation-extend').ActorQueryOperationExtend)({
+  'mediatorMergeBindingsContext': urn_comunica_default_merge_bindings_context_mediators_main,
+  'mediatorQueryOperation': urn_comunica_default_query_operation_mediators_main,
+  'name': 'urn:comunica:default:query-operation/actors#extend',
   'bus': https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_query_operation__3_0_0_components_ActorQueryOperation_jsonld_ActorQueryOperation_default_bus
 });
 const urn_comunica_default_query_operation_actors_group = new (require('@comunica/actor-query-operation-group').ActorQueryOperationGroup)({
@@ -1206,11 +1210,11 @@ const urn_comunica_default_optimize_query_operation_actors_describe_to_construct
 ]
 });
 const urn_comunica_default_Runner = (https___linkedsoftwaredependencies_org_bundles_npm__comunica_bus_init__3_0_0_components_ActorInit_jsonld_ActorInit_default_bus, [
-  urn_comunica_default_extract_links_actors_predicates_common,
   urn_comunica_default_extract_links_actors_predicates_ldp,
   urn_comunica_default_extract_links_actors_links_describedby,
-  urn_comunica_default_extract_links_actors_predicates_solid,
+  urn_comunica_default_extract_links_actors_predicates_common,
   urn_comunica_default_extract_links_actors_quad_pattern_query,
+  urn_comunica_default_extract_links_actors_predicates_solid,
   urn_comunica_default_extract_links_actors_solid_type_index,
   urn_comunica_default_context_preprocess_actors_convert_shortcuts,
   urn_comunica_default_context_preprocess_actors_set_defaults,
@@ -1294,12 +1298,12 @@ const urn_comunica_default_Runner = (https___linkedsoftwaredependencies_org_bund
   urn_comunica_default_optimize_query_operation_actors_group_sources,
   urn_comunica_default_optimize_query_operation_actors_construct_distinct,
   urn_comunica_default_query_operation_actors_ask,
-  urn_comunica_default_query_operation_actors_bgp,
   urn_comunica_default_query_operation_actors_construct,
+  urn_comunica_default_query_operation_actors_bgp,
   urn_comunica_default_query_operation_actors_distinct,
-  urn_comunica_default_query_operation_actors_extend,
   urn_comunica_default_query_operation_actors_filter,
   urn_comunica_default_query_operation_actors_from,
+  urn_comunica_default_query_operation_actors_extend,
   urn_comunica_default_query_operation_actors_group,
   urn_comunica_default_query_operation_actors_join,
   urn_comunica_default_query_operation_actors_leftjoin,
@@ -1310,11 +1314,11 @@ const urn_comunica_default_Runner = (https___linkedsoftwaredependencies_org_bund
   urn_comunica_default_query_operation_actors_reduced,
   urn_comunica_default_query_operation_actors_service,
   urn_comunica_default_query_operation_actors_slice,
-  urn_comunica_default_query_operation_actors_source,
   urn_comunica_default_query_operation_actors_union,
+  urn_comunica_default_query_operation_actors_source,
   urn_comunica_default_query_operation_actors_values,
-  urn_comunica_default_query_operation_actors_path_alt,
   urn_comunica_default_query_operation_actors_path_inv,
+  urn_comunica_default_query_operation_actors_path_alt,
   urn_comunica_default_query_operation_actors_path_link,
   urn_comunica_default_query_operation_actors_path_nps,
   urn_comunica_default_query_operation_actors_path_one_or_more,

@@ -14,7 +14,9 @@ describe('SolidPropertyService', () => {
     });
 
     before((done) => {
-        service = new SolidPropertyService();
+        service = new SolidPropertyService((node) => {
+            return node.collection ? node.collection.members.length < 3 : true;
+        });
         clientService.login("https://solid.maximvdw.be/").then(s => {
             expect(s).to.not.be.undefined;
             expect(s.info.isLoggedIn).to.be.true;
@@ -26,13 +28,13 @@ describe('SolidPropertyService', () => {
         }).catch(done);
     });
 
-    // after((done) => {
-    //     service.service.deleteRecursively(session, "https://solid.maximvdw.be/properties/test/").then(() => {
-    //         return clientService.logout(session);
-    //     }).then(() => {
-    //         done();
-    //     }).catch(done);
-    // });
+    after((done) => {
+        service.service.deleteRecursively(session, "https://solid.maximvdw.be/properties/test/").then(() => {
+            return clientService.logout(session);
+        }).then(() => {
+            done();
+        }).catch(done);
+    });
 
     describe('fetching properties', () => {
         it('should fetch properties from a profile', (done) => {
@@ -70,7 +72,6 @@ describe('SolidPropertyService', () => {
         it('should create a new property', (done) => {
             const property = new Property("https://solid.maximvdw.be/properties/test");
             service.createProperty(session, property).then(property => {
-                console.log(property);
                 setTimeout(() => {
                     done();
                 }, 2000);
@@ -83,9 +84,25 @@ describe('SolidPropertyService', () => {
             const property = new Property("https://solid.maximvdw.be/properties/test");
             const observation = new Observation();
             observation.resultTime = new Date();
+            observation.usedProcedures = ["https://solid.maximvdw.be/procedures/test"];
             service.addObservation(session, property, observation).then(observation => {
                 done();
             }).catch(done);
+        });
+
+        it('should be able to add multiple observations', (done) => {
+            const property = new Property("https://solid.maximvdw.be/properties/test");
+            const date = new Date();
+            (async () => {
+                for (let i = 0; i < 10; i++) {
+                    const observation = new Observation();
+                    observation.resultTime = new Date(date.getTime() + i * 1000);
+                    observation.usedProcedures = ["https://solid.maximvdw.be/procedures/test"];
+                    await service.addObservation(session, property, observation);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                done();
+            })().catch(done);
         });
     });
 });

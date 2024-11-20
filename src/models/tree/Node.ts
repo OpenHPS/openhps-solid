@@ -18,33 +18,44 @@ export class Node extends SerializableThing {
     relations: Relation[] = [];
 
     @SerializableMember({
-        rdf: {
-            
-        },
+        rdf: {},
     })
     collection?: Collection;
-    
+
     constructor(iri?: IriString) {
         super(iri);
     }
-    
+
     getChildNodes(): Node[] {
-        return this.relations.map(r => r.node as Node);
+        return this.relations.map((r) => r.node as Node);
     }
 
     /**
      * Get child node
-     * @param value 
-     * @param [filter] Filter function 
+     * @param value
      * @returns Child node if found
      */
-    getChildNode(value: Object, filter?: (node: Node) => boolean): Node {
-        const node = this.relations.find(r => {
-            return r ? r.value && r.test(value) : false
-        })?.node as Node;
-        if (node && filter && !filter(node)) {
+    getChildNode(value: object): Node {
+        const relations = this.relations.filter((r) => {
+            return r ? r.value && r.test(value) : false;
+        });
+        if (relations.length === 0) {
             return null;
         }
-        return node;
+        // Sort the nodes by value in decending order
+        // Since value can be anything, assume its either a number, date or string
+        const nodes = relations
+            .sort((a, b) => {
+                if (typeof a.value === 'number' && typeof b.value === 'number') {
+                    return a.value - b.value;
+                } else if (a.value instanceof Date && b.value instanceof Date) {
+                    return a.value.getTime() - b.value.getTime();
+                } else {
+                    return a.value.toString().localeCompare(b.value.toString());
+                }
+            })
+            .map((r) => r.node as Node);
+        // Select the node that with the highest value
+        return nodes[nodes.length - 1];
     }
 }

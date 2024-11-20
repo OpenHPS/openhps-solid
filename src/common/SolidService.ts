@@ -252,7 +252,7 @@ export abstract class SolidService extends RemoteService {
      * @returns {Promise<SolidDataset>} Promise of a solid dataset
      */
     getDataset(session: SolidSession, uri: string): Promise<SolidDataset> {
-        return new Promise(async (resolve, reject) => {
+        return new Promise(async (resolve, reject) => { // eslint-disable-line
             const documentURL = uri.startsWith('http') ? new URL(uri) : await this.getDocumentURL(session, uri);
             documentURL.hash = '';
             getSolidDataset(
@@ -346,14 +346,17 @@ export abstract class SolidService extends RemoteService {
      * @param session Solid session to delete a dataset with
      * @param dataset Dataset to delete
      */
-    async deleteRecursively(session: SolidSession, dataset: SolidDataset & WithResourceInfo): Promise<void>
+    async deleteRecursively(session: SolidSession, dataset: SolidDataset & WithResourceInfo): Promise<void>;
     /**
      * Recursively delete a Solid dataset
      * @param {SolidSession} session Solid session to delete a dataset with
      * @param url URL of the dataset
      */
-    async deleteRecursively(session: SolidSession, url: IriString): Promise<void>
-    async deleteRecursively(session: SolidSession, dataset: IriString | SolidDataset & WithResourceInfo): Promise<void> {
+    async deleteRecursively(session: SolidSession, url: IriString): Promise<void>;
+    async deleteRecursively(
+        session: SolidSession,
+        dataset: IriString | (SolidDataset & WithResourceInfo),
+    ): Promise<void> {
         if (typeof dataset === 'string') {
             const fetchedDataset = await this.getDataset(session, dataset);
             return await this.deleteRecursively(session, fetchedDataset as SolidDataset & WithResourceInfo);
@@ -362,22 +365,26 @@ export abstract class SolidService extends RemoteService {
             return Promise.resolve();
         }
         const containedResourceUrls = getContainedResourceUrlAll(dataset as SolidDataset & WithResourceInfo);
-        const containedDatasets = await Promise.all(containedResourceUrls.map(async resourceUrl => {
-          try {
-            return await getSolidDataset(resourceUrl, session ? { fetch: session.fetch } : undefined);
-          } catch(e) {
-            // The Resource might not have been a SolidDataset;
-            // we can delete it directly:
-            await deleteFile(resourceUrl, session ? { fetch: session.fetch } : undefined);
-            return null;
-          }
-        }));
-        await Promise.all(containedDatasets.map(async containedDataset => {
-          if (containedDataset === null) {
-            return;
-          }
-          return await this.deleteRecursively(session, containedDataset);
-        }));
+        const containedDatasets = await Promise.all(
+            containedResourceUrls.map(async (resourceUrl) => {
+                try {
+                    return await getSolidDataset(resourceUrl, session ? { fetch: session.fetch } : undefined);
+                } catch (e) {
+                    // The Resource might not have been a SolidDataset;
+                    // we can delete it directly:
+                    await deleteFile(resourceUrl, session ? { fetch: session.fetch } : undefined);
+                    return null;
+                }
+            }),
+        );
+        await Promise.all(
+            containedDatasets.map(async (containedDataset) => {
+                if (containedDataset === null) {
+                    return;
+                }
+                return await this.deleteRecursively(session, containedDataset);
+            }),
+        );
         return await deleteSolidDataset(dataset, session ? { fetch: session.fetch } : undefined);
     }
 
@@ -443,7 +450,7 @@ export abstract class SolidService extends RemoteService {
 
             const additions = store.additions;
             const deletions = store.deletions;
-            
+
             if (additions.length === 0 && deletions.length === 0) {
                 resolve(this.getDataset(session, documentURL.href));
                 return;

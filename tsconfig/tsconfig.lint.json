@@ -3,5 +3,8 @@
     "include": [
       "../test/specs/**/*.ts",
       "../src/**/*.ts"
+    ],
+    "exclude": [
+      "**/*.js"
     ]
 }

@@ -26,7 +26,7 @@ export class EventStream extends SerializableThing {
     @SerializableMember({
         rdf: {
             predicate: tree.view,
-            serializer: false
+            serializer: false,
         },
     })
     view: Node;
