@@ -28,15 +28,15 @@ describe('SolidPropertyService', () => {
         }).catch(done);
     });
 
-    after((done) => {
-        service.service.deleteRecursively(session, "https://solid.maximvdw.be/properties/test/").then(() => {
-            return clientService.logout(session);
-        }).then(() => {
-            return Promise.all([service.emitAsync('destroy'), clientService.emitAsync('destroy')]);
-        }).then(() => {
-            done();
-        }).catch(done);
-    });
+    // after((done) => {
+    //     service.service.deleteRecursively(session, "https://solid.maximvdw.be/properties/test/").then(() => {
+    //         return clientService.logout(session);
+    //     }).then(() => {
+    //         return Promise.all([service.emitAsync('destroy'), clientService.emitAsync('destroy')]);
+    //     }).then(() => {
+    //         done();
+    //     }).catch(done);
+    // });
 
     describe('fetching properties', () => {
         it('should fetch properties from a profile', (done) => {

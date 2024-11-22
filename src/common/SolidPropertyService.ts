@@ -18,7 +18,7 @@ import { Observation } from '@openhps/rdf/models';
 import { EventStream } from '../models/ldes';
 import { Node } from '../models/tree';
 import { tree } from '../terms';
-import { GreaterThanOrEqualToRelation, Relation } from '../models/tree/Relation';
+import { GreaterThanOrEqualToRelation } from '../models/tree/Relation';
 import { Collection } from '../models/tree/Collection';
 
 /**
@@ -50,10 +50,6 @@ export class SolidPropertyService extends DataService<string, any> {
             }),
         );
         this.filter = filter ?? defaultFilter;
-
-        this.once('destroy', () => {
-            this.driver.emit('destroy');
-        });
     }
 
     set service(service: SolidService) {
@@ -119,6 +115,7 @@ export class SolidPropertyService extends DataService<string, any> {
                 .then((store) => {
                     const thing = RDFSerializer.quadsToThing(DataFactory.namedNode(session.info.webId), store);
                     const builder = RDFBuilder.fromSerialized(thing);
+                    // Add property reference to profile
                     builder.add(ssn.hasProperty, property.id);
                     const changelog = builder.build(true);
                     let dirty = false;
@@ -253,7 +250,7 @@ export class SolidPropertyService extends DataService<string, any> {
                     }`,
                         undefined,
                         {
-                            sources: [store],
+                            sources: [meta],
                         },
                     );
                     if (bindings.length === 0) {
@@ -302,6 +299,7 @@ export class SolidPropertyService extends DataService<string, any> {
                                 sosa.resultTime,
                             ),
                         );
+
                         // Save root node
                         await this.createTreeNode(session, rootNode);
                     }
