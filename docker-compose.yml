@@ -1,0 +1,39 @@
+networks:
+  dht-network:
+    driver: bridge
+  
+x-solid-server: &solid-server
+  build:
+    context: docker
+    dockerfile: Dockerfile
+  networks: 
+    - dht-network
+
+services:
+  test-server1:
+    <<: *solid-server
+    environment:
+      - USER_EMAIL=test1@test.com
+      - USER_POD=test1
+      - USER_PASSWORD=test123
+      - BASE_URL=http://localhost:3000
+    ports:
+      - 3000:3000
+  test-server2:
+    <<: *solid-server
+    environment:
+      - USER_EMAIL=test2@test.com
+      - USER_POD=test2
+      - USER_PASSWORD=test123
+      - BASE_URL=http://localhost:3001
+    ports:
+      - 3001:3000
+  test-server3:
+    <<: *solid-server
+    environment:
+      - USER_EMAIL=test3@test.com
+      - USER_POD=test3
+      - USER_PASSWORD=test123
+      - BASE_URL=http://localhost:3002
+    ports:
+      - 3002:3000

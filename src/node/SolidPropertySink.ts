@@ -1,13 +1,13 @@
 import { DataFrame, PushOptions, SinkNode, SinkNodeOptions } from '@openhps/core';
-import { Property } from '@openhps/rdf';
-import { SolidService, SolidSession } from '../common';
+import { IriString, Property } from '@openhps/rdf';
+import { SolidPropertyService, SolidService, SolidSession } from '../common';
 
 /**
  * Solid property sink is a sink node that writes data to a Solid pod.
  */
 export class SolidPropertySink<Out extends DataFrame> extends SinkNode<Out> {
     protected options: SolidPropertySinkOptions;
-    protected service: SolidService;
+    protected service: SolidPropertyService;
 
     constructor(options?: SolidPropertySinkOptions) {
         super(options);
@@ -16,7 +16,7 @@ export class SolidPropertySink<Out extends DataFrame> extends SinkNode<Out> {
 
     onBuild(): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            this.service = this.model.findService(SolidService);
+            this.service = this.model.findService(SolidPropertyService);
             if (!this.service) {
                 reject(new Error('No Solid session found'));
             }
@@ -44,9 +44,30 @@ export class SolidPropertySink<Out extends DataFrame> extends SinkNode<Out> {
      */
     protected prepareProperty(session: SolidSession): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            // Create a new Solid pod for the property
-            // Get the root directory
-            const property = new Property();
+            // Create a new property
+            const promises: Promise<IriString>[] = [];
+            // Prepare properties
+            for (const property of this.options.properties) {
+                if (property === PropertyType.POSITION) {
+                    const positionProperty = new Property();
+                    positionProperty.label = 'Position';
+                    promises.push(this.service.createProperty(session, positionProperty));
+                } else if (property === PropertyType.VELOCITY) {
+                    const velocityProperty = new Property();
+                    velocityProperty.label = 'Velocity';
+                    promises.push(this.service.createProperty(session, velocityProperty));
+                } else if (property === PropertyType.ORIENTATION) {
+                    const orientationProperty = new Property();
+                    orientationProperty.label = 'Orientation';
+                    promises.push(this.service.createProperty(session, orientationProperty));
+                }
+            }
+
+            Promise.all(promises)
+                .then(() => {
+                    resolve();
+                })
+                .catch(reject);
         });
     }
 

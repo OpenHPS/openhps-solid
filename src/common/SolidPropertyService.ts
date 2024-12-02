@@ -52,6 +52,10 @@ export class SolidPropertyService extends DataService<string, any> {
         this.filter = filter ?? defaultFilter;
     }
 
+    get session(): SolidSession {
+        return this.service.session;
+    }
+
     set service(service: SolidService) {
         this.driver.service = service;
     }
