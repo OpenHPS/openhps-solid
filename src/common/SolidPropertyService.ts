@@ -254,7 +254,7 @@ export class SolidPropertyService extends DataService<string, any> {
                     }`,
                         undefined,
                         {
-                            sources: [meta],
+                            sources: [store, meta],
                         },
                     );
                     if (bindings.length === 0) {
