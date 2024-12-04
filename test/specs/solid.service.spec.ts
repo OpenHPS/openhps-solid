@@ -2,6 +2,7 @@ import 'mocha';
 import { expect } from 'chai';
 import { SolidClientService, SolidSession } from '../../src';
 import { IriString } from '@openhps/rdf';
+import { ModelBuilder } from '@openhps/core';
 require('dotenv').config();
 
 describe('SolidService', () => {
@@ -14,6 +15,22 @@ describe('SolidService', () => {
 
     after(() => {
         service.emit('destroy');
+    });
+
+    it('should emit a ready event', (done) => {
+        const service = new SolidClientService({
+            clientName: "OpenHPS",
+            clientId: process.env.clientId,
+            clientSecret: process.env.clientSecret,
+            defaultOidcIssuer: "https://solid.maximvdw.be/",
+            autoLogin: true
+        });
+        ModelBuilder.create()
+            .addService(service)
+            .build();
+        service.once('ready', () => {
+            done();
+        });
     });
 
     it('should get a dataset subscription', (done) => {
