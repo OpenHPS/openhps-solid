@@ -209,12 +209,14 @@ export abstract class SolidService extends RemoteService {
                 fetch: session.fetch,
             })
                 .then((value) => {
+                    // No storage
                     if (value[0] === undefined) {
-                        return reject(
-                            new Error(
-                                'No pod URL found! Please ensure you have a pim:storage or solid:storage predicate in your profile document!',
-                            ),
-                        );
+                        // Get the POD url based on the web id by removing /profile/card#me
+                        const webIdURL = new URL(session.info.webId);
+                        webIdURL.hash = '';
+                        webIdURL.pathname = webIdURL.pathname.replace(/\/profile\/card$/, '/');
+                        resolve(webIdURL.href as IriString);
+                        return;
                     }
                     resolve(value[0] as IriString);
                 })
@@ -556,6 +558,16 @@ export abstract class SolidService extends RemoteService {
                 })
                 .catch(reject);
         });
+    }
+
+    /**
+     * Set a thing in a session Pod
+     * @param {SolidSession} session Solid session to set a thing to
+     * @param {ThingPersisted} thing Persisted thing to store in the Pod
+     * @returns {Promise<SolidDataset>} Promise if stored
+     */
+    setThing(session: SolidSession, thing: ThingPersisted): Promise<SolidDataset> {
+        return this.createThing(session, thing);
     }
 
     /**
