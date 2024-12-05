@@ -60,7 +60,7 @@
     "test": "mocha --config test/.mocharc.json",
     "cover": "nyc mocha --config test/.mocharc.json && nyc report --reporter=cobertura",
     "cover:ci": "nyc mocha --config test/.mocharc.json --reporter mocha-junit-reporter && nyc report --reporter=cobertura",
-    "lint": "eslint src/ --ignore-pattern engine-default --ignore-pattern src/fix/install.js",
+    "lint": "eslint src/ --ignore-pattern engine-default --ignore-pattern src/fix/install.js --ignore-pattern src/terms/**/*",
     "clean": "shx rm -rf ./dist && shx rm -rf ./docs/out",
     "build": "npm run clean && npm-run-all --parallel build:ts:* && npm run build:webpack",
     "build:ts:cjs": "tsc --build ./tsconfig/tsconfig.bundle.cjs.json",
