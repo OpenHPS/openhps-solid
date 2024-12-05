@@ -6,3 +6,4 @@ artifacts/
 .nyc_output/
 test-results.xml
 .env
+src/**/engine-default.js

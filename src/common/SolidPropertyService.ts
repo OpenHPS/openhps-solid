@@ -52,6 +52,10 @@ export class SolidPropertyService extends DataService<string, any> {
         this.filter = filter ?? defaultFilter;
     }
 
+    get session(): SolidSession {
+        return this.service.session;
+    }
+
     set service(service: SolidService) {
         this.driver.service = service;
     }
@@ -250,7 +254,7 @@ export class SolidPropertyService extends DataService<string, any> {
                     }`,
                         undefined,
                         {
-                            sources: [meta],
+                            sources: [store, meta],
                         },
                     );
                     if (bindings.length === 0) {

@@ -1,4 +1,3 @@
-import { expect } from 'chai';
 import { SolidClientService, SolidDataDriver } from '../../src';
 import { Accelerometer, DataFrame, DataFrameService, DataObject, DataObjectService, Model, ModelBuilder } from '@openhps/core';
 require('dotenv').config();
