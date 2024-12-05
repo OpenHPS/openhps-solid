@@ -94,6 +94,9 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
                 return this.service.getDataset(session, query.uri);
             })
             .then((dataset) => {
+                if (!dataset) {
+                    return undefined;
+                }
                 const subjects = Object.values(dataset.graphs.default);
                 const quads = RDFSerializer.subjectsToQuads(subjects);
                 const store = new Store(quads);
@@ -111,6 +114,9 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
                 return this.service.getDataset(session, query.uri);
             })
             .then((dataset) => {
+                if (!dataset) {
+                    return [];
+                }
                 const subjects = Object.values(dataset.graphs.default);
                 const quads = RDFSerializer.subjectsToQuads(subjects);
                 const store = new Store(quads);
@@ -134,6 +140,9 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
                 return this.service.getDataset(session, query.uri);
             })
             .then((dataset) => {
+                if (!dataset) {
+                    return 0;
+                }
                 const subjects = Object.values(dataset.graphs.default);
                 const quads = RDFSerializer.subjectsToQuads(subjects);
                 const store = new Store(quads);
@@ -178,6 +187,9 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
                     this.service
                         .getDataset(session, documentURL.href)
                         .then((dataset) => {
+                            if (!dataset) {
+                                dataset = this.service.createDataset();
+                            }
                             let promise = Promise.resolve(dataset);
                             for (let i = 0; i < items.length; i++) {
                                 promise = promise.then(

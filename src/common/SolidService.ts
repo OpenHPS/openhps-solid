@@ -23,6 +23,7 @@ import {
     getThing,
     saveSolidDatasetAt,
     createContainerAt,
+    isContainer,
     deleteSolidDataset,
     setStringNoLocale,
     setThing,
@@ -234,6 +235,9 @@ export abstract class SolidService extends RemoteService {
         return new Promise((resolve, reject) => {
             this.getDataset(session, uri)
                 .then((dataset) => {
+                    if (!dataset) {
+                        dataset = createSolidDataset();
+                    }
                     const quads: Quad[] = Object.keys(dataset.graphs)
                         .map((key) => {
                             const graph = dataset.graphs[key];
@@ -245,6 +249,10 @@ export abstract class SolidService extends RemoteService {
                 })
                 .catch(reject);
         });
+    }
+
+    createDataset(): SolidDataset {
+        return createSolidDataset();
     }
 
     /**
@@ -269,7 +277,7 @@ export abstract class SolidService extends RemoteService {
                 .catch((ex: FetchError) => {
                     if (ex.response.status === 404) {
                         // Create dataset when 404 (not found)
-                        resolve(createSolidDataset());
+                        resolve(undefined);
                     } else {
                         reject(ex);
                     }
@@ -313,14 +321,23 @@ export abstract class SolidService extends RemoteService {
      */
     createContainer(session: SolidSession, url: IriString): Promise<SolidDataset> {
         return new Promise((resolve, reject) => {
-            createContainerAt(
-                url,
-                session
-                    ? {
-                          fetch: session.fetch,
-                      }
-                    : undefined,
-            )
+            // First check if the container does not exist yet
+            this.getDataset(session, url)
+                .then((dataset: SolidDataset & WithResourceInfo) => {
+                    if (dataset && isContainer(dataset)) {
+                        resolve(dataset);
+                        return;
+                    }
+                    // Create container (can still fail based on permissions)
+                    return createContainerAt(
+                        url,
+                        session
+                            ? {
+                                  fetch: session.fetch,
+                              }
+                            : undefined,
+                    );
+                })
                 .then(resolve)
                 .catch(reject);
         });
@@ -361,6 +378,9 @@ export abstract class SolidService extends RemoteService {
     ): Promise<void> {
         if (typeof dataset === 'string') {
             const fetchedDataset = await this.getDataset(session, dataset);
+            if (!fetchedDataset) {
+                return Promise.resolve();
+            }
             return await this.deleteRecursively(session, fetchedDataset as SolidDataset & WithResourceInfo);
         }
         if (!dataset) {
@@ -467,6 +487,9 @@ export abstract class SolidService extends RemoteService {
             };
             this.getDataset(session, documentURL.href)
                 .then((dataset: SolidDataset & WithResourceInfo) => {
+                    if (!dataset) {
+                        dataset = createSolidDataset() as SolidDataset & WithResourceInfo;
+                    }
                     dummyDataset.internal_resourceInfo = dataset.internal_resourceInfo;
                     return saveSolidDatasetAt(
                         documentURL.href,
@@ -605,6 +628,9 @@ export abstract class SolidService extends RemoteService {
             } else {
                 this.getDataset(session, documentURL.href)
                     .then((dataset) => {
+                        if (!dataset) {
+                            dataset = createSolidDataset();
+                        }
                         setThingInDataset.bind(this)(dataset);
                     })
                     .catch(reject);

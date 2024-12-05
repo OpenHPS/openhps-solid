@@ -2,7 +2,6 @@ import { DataService } from '@openhps/core';
 import {
     Property,
     RDFSerializer,
-    dcterms,
     rdfs,
     sosa,
     ssn,
@@ -20,10 +19,13 @@ import { Node } from '../models/tree';
 import { tree } from '../terms';
 import { GreaterThanOrEqualToRelation } from '../models/tree/Relation';
 import { Collection } from '../models/tree/Collection';
+import { isContainer } from '@inrupt/solid-client';
 
 /**
- *
- * @param node
+ * Default filter function for nodes
+ * This is the function that splits data over nodes based on the amount of members,
+ * date or other properties.
+ * @param node Tree node to filter
  */
 function defaultFilter(node: Node): boolean {
     // Filter false if node has 50 or more children
@@ -185,8 +187,7 @@ export class SolidPropertyService extends DataService<string, any> {
         return new Promise((resolve, reject) => {
             const nodeURL = new URL(node.id);
             nodeURL.hash = '';
-            const isContainer = !nodeURL.href.endsWith('.ttl');
-            const datasetURL = `${nodeURL.href}${isContainer ? `${nodeURL.href.endsWith('/') ? '' : '/'}.meta` : ''}`;
+            const datasetURL = `${nodeURL.href}${isContainer(nodeURL.href) ? `${nodeURL.href.endsWith('/') ? '' : '/'}.meta` : ''}`;
             this.service
                 .getDatasetStore(session, datasetURL)
                 .then((dataset) => {
@@ -205,8 +206,7 @@ export class SolidPropertyService extends DataService<string, any> {
         return new Promise((resolve, reject) => {
             const nodeURL = new URL(node.id);
             nodeURL.hash = '';
-            const isContainer = !nodeURL.href.endsWith('.ttl');
-            const datasetURL = `${nodeURL.href}${isContainer ? `${nodeURL.href.endsWith('/') ? '' : '/'}.meta` : ''}`;
+            const datasetURL = `${nodeURL.href}${isContainer(nodeURL.href) ? `${nodeURL.href.endsWith('/') ? '' : '/'}.meta` : ''}`;
             this.service
                 .getDatasetStore(session, datasetURL)
                 .then((dataset) => {
@@ -234,13 +234,12 @@ export class SolidPropertyService extends DataService<string, any> {
     }
 
     /**
-     * Add an observation to a property
-     * @param session
-     * @param property
-     * @param observation
-     * @returns
+     * Find the root node of a property
+     * @param session Solid session
+     * @param property Property
+     * @returns {Promise<Node>} Root node
      */
-    addObservation(session: SolidSession, property: Property, observation: Observation): Promise<void> {
+    findRootNode(session: SolidSession, property: Property): Promise<Node> {
         return new Promise((resolve, reject) => {
             Promise.all([
                 this.service.getDatasetStore(session, `${property.id}/property.ttl`),
@@ -259,7 +258,8 @@ export class SolidPropertyService extends DataService<string, any> {
                     );
                     if (bindings.length === 0) {
                         // No root node
-                        return reject(new Error('Root node not found'));
+                        resolve(undefined);
+                        return;
                     }
                     const rootNode: Node = RDFSerializer.deserializeFromStore(
                         DataFactory.namedNode(bindings[0].get('node').value as IriString),
@@ -267,7 +267,29 @@ export class SolidPropertyService extends DataService<string, any> {
                     );
                     if (!rootNode) {
                         // Root node not found
-                        return reject(new Error('Root node not found, but it was in the query result'));
+                        resolve(undefined);
+                        return;
+                    }
+                    resolve(rootNode);
+                })
+                .catch(reject);
+        });
+    }
+
+    /**
+     * Add an observation to a property
+     * @param session
+     * @param property
+     * @param observation
+     * @returns
+     */
+    addObservation(session: SolidSession, property: Property, observation: Observation): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.findRootNode(session, property)
+                .then(async (rootNode) => {
+                    // Create/repair root node if it does not exist
+                    if (!rootNode) {
+                        await this.createProperty(session, property);
                     }
 
                     // Check relations to make sure there is no issue

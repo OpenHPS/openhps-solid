@@ -123,5 +123,12 @@ describe('SolidService', () => {
             }).catch(done);
         });
         
+        it('should not throw an error when creating an existing container', (done) => {
+            service.getDocumentURL(session, "/test/abc/").then(url => {
+                return service.createContainer(session, url.href as IriString);
+            }).then(() => {
+                done();
+            }).catch(done);
+        });
     });
 });
