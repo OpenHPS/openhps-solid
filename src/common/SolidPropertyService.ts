@@ -20,6 +20,7 @@ import { tree } from '../terms';
 import { GreaterThanOrEqualToRelation } from '../models/tree/Relation';
 import { Collection } from '../models/tree/Collection';
 import { isContainer } from '@inrupt/solid-client';
+import { get } from 'http';
 
 /**
  * Default filter function for nodes
@@ -112,10 +113,13 @@ export class SolidPropertyService extends DataService<string, any> {
      */
     createProperty(session: SolidSession, property: Property): Promise<IriString> {
         return new Promise((resolve, reject) => {
-            const propertyContainer = new URL(property.id);
-            propertyContainer.hash = '';
+            const propertyContainer = this.getPropertyContainer(property);
+
+            if (!property.id.endsWith('/property.ttl')) {
+                property.id = `${property.id.replace(/\/$/, '')}/property.ttl` as IriString;
+            }
+
             // Root dataset for the property
-            property.id = `${property.id}/property.ttl` as IriString;
             this.service
                 .getDatasetStore(session, session.info.webId)
                 .then((store) => {
@@ -155,17 +159,17 @@ export class SolidPropertyService extends DataService<string, any> {
                 .then(() => {
                     // Create a new property dataset
                     return Promise.all([
-                        this.service.getDatasetStore(session, `${propertyContainer.href}/property.ttl`),
-                        this.service.getDatasetStore(session, `${propertyContainer.href}/.meta`),
+                        this.service.getDatasetStore(session, `${propertyContainer.href}property.ttl`),
+                        this.service.getDatasetStore(session, `${propertyContainer.href}.meta`),
                     ]);
                 })
                 .then(([store, meta]) => {
                     // Add the property
                     store.addQuads(RDFSerializer.serializeToQuads(property));
                     // Add the eventstream to the metadata
-                    const eventStreamURL = new URL(`${propertyContainer.href}/property.ttl`);
+                    const eventStreamURL = new URL(`${propertyContainer.href}property.ttl`);
                     eventStreamURL.hash = 'EventStream';
-                    const viewURL = new URL(`${propertyContainer.href}/property.ttl`);
+                    const viewURL = new URL(`${propertyContainer.href}property.ttl`);
                     viewURL.hash = 'root';
                     const stream = new EventStream(eventStreamURL.href as IriString);
                     stream.setTimestampPath(sosa.resultTime);
@@ -173,8 +177,8 @@ export class SolidPropertyService extends DataService<string, any> {
                     meta.addQuads(RDFSerializer.serializeToQuads(stream));
                     store.addQuads(RDFSerializer.serializeToQuads(stream.view));
                     return this.service
-                        .saveDatasetStore(session, `${propertyContainer.href}/property.ttl`, store)
-                        .then(() => this.service.saveDatasetStore(session, `${propertyContainer.href}/.meta`, meta));
+                        .saveDatasetStore(session, `${propertyContainer.href}property.ttl`, store)
+                        .then(() => this.service.saveDatasetStore(session, `${propertyContainer.href}.meta`, meta));
                 })
                 .then(() => {
                     resolve(property.id as IriString);
@@ -241,11 +245,10 @@ export class SolidPropertyService extends DataService<string, any> {
      */
     findRootNode(session: SolidSession, property: Property): Promise<Node> {
         return new Promise((resolve, reject) => {
-            Promise.all([
-                this.service.getDatasetStore(session, `${property.id}/property.ttl`),
-                this.service.getDatasetStore(session, `${property.id}/.meta`),
-            ])
-                .then(async ([store, meta]) => {
+            const propertyContainer = this.getPropertyContainer(property);
+
+            Promise.all([this.service.getDatasetStore(session, `${property.id}`)])
+                .then(async ([store]) => {
                     // Get the root node of the dataset
                     const bindings = await this.driver.queryBindings(
                         `SELECT DISTINCT ?node WHERE {
@@ -253,7 +256,7 @@ export class SolidPropertyService extends DataService<string, any> {
                     }`,
                         undefined,
                         {
-                            sources: [store, meta],
+                            sources: [store],
                         },
                     );
                     if (bindings.length === 0) {
@@ -276,6 +279,19 @@ export class SolidPropertyService extends DataService<string, any> {
         });
     }
 
+    protected getPropertyContainer(property: Property): URL {
+        const propertyContainer = new URL(property.id);
+        propertyContainer.hash = '';
+        if (property.id.endsWith('/property.ttl')) {
+            // Ensure the property container does not include the property.ttl
+            propertyContainer.pathname = propertyContainer.pathname.replace(/\/property\.ttl$/, '');
+        }
+        if (!propertyContainer.href.endsWith('/')) {
+            propertyContainer.pathname += '/';
+        }
+        return propertyContainer;
+    }
+
     /**
      * Add an observation to a property
      * @param session
@@ -285,11 +301,18 @@ export class SolidPropertyService extends DataService<string, any> {
      */
     addObservation(session: SolidSession, property: Property, observation: Observation): Promise<void> {
         return new Promise((resolve, reject) => {
+            const propertyContainer = this.getPropertyContainer(property);
+
             this.findRootNode(session, property)
                 .then(async (rootNode) => {
                     // Create/repair root node if it does not exist
                     if (!rootNode) {
                         await this.createProperty(session, property);
+                        // After fixing it we still need to fetch it
+                        rootNode = await this.findRootNode(session, property);
+                        if (!rootNode) {
+                            throw new Error('Root node could not be created');
+                        }
                     }
 
                     // Check relations to make sure there is no issue
@@ -316,7 +339,7 @@ export class SolidPropertyService extends DataService<string, any> {
                     if (!childNode) {
                         // Create node
                         childNode = new Node();
-                        childNode.id = `${property.id}/${observation.resultTime.getTime()}/` as IriString;
+                        childNode.id = `${propertyContainer.href}${observation.resultTime.getTime()}/` as IriString;
                         await this.service.createContainer(session, childNode.id);
 
                         // Add relation from root node to child node
@@ -331,7 +354,7 @@ export class SolidPropertyService extends DataService<string, any> {
                     }
 
                     observation.id = `${childNode.id}${this.generateUUID()}.ttl` as IriString;
-                    const collection = new Collection(property.id);
+                    const collection = new Collection(propertyContainer.href as IriString);
                     collection.members.push(observation);
                     // Save child node
                     await this.createTreeNode(session, childNode, collection);

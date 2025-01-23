@@ -321,13 +321,21 @@ export abstract class SolidService extends RemoteService {
      */
     createContainer(session: SolidSession, url: IriString): Promise<SolidDataset> {
         return new Promise((resolve, reject) => {
+            // Ensure url ends with /
+            if (!url.endsWith('/')) {
+                url += '/';
+            }
             // First check if the container does not exist yet
             this.getDataset(session, url)
                 .then((dataset: SolidDataset & WithResourceInfo) => {
                     if (dataset && isContainer(dataset)) {
                         resolve(dataset);
                         return;
+                    } else if (dataset && !isContainer(dataset)) {
+                        reject(new Error('Resource already exists and is not a container'));
+                        return;
                     }
+
                     // Create container (can still fail based on permissions)
                     return createContainerAt(
                         url,

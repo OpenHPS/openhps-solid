@@ -29,7 +29,7 @@ describe('SolidPropertyService', () => {
     });
 
     after((done) => {
-        service.service.deleteRecursively(session, "https://solid.maximvdw.be/properties/test/").then(() => {
+        service.service.deleteRecursively(session, "https://solid.maximvdw.be/properties/test").then(() => {
             return clientService.logout(session);
         }).then(() => {
             return Promise.all([service.emitAsync('destroy'), clientService.emitAsync('destroy')]);
@@ -76,7 +76,7 @@ describe('SolidPropertyService', () => {
             service.createProperty(session, property).then(property => {
                 setTimeout(() => {
                     done();
-                }, 2000);
+                }, 5000);
             }).catch(done);
         });
     });
@@ -88,7 +88,9 @@ describe('SolidPropertyService', () => {
             observation.resultTime = new Date();
             observation.usedProcedures = ["https://solid.maximvdw.be/procedures/test"];
             service.addObservation(session, property, observation).then(observation => {
-                done();
+                setTimeout(() => {
+                    done();
+                }, 2000);
             }).catch(done);
         });
 
@@ -101,7 +103,7 @@ describe('SolidPropertyService', () => {
                     observation.resultTime = new Date(date.getTime() + i * 1000);
                     observation.usedProcedures = ["https://solid.maximvdw.be/procedures/test"];
                     await service.addObservation(session, property, observation);
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await new Promise(resolve => setTimeout(resolve, 500));
                 }
                 done();
             })().catch(done);

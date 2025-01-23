@@ -54,8 +54,8 @@ export class SolidProfileObject extends DataObject {
     @SerializableMember()
     sessionId: string;
 
-    constructor(webId?: string) {
-        super(webId);
+    constructor(webId?: string, displayName?: string) {
+        super(webId, displayName);
     }
 
     /**

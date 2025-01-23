@@ -1,6 +1,6 @@
 import { DataFrame, PushOptions, SinkNode, SinkNodeOptions } from '@openhps/core';
-import { IriString, Property } from '@openhps/rdf';
-import { SolidPropertyService, SolidService, SolidSession } from '../common';
+import { FeatureOfInterest, IriString, ObservableProperty, Observation, Property } from '@openhps/rdf';
+import { SolidPropertyService, SolidSession } from '../common';
 
 /**
  * Solid property sink is a sink node that writes data to a Solid pod.
@@ -40,32 +40,24 @@ export class SolidPropertySink<Out extends DataFrame> extends SinkNode<Out> {
 
     /**
      * Prepare the property for writing to the Solid pod.
+     * @param property Property type
      * @param session Solid session
      */
-    protected prepareProperty(session: SolidSession): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            // Create a new property
-            const promises: Promise<IriString>[] = [];
-            // Prepare properties
-            for (const property of this.options.properties) {
-                if (property === PropertyType.POSITION) {
-                    const positionProperty = new Property();
-                    positionProperty.label = 'Position';
-                    promises.push(this.service.createProperty(session, positionProperty));
-                } else if (property === PropertyType.VELOCITY) {
-                    const velocityProperty = new Property();
-                    velocityProperty.label = 'Velocity';
-                    promises.push(this.service.createProperty(session, velocityProperty));
-                } else if (property === PropertyType.ORIENTATION) {
-                    const orientationProperty = new Property();
-                    orientationProperty.label = 'Orientation';
-                    promises.push(this.service.createProperty(session, orientationProperty));
-                }
-            }
+    protected prepareProperty(property: PropertyType, session: SolidSession): Promise<IriString> {
+        return new Promise<IriString>((resolve, reject) => {
+            this.service.service
+                .getDocumentURL(session, '/properties/')
+                .then((propertiesURL) => {
+                    // Create a new property
+                    let promise: Promise<IriString>;
+                    // Prepare properties
+                    if (property === PropertyType.POSITION) {
+                        const positionProperty = new Property((propertiesURL.href + 'position/') as IriString);
+                        positionProperty.label = 'Position';
+                        promise = this.service.createProperty(session, positionProperty);
+                    }
 
-            Promise.all(promises)
-                .then(() => {
-                    resolve();
+                    promise.then(resolve).catch(reject);
                 })
                 .catch(reject);
         });
@@ -73,34 +65,42 @@ export class SolidPropertySink<Out extends DataFrame> extends SinkNode<Out> {
 
     protected writeFrame(frame: Out): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            let promises: Promise<void>[] = [];
+            let promises: Promise<any>[] = [];
             // Prepare properties
             for (const property of this.options.properties) {
                 if (property === PropertyType.POSITION) {
-                    promises.push(this.prepareProperty(this.service.session));
-                } else if (property === PropertyType.VELOCITY) {
-                    promises.push(this.prepareProperty(this.service.session));
-                } else if (property === PropertyType.ORIENTATION) {
-                    promises.push(this.prepareProperty(this.service.session));
+                    promises.push(this.prepareProperty(property, this.service.session));
                 }
             }
 
             Promise.all(promises)
-                .then(() => {
+                .then((results) => {
                     promises = [];
                     for (const dataObject of frame.getObjects()) {
                         // Write to properties
-                        for (const property of this.options.properties) {
-                            if (property === PropertyType.POSITION) {
-                                console.log('Position');
-                            } else if (property === PropertyType.VELOCITY) {
-                                console.log('Velocity');
-                            } else if (property === PropertyType.ORIENTATION) {
-                                console.log('Orientation');
+                        for (const [index, property] of this.options.properties.entries()) {
+                            const observableProperty = new ObservableProperty(results[index]);
+                            const observation = new Observation(`_:${frame.createdTimestamp}`);
+                            observation.resultTime = new Date(frame.createdTimestamp);
+                            observation.observedProperties = [observableProperty];
+                            if (dataObject.webId) {
+                                observation.featuresOfInterest = [new FeatureOfInterest(dataObject.webId)];
                             }
+
+                            if (property === PropertyType.POSITION) {
+                                observation.results = [dataObject.position];
+                            }
+
+                            // Write observation
+                            promises.push(
+                                this.service.addObservation(this.service.session, observableProperty, observation),
+                            );
                         }
                     }
+
+                    return Promise.all(promises);
                 })
+                .then(() => resolve())
                 .catch(reject);
         });
     }
@@ -108,8 +108,6 @@ export class SolidPropertySink<Out extends DataFrame> extends SinkNode<Out> {
 
 export enum PropertyType {
     POSITION,
-    VELOCITY,
-    ORIENTATION,
 }
 
 export interface SolidPropertySinkOptions extends SinkNodeOptions {
