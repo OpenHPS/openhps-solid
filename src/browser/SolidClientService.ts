@@ -248,7 +248,7 @@ export class SolidClientService extends SolidService {
                 }),
             );
             const authFetch = await buildAuthenticatedFetch(fetch, tokens.accessToken, {
-                dpopKey: tokens.dpopKey,
+                dpopKey: tokens.dpopKey as any,
                 refreshOptions: undefined,
                 eventEmitter: undefined,
                 expiresIn: tokens.expiresIn,

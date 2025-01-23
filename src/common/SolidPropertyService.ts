@@ -20,7 +20,6 @@ import { tree } from '../terms';
 import { GreaterThanOrEqualToRelation } from '../models/tree/Relation';
 import { Collection } from '../models/tree/Collection';
 import { isContainer } from '@inrupt/solid-client';
-import { get } from 'http';
 
 /**
  * Default filter function for nodes
