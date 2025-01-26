@@ -68,19 +68,27 @@ const bundle = (env, module, entry = 'index', suffix = '') => {
       outputModule: module,
     },
     externalsType: module ? "module" : undefined,
-    externals: {
-      '@openhps/core': module ? "./openhps-core.es" + (env.prod ? ".min" : "") + ".js" : {
-        commonjs: '@openhps/core',
-        commonjs2: '@openhps/core',
-        amd: 'core',
-        root: ['OpenHPS', 'core']
-      },
-      '@openhps/rdf': module ? "./openhps-rdf.es" + (env.prod ? ".min" : "") + ".js" : {
-        commonjs: '@openhps/rdf',
-        commonjs2: '@openhps/rdf',
-        amd: 'rdf',
-        root: ['OpenHPS', 'rdf']
-      },
+    externals: function ({ context, request }, callback) {
+      const packages = ['core', 'rdf', 'rf'];
+      const knownExternals = packages.reduce((externals, pkg) => {
+        const packageName = `@openhps/${pkg}`;
+        externals[packageName] = module ? `./openhps-${pkg}.es${env.prod ? ".min" : ""}.js` : {
+          commonjs: packageName,
+          commonjs2: packageName,
+          amd: pkg,
+          root: ['OpenHPS', pkg]
+        };
+        return externals;
+      }, {});
+      const external = knownExternals[request];
+      if (external) {
+        if (!module || typeof external === 'object') {
+          return callback(null, external);
+        } else if (module && typeof external === 'string') {
+          return callback(null, `promise import('${external}')`)
+        }
+      }
+      callback();
     },
     devtool: 'source-map',
     plugins: [],

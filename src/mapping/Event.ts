@@ -1,5 +1,5 @@
 import { SerializableObject } from '@openhps/core';
-import { ssn } from '@openhps/rdf/vocab';
+import { ssn } from '@openhps/rdf';
 
 @SerializableObject({
     rdf: {

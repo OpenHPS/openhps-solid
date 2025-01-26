@@ -1,8 +1,8 @@
 import { SerializableArrayMember, SerializableMember, SerializableObject } from "@openhps/core";
-import { sosa } from "@openhps/rdf/vocab";
+import { sosa } from "@openhps/rdf";
 import { FeatureOfInterest } from "./FeatureOfInterest";
 import { ObservableProperty } from "./ObservableProperty";
-import { SerializableNamedNode, xsd } from "@openhps/rdf/serialization";
+import { SerializableNamedNode, xsd } from "@openhps/rdf";
 
 @SerializableObject({
     rdf: {

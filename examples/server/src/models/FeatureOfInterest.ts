@@ -1,7 +1,7 @@
 import { SerializableArrayMember, SerializableMember, SerializableObject } from "@openhps/core";
-import { rdfs, sosa, ssn } from "@openhps/rdf/vocab";
+import { rdfs, sosa, ssn } from "@openhps/rdf";
 import { ObservableProperty } from "./ObservableProperty";
-import { SerializableNamedNode } from "@openhps/rdf/serialization";
+import { SerializableNamedNode } from "@openhps/rdf";
 
 @SerializableObject({
     rdf: {

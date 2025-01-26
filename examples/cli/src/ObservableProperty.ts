@@ -1,7 +1,7 @@
 import { SerializableMember, SerializableObject } from "@openhps/core";
-import { sosa, rdfs, ssn } from "@openhps/rdf/vocab";
+import { sosa, rdfs, ssn } from "@openhps/rdf";
 import { DataFactory } from 'n3';
-import { SerializableNamedNode, IriString, Thing } from "@openhps/rdf/serialization";
+import { SerializableNamedNode, IriString, Thing } from "@openhps/rdf";
 
 @SerializableObject({
     rdf: {

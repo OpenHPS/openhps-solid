@@ -100,7 +100,7 @@
   },
   "peerDependencies": {
     "@openhps/core": ">=0.6.9",
-    "@openhps/rdf": ">=0.4.98",
+    "@openhps/rdf": ">=0.4.99",
     "reflect-metadata": ">=0.2.1"
   },
   "devDependencies": {
@@ -111,7 +111,7 @@
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.15.0",
     "@openhps/core": ">=0.7.10",
-    "@openhps/rdf": ">=0.4.95",
+    "@openhps/rdf": ">=0.4.99",
     "@openhps/rf": "^1.0.1",
     "@types/chai": "^4.3.19",
     "@types/cookie-session": "^2.0.49",

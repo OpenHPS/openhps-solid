@@ -9,11 +9,12 @@ import {
     RDFBuilder,
     DataFactory,
     SerializableThing,
+    Observation,
 } from '@openhps/rdf';
 import { SolidProfileObject } from './SolidProfileObject';
 import { SolidDataDriver, SolidFilterQuery } from './SolidDataDriver';
 import { SolidService, SolidSession } from './SolidService';
-import { Observation } from '@openhps/rdf/models';
+
 import { EventStream } from '../models/ldes';
 import { Node } from '../models/tree';
 import { tree } from '../terms';
