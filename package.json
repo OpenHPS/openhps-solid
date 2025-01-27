@@ -54,7 +54,7 @@
     "config/**/*"
   ],
   "scripts": {
-    "postinstall": "node ./src/fix/install.js && cross-env npm-run-all --parallel prepare:terms",
+    "prepare": "node ./src/fix/install.js && cross-env npm-run-all --parallel prepare:terms && comunica-compile-config config/config.json > src/common/engine-default.js",
     "prepare:terms": "openhps-rdf -d ./src/terms -n ldes:https://w3id.org/ldes# -n ldp:http://www.w3.org/ns/ldp# -n tree:https://w3id.org/tree#",
     "update": "ncu -u -x eslint,chai",
     "test": "mocha --config test/.mocharc.json",
@@ -74,8 +74,7 @@
     "bump:development": "standard-version --prerelease alpha -m 'chore(alpha): %s' --skip.changelog",
     "bump:beta": "standard-version --prerelease beta -m 'chore(beta): %s' --skip.changelog",
     "bump:release": "standard-version -m 'chore(release): %s' --skip.changelog",
-    "start:server": "npx @solid/community-server -c @css:config/file.json -f data/",
-    "prepare": "comunica-compile-config config/config.json > src/common/engine-default.js"
+    "start:server": "npx @solid/community-server -c @css:config/file.json -f data/"
   },
   "keywords": [
     "openhps",
