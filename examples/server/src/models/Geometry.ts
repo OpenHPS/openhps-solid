@@ -1,5 +1,5 @@
 import { SerializableMember, SerializableObject } from "@openhps/core";
-import { ogc } from "@openhps/rdf/vocab";
+import { ogc } from "@openhps/rdf";
 import { QuantityValue } from "./QuantityValue";
 import { DataFactory } from 'n3';
 

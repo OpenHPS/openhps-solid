@@ -1,2 +1,2 @@
-import '@openhps/rdf/minimal';
+import '@openhps/rdf';
 export * from './index.node';

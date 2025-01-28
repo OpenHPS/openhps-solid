@@ -1,6 +1,6 @@
 import { SerializableArrayMember, SerializableMember, SerializableObject } from "@openhps/core";
-import { SerializableNamedNode } from "@openhps/rdf/serialization";
-import { rdfs, ssn } from "@openhps/rdf/vocab";
+import { SerializableNamedNode } from "@openhps/rdf";
+import { rdfs, ssn } from "@openhps/rdf";
 import { Deployment } from "./Deployment";
 
 @SerializableObject({

@@ -1,6 +1,6 @@
 {
   "name": "@openhps/solid",
-  "version": "0.2.13",
+  "version": "0.2.16",
   "description": "Open Hybrid Positioning System",
   "author": "Maxim Van de Wynckel",
   "license": "Apache-2.0",
@@ -54,7 +54,7 @@
     "config/**/*"
   ],
   "scripts": {
-    "postinstall": "node ./src/fix/install.js && npm-run-all --parallel prepare:terms",
+    "prepare": "node ./src/fix/install.js && cross-env npm-run-all --parallel prepare:terms && comunica-compile-config config/config.json > src/common/engine-default.js",
     "prepare:terms": "openhps-rdf -d ./src/terms -n ldes:https://w3id.org/ldes# -n ldp:http://www.w3.org/ns/ldp# -n tree:https://w3id.org/tree#",
     "update": "ncu -u -x eslint,chai",
     "test": "mocha --config test/.mocharc.json",
@@ -74,8 +74,7 @@
     "bump:development": "standard-version --prerelease alpha -m 'chore(alpha): %s' --skip.changelog",
     "bump:beta": "standard-version --prerelease beta -m 'chore(beta): %s' --skip.changelog",
     "bump:release": "standard-version -m 'chore(release): %s' --skip.changelog",
-    "start:server": "npx @solid/community-server -c @css:config/file.json -f data/",
-    "prepare": "comunica-compile-config config/config.json > src/common/engine-default.js"
+    "start:server": "npx @solid/community-server -c @css:config/file.json -f data/"
   },
   "keywords": [
     "openhps",
@@ -100,7 +99,7 @@
   },
   "peerDependencies": {
     "@openhps/core": ">=0.6.9",
-    "@openhps/rdf": ">=0.4.98",
+    "@openhps/rdf": ">=0.4.99",
     "reflect-metadata": ">=0.2.1"
   },
   "devDependencies": {
@@ -111,7 +110,7 @@
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.15.0",
     "@openhps/core": ">=0.7.10",
-    "@openhps/rdf": ">=0.4.95",
+    "@openhps/rdf": ">=0.4.99",
     "@openhps/rf": "^1.0.1",
     "@types/chai": "^4.3.19",
     "@types/cookie-session": "^2.0.49",
@@ -122,6 +121,7 @@
     "@typescript-eslint/parser": "^8.14.1-alpha.8",
     "buffer": "^6.0.3",
     "chai": "^4",
+    "cross-env": "^7.0.3",
     "dotenv": "^16.4.5",
     "eslint": "^9.15.0",
     "eslint-config-prettier": "^9.1.0",
