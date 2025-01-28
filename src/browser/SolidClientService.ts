@@ -79,13 +79,31 @@ export class SolidClientService extends SolidService {
             this.storage
                 .set('currentSession', session.info.sessionId)
                 .then(() => {
+                    // Create handle redirect function
+                    const handleRedirect = this.options.handleRedirect
+                        ? (url: string) => {
+                              const errorCallback = (error?: Error) => {
+                                  if (error) {
+                                      // Check if promise is already resolved, else reject
+                                      if (session.info.isLoggedIn) {
+                                          this.emit('error', error);
+                                      } else {
+                                          reject(error);
+                                          return;
+                                      }
+                                  }
+                                  resolve();
+                              };
+                              return this.options.handleRedirect(url, errorCallback);
+                          }
+                        : undefined;
                     return session.login({
                         oidcIssuer,
                         clientName: this.options.clientName,
                         clientId: this.options.clientId,
                         clientSecret: this.options.clientSecret,
                         redirectUrl: this.options.redirectUrl ? this.options.redirectUrl : window.location.href,
-                        handleRedirect: this.options.handleRedirect,
+                        handleRedirect: handleRedirect,
                     });
                 })
                 .then(() => {
@@ -302,7 +320,8 @@ export interface SolidClientServiceOptions extends SolidDataServiceOptions {
     /**
      * Handle redirect URL. In a mobile app such as CapacitorJS you can use `@capacitor/browser` to open the URL.
      * @param redirectUrl
+     * @param callback
      * @returns
      */
-    handleRedirect?: (redirectUrl: string) => void;
+    handleRedirect?: (redirectUrl: string, callback?: (error?: Error) => void) => void;
 }
