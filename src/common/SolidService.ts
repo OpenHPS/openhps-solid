@@ -50,7 +50,6 @@ import {
     RDFChangeLog,
     createChangeLog,
 } from '@openhps/rdf';
-import { DatasetSubscription } from './DatasetSubscription';
 import { ISessionOptions } from '@inrupt/solid-client-authn-node';
 import type {
     AccessModes,
@@ -62,6 +61,10 @@ import type {
 import { StorageUtility } from '@inrupt/solid-client-authn-core';
 import { ClientRegistrar } from './ClientRegistrar';
 import { SessionManager } from './SessionManager';
+import { SubscriptionClient } from '@solid-notifications/subscription';
+import { ChannelType, NotificationChannel } from '@solid-notifications/types';
+import { DatasetSubscription } from './DatasetSubscription';
+import { DiscoveryClient } from '@solid-notifications/discovery';
 
 class StorageUtilityWrapper extends StorageUtility {
     constructor(secureStorage: IStorage, insecureStorage: IStorage) {
@@ -292,22 +295,75 @@ export abstract class SolidService extends RemoteService {
      * @returns {Promise<DatasetSubscription>} Promise of a solid dataset subscription
      */
     getDatasetSubscription(session: SolidSession, uri: string): Promise<DatasetSubscription> {
+        const fetchFn = session ? session.fetch : fetch;
+        /**
+         *
+         */
+        function legacySubscription(): Promise<IriString> {
+            return new Promise((resolve, reject) => {
+                fetchFn(uri, {
+                    method: 'HEAD',
+                })
+                    .then((response) => {
+                        const websocketUri = response.headers.get('updates-via');
+                        if (!websocketUri) {
+                            return resolve(undefined);
+                        }
+                        resolve(websocketUri as IriString);
+                    })
+                    .catch(reject);
+            });
+        }
+        /**
+         *
+         */
+        function newSubscription(): Promise<IriString> {
+            return new Promise((resolve, reject) => {
+                const discovery = new DiscoveryClient(fetchFn);
+                Promise.all([discovery.findService(uri, ChannelType.WebSocketChannel2023)])
+                    .then(([ws]) => {
+                        if (!ws) {
+                            reject(new Error('No WebSocket service found'));
+                            return;
+                        }
+                        const client = new SubscriptionClient(fetchFn);
+                        return client.subscribe(uri, ws.channelType as ChannelType);
+                    })
+                    .then((service) => {
+                        resolve(service.receiveFrom as IriString);
+                    })
+                    .catch(reject);
+            });
+        }
+
+        /**
+         *
+         * @param uri
+         */
+        function createSubscription(uri: IriString): Promise<DatasetSubscription> {
+            return new Promise((resolve, reject) => {
+                DatasetSubscription.create(uri)
+                    .then((subscription) => {
+                        subscription.subscribe(uri);
+                        resolve(subscription);
+                    })
+                    .catch(reject);
+            });
+        }
+
         return new Promise((resolve, reject) => {
-            const fetchFn = session ? session.fetch : fetch;
-            fetchFn(uri, {
-                method: 'HEAD',
-            })
-                .then((response) => {
-                    const websocketUri = response.headers.get('updates-via');
-                    if (!websocketUri) {
-                        return resolve(undefined);
+            legacySubscription()
+                .then((uri) => {
+                    if (uri) {
+                        createSubscription(uri).then(resolve).catch(reject);
+                    } else {
+                        newSubscription()
+                            .then((uri) => {
+                                return createSubscription(uri);
+                            })
+                            .then(resolve)
+                            .catch(reject);
                     }
-                    DatasetSubscription.create(websocketUri)
-                        .then((subscription) => {
-                            subscription.subscribe(uri);
-                            resolve(subscription);
-                        })
-                        .catch(reject);
                 })
                 .catch(reject);
         });

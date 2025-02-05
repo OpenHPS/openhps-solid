@@ -4960,6 +4960,15 @@
   resolved "https://registry.yarnpkg.com/@istanbuljs/schema/-/schema-0.1.3.tgz#e45e384e4b8ec16bce2fd903af78450f6bf7ec98"
   integrity sha512-ZXRY4jNvVgSVQ8DL3LTcakaAtXwTVUxE81hslsyD2AtoXW/wVob10HkOJ1X/pAlcI7D+2YoZKg5do8G/w6RYgA==
 
+"@janeirodigital/interop-utils@^1.0.0-rc.24":
+  version "1.0.0-rc.24"
+  resolved "https://registry.yarnpkg.com/@janeirodigital/interop-utils/-/interop-utils-1.0.0-rc.24.tgz#6321ac918e2ecec46ed886bb71649f79051bf238"
+  integrity sha512-mLOhitq6SyRSZi1DxrzTTgms7Mt0zgx/5KezkkyMBH3OYuYJBGPH6A93iBJl0wA5Ln90A9KnyiC7I/7+IUYhoQ==
+  dependencies:
+    http-link-header "^1.1.1"
+    jsonld-streaming-parser "^3.2.1"
+    n3 "^1.17.1"
+
 "@jeswr/prefixcc@^1.2.1":
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/@jeswr/prefixcc/-/prefixcc-1.2.1.tgz#db4290930fd8f623204199075c6c710c47637faa"
@@ -5232,6 +5241,28 @@
   dependencies:
     process "^0.11.10"
     readable-stream "^4.5.1"
+
+"@solid-notifications/discovery@^0.1.2":
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/@solid-notifications/discovery/-/discovery-0.1.2.tgz#3bd8a6d54da9e8fb2ba8ae482f14d474a6ee3e20"
+  integrity sha512-jkqV+Ceknw2XE0Vl/4O2BBFnkCZQhNDVt6B9nzbVD4T3aNhMlK/gZS6oNHqa23obgFNCtgFBmeeRKiN1/v8lcw==
+  dependencies:
+    "@janeirodigital/interop-utils" "^1.0.0-rc.24"
+    n3 "^1.17.2"
+
+"@solid-notifications/subscription@^0.1.2":
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/@solid-notifications/subscription/-/subscription-0.1.2.tgz#0f4130f91f091902d00f0e57cb28101e74c7431f"
+  integrity sha512-XnnqNsLOIdUAzB11aROzfRiJLHJjTOaHMSrnn3teQRtE0BwpbnAJtzGG/m3JNUR+QqyjKkB3jfibxJjzvI/HQg==
+  dependencies:
+    "@janeirodigital/interop-utils" "^1.0.0-rc.24"
+    "@solid-notifications/discovery" "^0.1.2"
+    n3 "^1.17.2"
+
+"@solid-notifications/types@^0.1.2":
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/@solid-notifications/types/-/types-0.1.2.tgz#3ab31c6813a37649f91cbd6230369af53ef0b2a8"
+  integrity sha512-0SP6XmOjFhqt/m4FFXnYh6slSiXMoheO3UpU7POSDStLSb6tLVAQLiy0hBKvNyGBLlftRObHWoBWlt2X/LhVRg==
 
 "@tsconfig/node10@^1.0.7":
   version "1.0.11"
@@ -8922,7 +8953,7 @@ jsonld-context-parser@^3.0.0:
     http-link-header "^1.0.2"
     relative-to-absolute-iri "^1.0.5"
 
-jsonld-streaming-parser@^3.0.1:
+jsonld-streaming-parser@^3.0.1, jsonld-streaming-parser@^3.2.1:
   version "3.4.0"
   resolved "https://registry.yarnpkg.com/jsonld-streaming-parser/-/jsonld-streaming-parser-3.4.0.tgz#ea0c74b7a108c4aacd4eaa8518348bd89b9fff0a"
   integrity sha512-897CloyQgQidfkB04dLM5XaAXVX/cN9A2hvgHJo4y4jRhIpvg3KLMBBfcrswepV2N3T8c/Rp2JeFdWfVsbVZ7g==
@@ -9545,7 +9576,7 @@ mute-stream@^1.0.0:
   resolved "https://registry.yarnpkg.com/mute-stream/-/mute-stream-1.0.0.tgz#e31bd9fe62f0aed23520aa4324ea6671531e013e"
   integrity sha512-avsJQhyd+680gKXyG/sQc0nXaC6rBkPOfyHYcFb9+hdkqQkR9bdnkJ0AMZhke0oesPqIO+mFFJ+IdBc7mst4IA==
 
-n3@^1.0.0, n3@^1.16.3, n3@^1.17.0, n3@^1.17.2, n3@^1.17.4:
+n3@^1.0.0, n3@^1.16.3, n3@^1.17.0, n3@^1.17.1, n3@^1.17.2, n3@^1.17.4:
   version "1.23.1"
   resolved "https://registry.yarnpkg.com/n3/-/n3-1.23.1.tgz#42a5aded4802db7a3c5d22feec19bdd919190268"
   integrity sha512-3f0IYJo+6+lXypothmlwPzm3wJNffsxUwnfONeFv2QqWq7RjTvyCMtkRXDUXW6XrZoOzaQX8xTTSYNlGjXcGtw==

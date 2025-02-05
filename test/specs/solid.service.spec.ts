@@ -33,8 +33,15 @@ describe('SolidService', () => {
         });
     });
 
-    it('should get a dataset subscription', (done) => {
+    it('should get a legacy dataset subscription', (done) => {
         service.getDatasetSubscription(undefined, `https://maximvdw.solidweb.org/properties/position.ttl`).then(listener => {
+            listener.close();
+            done();
+        }).catch(done);
+    }).timeout(100000000);
+
+    it('should get a websocket2023 dataset subscription', (done) => {
+        service.getDatasetSubscription(undefined, `https://solid.maximvdw.be/profile/card`).then(listener => {
             listener.close();
             done();
         }).catch(done);
