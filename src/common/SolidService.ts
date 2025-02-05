@@ -62,7 +62,7 @@ import { StorageUtility } from '@inrupt/solid-client-authn-core';
 import { ClientRegistrar } from './ClientRegistrar';
 import { SessionManager } from './SessionManager';
 import { SubscriptionClient } from '@solid-notifications/subscription';
-import { ChannelType, NotificationChannel } from '@solid-notifications/types';
+import { ChannelType } from '@solid-notifications/types';
 import { DatasetSubscription } from './DatasetSubscription';
 import { DiscoveryClient } from '@solid-notifications/discovery';
 
