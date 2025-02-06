@@ -234,7 +234,7 @@ export abstract class SolidService extends RemoteService {
      * @param {string} uri URI of the thing in the Solid Pod
      * @returns {Promise<Store & RDFChangeLog>} Promise of a solid dataset store
      */
-    getDatasetStore(session: SolidSession, uri: string): Promise<Store & RDFChangeLog> {
+    getDatasetStore(session: SolidSession, uri: string): Promise<Store & RDFChangeLog & SolidDataset> {
         return new Promise((resolve, reject) => {
             this.getDataset(session, uri)
                 .then((dataset) => {
@@ -248,7 +248,10 @@ export abstract class SolidService extends RemoteService {
                         })
                         .reduce((a, b) => a.concat(b), []);
                     const store = new Store(quads);
-                    resolve(createChangeLog(store));
+                    const result = Object.assign(store, createChangeLog(store), dataset) as Store &
+                        RDFChangeLog &
+                        SolidDataset;
+                    resolve(result);
                 })
                 .catch(reject);
         });
@@ -268,14 +271,7 @@ export abstract class SolidService extends RemoteService {
         return new Promise(async (resolve, reject) => { // eslint-disable-line
             const documentURL = uri.startsWith('http') ? new URL(uri) : await this.getDocumentURL(session, uri);
             documentURL.hash = '';
-            getSolidDataset(
-                documentURL.href,
-                session
-                    ? {
-                          fetch: session.fetch,
-                      }
-                    : undefined,
-            )
+            getSolidDataset(documentURL.href, session ? { fetch: session.fetch } : undefined)
                 .then(resolve)
                 .catch((ex: FetchError) => {
                     if (ex.response.status === 404) {
@@ -482,14 +478,7 @@ export abstract class SolidService extends RemoteService {
      */
     deleteDataset(session: SolidSession, uri: string): Promise<void> {
         return new Promise((resolve, reject) => {
-            deleteSolidDataset(
-                uri,
-                session
-                    ? {
-                          fetch: session.fetch,
-                      }
-                    : undefined,
-            )
+            deleteSolidDataset(uri, session ? { fetch: session.fetch } : undefined)
                 .then(() => {
                     resolve();
                 })
@@ -501,74 +490,52 @@ export abstract class SolidService extends RemoteService {
      * Save a Solid dataset
      * @param {SolidSession} session Solid session to get a thing from
      * @param {string} uri URI of the thing in the Solid Pod
-     * @param {SolidDataset} dataset Dataset to save at the uri
-     * @returns {Promise<SolidDataset>} Promise of a solid dataset
+     * @param {SolidDataset | (Store & RDFChangeLog)} dataset Dataset to save at the uri
+     * @returns {Promise<SolidDataset | null>} Promise of a solid dataset
      */
-    saveDataset(session: SolidSession, uri: string, dataset?: SolidDataset): Promise<SolidDataset> {
+    saveDataset(
+        session: SolidSession,
+        uri: string,
+        dataset?: SolidDataset | (Store & RDFChangeLog) | (Store & RDFChangeLog & SolidDataset),
+    ): Promise<SolidDataset | null> {
         return new Promise((resolve, reject) => {
-            saveSolidDatasetAt(
-                uri,
-                dataset ? dataset : createSolidDataset(),
-                session
-                    ? {
-                          fetch: session.fetch,
-                      }
-                    : undefined,
-            )
-                .then((dataset) => {
-                    resolve(dataset);
-                })
-                .catch(reject);
-        });
-    }
+            const options = session ? { fetch: session.fetch } : undefined;
 
-    /**
-     * Save a Solid dataset store
-     * @param session
-     * @param uri
-     * @param store
-     * @returns
-     */
-    saveDatasetStore(session: SolidSession, uri: string, store: Store & RDFChangeLog): Promise<SolidDataset> {
-        return new Promise((resolve, reject) => {
-            const documentURL = new URL(uri);
-            documentURL.hash = '';
+            if (dataset instanceof Store) {
+                const documentURL = new URL(uri);
+                documentURL.hash = '';
 
-            const additions = store.additions;
-            const deletions = store.deletions;
+                const additions = dataset.additions ?? [];
+                const deletions = dataset.deletions ?? [];
 
-            if (additions.length === 0 && deletions.length === 0) {
-                resolve(this.getDataset(session, documentURL.href));
-                return;
+                if (additions.length === 0 && deletions.length === 0) {
+                    resolve(null);
+                    return;
+                }
+
+                const internalDataset = (
+                    (dataset as any).type === 'Dataset' ? dataset : createSolidDataset()
+                ) as SolidDataset & WithResourceInfo;
+                const dummyDataset: SolidDataset & WithChangeLog & Partial<WithResourceInfo> = {
+                    ...(this.storeToDataset(dataset) as SolidDataset),
+                    internal_changeLog: {
+                        additions,
+                        deletions,
+                    },
+                    internal_resourceInfo: internalDataset.internal_resourceInfo,
+                };
+                saveSolidDatasetAt(documentURL.href, dummyDataset, options)
+                    .then((dataset) => {
+                        resolve(dataset);
+                    })
+                    .catch(reject);
+            } else {
+                saveSolidDatasetAt(uri, dataset ? dataset : createSolidDataset(), options)
+                    .then((dataset) => {
+                        resolve(dataset);
+                    })
+                    .catch(reject);
             }
-
-            const dummyDataset: SolidDataset & WithChangeLog & Partial<WithResourceInfo> = {
-                ...(this.storeToDataset(store) as SolidDataset),
-                internal_changeLog: {
-                    additions,
-                    deletions,
-                },
-            };
-            this.getDataset(session, documentURL.href)
-                .then((dataset: SolidDataset & WithResourceInfo) => {
-                    if (!dataset) {
-                        dataset = createSolidDataset() as SolidDataset & WithResourceInfo;
-                    }
-                    dummyDataset.internal_resourceInfo = dataset.internal_resourceInfo;
-                    return saveSolidDatasetAt(
-                        documentURL.href,
-                        dummyDataset,
-                        session
-                            ? {
-                                  fetch: session.fetch,
-                              }
-                            : undefined,
-                    );
-                })
-                .then((dataset) => {
-                    resolve(dataset);
-                })
-                .catch(reject);
         });
     }
 

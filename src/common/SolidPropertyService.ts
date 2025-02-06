@@ -139,7 +139,7 @@ export class SolidPropertyService extends DataService<string, any> {
                     }
                     // Update thing when modified
                     if (dirty) {
-                        return this.service.saveDatasetStore(session, session.info.webId, store) as Promise<any>;
+                        return this.service.saveDataset(session, session.info.webId, store) as Promise<any>;
                     } else {
                         return Promise.resolve();
                     }
@@ -177,8 +177,8 @@ export class SolidPropertyService extends DataService<string, any> {
                     meta.addQuads(RDFSerializer.serializeToQuads(stream));
                     store.addQuads(RDFSerializer.serializeToQuads(stream.view));
                     return this.service
-                        .saveDatasetStore(session, `${propertyContainer.href}property.ttl`, store)
-                        .then(() => this.service.saveDatasetStore(session, `${propertyContainer.href}.meta`, meta));
+                        .saveDataset(session, `${propertyContainer.href}property.ttl`, store)
+                        .then(() => this.service.saveDataset(session, `${propertyContainer.href}.meta`, meta));
                 })
                 .then(() => {
                     resolve(property.id as IriString);
@@ -199,7 +199,7 @@ export class SolidPropertyService extends DataService<string, any> {
                     if (collection) {
                         dataset.addQuads(RDFSerializer.serializeToQuads(collection, `${nodeURL.href}#` as IriString));
                     }
-                    return this.service.saveDatasetStore(session, datasetURL, dataset);
+                    return this.service.saveDataset(session, datasetURL, dataset);
                 })
                 .then(() => resolve(node))
                 .catch(reject);
@@ -359,7 +359,7 @@ export class SolidPropertyService extends DataService<string, any> {
                     // Save child node
                     await this.createTreeNode(session, childNode, collection);
                     // Save observation
-                    return this.service.saveDatasetStore(
+                    return this.service.saveDataset(
                         session,
                         `${observation.id}`,
                         RDFSerializer.serializeToStore(observation),
