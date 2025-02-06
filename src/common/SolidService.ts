@@ -247,10 +247,8 @@ export abstract class SolidService extends RemoteService {
                             return RDFSerializer.subjectsToQuads(Object.values(graph));
                         })
                         .reduce((a, b) => a.concat(b), []);
-                    const store = new Store(quads);
-                    const result = Object.assign(store, createChangeLog(store), dataset) as Store &
-                        RDFChangeLog &
-                        SolidDataset;
+                    const store = createChangeLog(new Store(quads));
+                    const result = Object.assign(store, dataset) as Store & RDFChangeLog & SolidDataset;
                     resolve(result);
                 })
                 .catch(reject);
@@ -496,7 +494,7 @@ export abstract class SolidService extends RemoteService {
     saveDataset(
         session: SolidSession,
         uri: string,
-        dataset?: SolidDataset | (Store & RDFChangeLog) | (Store & RDFChangeLog & SolidDataset),
+        dataset?: SolidDataset | (Store & RDFChangeLog) | (Store & RDFChangeLog & SolidDataset) | Store,
     ): Promise<SolidDataset | null> {
         return new Promise((resolve, reject) => {
             const options = session ? { fetch: session.fetch } : undefined;
@@ -505,8 +503,17 @@ export abstract class SolidService extends RemoteService {
                 const documentURL = new URL(uri);
                 documentURL.hash = '';
 
-                const additions = dataset.additions ?? [];
-                const deletions = dataset.deletions ?? [];
+                let additions = [];
+                let deletions = [];
+
+                if (dataset['additions'] && dataset['deletions']) {
+                    additions = (dataset as any).additions ?? [];
+                    deletions = (dataset as any).deletions ?? [];
+                } else {
+                    dataset = createChangeLog(dataset as Store);
+                    // Add all quads to the additions
+                    additions = dataset.getQuads(null, null, null, null);
+                }
 
                 if (additions.length === 0 && deletions.length === 0) {
                     resolve(null);
