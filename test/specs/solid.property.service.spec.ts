@@ -29,7 +29,7 @@ describe('SolidPropertyService', () => {
     });
 
     after((done) => {
-        service.service.deleteRecursively(session, "https://solid.maximvdw.be/properties/test").then(() => {
+        service.service.deleteRecursively(session, "https://solid.maximvdw.be/properties/test/").then(() => {
             return clientService.logout(session);
         }).then(() => {
             return Promise.all([service.emitAsync('destroy'), clientService.emitAsync('destroy')]);

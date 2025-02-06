@@ -5061,10 +5061,10 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@openhps/core@>=0.7.10":
-  version "0.7.16"
-  resolved "https://registry.yarnpkg.com/@openhps/core/-/core-0.7.16.tgz#31e2c2f0cf7e00262c7c481152c3487a6a721152"
-  integrity sha512-HoPONshEBWtkjfr7qbvk0e0I9TXarWKuODiaTnTRMh5Lqv946qB2uXpQNTnIQnc34yQ6Ol7z59IMq9DHvajpRg==
+"@openhps/core@>=1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@openhps/core/-/core-1.0.1.tgz#4c265115c759a8538d9fa0c94e86c4aa1b7fa317"
+  integrity sha512-qhC5vZeG4cb7G2LZwohq7MXREaybwuJUZfxfQvEpzOhLoxUjAIlVni2mEiYOYLo6XBSjAAEZ53bDun5zzpVd4g==
   dependencies:
     lodash.clonedeep "^4.5.0"
     reflect-metadata ">=0.2.2"
@@ -5089,10 +5089,10 @@
     robust-predicates "^3.0.2"
     wkt "^0.1.1"
 
-"@openhps/rdf@>=0.4.99":
-  version "0.4.99"
-  resolved "https://registry.yarnpkg.com/@openhps/rdf/-/rdf-0.4.99.tgz#08f0104a1183413fa0a9079429976bba3531958c"
-  integrity sha512-onaMDzIHFlhqEAbBFV0WnWPMQPHOfSbed7a+AzTeGNp42UxiDnrve9uPDaxJ2K3JIPFPazXlOnDYlg6QF2uqng==
+"@openhps/rdf@>=1.1.0-alpha.2":
+  version "1.1.0-alpha.2"
+  resolved "https://registry.yarnpkg.com/@openhps/rdf/-/rdf-1.1.0-alpha.2.tgz#7b3a1d1320c8fb4cb31dbb4460bfc7ea4267b845"
+  integrity sha512-9DFwny/994N7FA/OKVEv+YkNiOfPVOPR53DHOafhIFYITUzE9DWGyr6rXzwfYxz6vK5I1jhRjV2PXyIH0tw05g==
   dependencies:
     "@comunica/query-sparql" "^4.0.2"
     "@inquirer/prompts" "^5.1.0"

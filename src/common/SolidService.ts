@@ -36,6 +36,7 @@ import {
     getSolidDataset,
     getContainedResourceUrlAll,
     deleteFile,
+    saveSolidDatasetInContainer,
 } from '@inrupt/solid-client';
 import { fetch } from 'cross-fetch';
 import {
@@ -489,20 +490,24 @@ export abstract class SolidService extends RemoteService {
      * @param {SolidSession} session Solid session to get a thing from
      * @param {string} uri URI of the thing in the Solid Pod
      * @param {SolidDataset | (Store & RDFChangeLog)} dataset Dataset to save at the uri
+     * @param {boolean} [append] Append in container
      * @returns {Promise<SolidDataset | null>} Promise of a solid dataset
      */
     saveDataset(
         session: SolidSession,
         uri: string,
         dataset?: SolidDataset | (Store & RDFChangeLog) | (Store & RDFChangeLog & SolidDataset) | Store,
+        append?: boolean,
     ): Promise<SolidDataset | null> {
         return new Promise((resolve, reject) => {
             const options = session ? { fetch: session.fetch } : undefined;
+            const documentURL = new URL(uri);
+            documentURL.hash = '';
+            const containerURL = new URL(documentURL.href);
+            // Remove path resource so it ends with a /
+            containerURL.pathname = containerURL.pathname.replace(/\/[^/]+$/, '/');
 
             if (dataset instanceof Store) {
-                const documentURL = new URL(uri);
-                documentURL.hash = '';
-
                 let additions = [];
                 let deletions = [];
 
@@ -531,17 +536,21 @@ export abstract class SolidService extends RemoteService {
                     },
                     internal_resourceInfo: internalDataset.internal_resourceInfo,
                 };
-                saveSolidDatasetAt(documentURL.href, dummyDataset, options)
-                    .then((dataset) => {
-                        resolve(dataset);
-                    })
-                    .catch(reject);
+                dataset = dummyDataset;
             } else {
-                saveSolidDatasetAt(uri, dataset ? dataset : createSolidDataset(), options)
-                    .then((dataset) => {
-                        resolve(dataset);
-                    })
-                    .catch(reject);
+                dataset = dataset ? dataset : createSolidDataset();
+            }
+
+            if (append) {
+                // Add a hint to the dataset about the URI it should be saved at
+                const resourceInfo = {
+                    sourceIri: documentURL.href,
+                    ...(dataset as any).internal_resourceInfo,
+                };
+                (dataset as any).internal_resourceInfo = resourceInfo;
+                saveSolidDatasetInContainer(containerURL.href, dataset, options).then(resolve).catch(reject);
+            } else {
+                saveSolidDatasetAt(documentURL.href, dataset, options).then(resolve).catch(reject);
             }
         });
     }

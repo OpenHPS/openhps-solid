@@ -217,11 +217,12 @@ export class SolidPropertyService extends DataService<string, any> {
                     const nodeThing = RDFSerializer.quadsToThing(DataFactory.namedNode(node.id), dataset);
                     if (nodeThing) {
                         const deserializedNode: Node = RDFSerializer.deserializeFromStore(
-                            DataFactory.namedNode(node.id),
+                            node.id as IriString,
                             dataset,
+                            Node,
                         );
                         const deserializedCollection: Collection = collection
-                            ? RDFSerializer.deserializeFromStore(DataFactory.namedNode(collection), dataset)
+                            ? RDFSerializer.deserializeFromStore(collection, dataset, Collection)
                             : undefined;
                         if (deserializedNode) {
                             deserializedNode.collection = deserializedCollection;
@@ -332,7 +333,7 @@ export class SolidPropertyService extends DataService<string, any> {
                     let childNode = rootNode.getChildNode(observation.resultTime);
                     if (childNode) {
                         // False when first node
-                        childNode = await this.fetchTreeNode(session, childNode, property.id as IriString);
+                        childNode = await this.fetchTreeNode(session, childNode, propertyContainer.href as IriString);
                         childNode = this.filter(childNode) ? childNode : undefined;
                     }
 
@@ -363,6 +364,7 @@ export class SolidPropertyService extends DataService<string, any> {
                         session,
                         `${observation.id}`,
                         RDFSerializer.serializeToStore(observation),
+                        true,
                     );
                 })
                 .then(() => {
