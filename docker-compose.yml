@@ -1,13 +1,18 @@
 networks:
-  dht-network:
+  solid-network:
     driver: bridge
   
+volumes:
+  test-data1:
+  test-data2:
+  test-data3:
+
 x-solid-server: &solid-server
   build:
     context: docker
     dockerfile: Dockerfile
   networks: 
-    - dht-network
+    - solid-network
 
 services:
   test-server1:
@@ -17,8 +22,11 @@ services:
       - USER_POD=test1
       - USER_PASSWORD=test123
       - BASE_URL=http://localhost:3000
+      - PORT=3000
     ports:
       - 3000:3000
+    volumes:
+      - test-data1:/data
   test-server2:
     <<: *solid-server
     environment:
@@ -26,8 +34,11 @@ services:
       - USER_POD=test2
       - USER_PASSWORD=test123
       - BASE_URL=http://localhost:3001
+      - PORT=3001
     ports:
-      - 3001:3000
+      - 3001:3001
+    volumes:
+      - test-data2:/data
   test-server3:
     <<: *solid-server
     environment:
@@ -35,5 +46,8 @@ services:
       - USER_POD=test3
       - USER_PASSWORD=test123
       - BASE_URL=http://localhost:3002
+      - PORT=3002
     ports:
-      - 3002:3000
+      - 3002:3002
+    volumes:
+      - test-data3:/data

@@ -1,6 +1,6 @@
 {
   "name": "@openhps/solid",
-  "version": "0.2.23",
+  "version": "1.0.0",
   "description": "Open Hybrid Positioning System",
   "author": "Maxim Van de Wynckel",
   "license": "Apache-2.0",
@@ -55,8 +55,9 @@
   ],
   "scripts": {
     "prepare": "node ./src/fix/install.js && cross-env npm-run-all --parallel prepare:terms && comunica-compile-config config/config.json > src/common/engine-default.js",
-    "prepare:terms": "openhps-rdf -d ./src/terms -n ldes:https://w3id.org/ldes# -n ldp:http://www.w3.org/ns/ldp# -n tree:https://w3id.org/tree#",
+    "prepare:terms": "openhps-rdf -d ./src/terms -n ldes:https://w3id.org/ldes# -n ldp:http://www.w3.org/ns/ldp# -n tree:https://w3id.org/tree# -n activitystreams:https://www.w3.org/ns/activitystreams# -m https://www.w3.org/ns/activitystreams# https://raw.githubusercontent.com/w3c/activitystreams/refs/heads/main/vocabulary/activitystreams2.owl",
     "update": "ncu -u -x eslint,chai",
+    "docker:reset": "docker compose down && docker volume rm solid_test-data1 solid_test-data2 solid_test-data3 && docker compose up --build -d",
     "test": "mocha --config test/.mocharc.json",
     "cover": "nyc mocha --config test/.mocharc.json && nyc report --reporter=cobertura",
     "cover:ci": "nyc mocha --config test/.mocharc.json --reporter mocha-junit-reporter && nyc report --reporter=cobertura",

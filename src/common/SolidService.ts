@@ -37,6 +37,12 @@ import {
     getContainedResourceUrlAll,
     deleteFile,
     saveSolidDatasetInContainer,
+    setAgentDefaultAccess,
+    getResourceAcl,
+    getSolidDatasetWithAcl,
+    hasAcl,
+    saveAclFor,
+    WithAcl,
 } from '@inrupt/solid-client';
 import { fetch } from 'cross-fetch';
 import {
@@ -58,6 +64,7 @@ import type {
     ThingPersisted,
     WithChangeLog,
     WithResourceInfo,
+    WithServerResourceInfo,
 } from '@inrupt/solid-client/dist/interfaces';
 import { StorageUtility } from '@inrupt/solid-client-authn-core';
 import { ClientRegistrar } from './ClientRegistrar';
@@ -270,7 +277,7 @@ export abstract class SolidService extends RemoteService {
         return new Promise(async (resolve, reject) => { // eslint-disable-line
             const documentURL = uri.startsWith('http') ? new URL(uri) : await this.getDocumentURL(session, uri);
             documentURL.hash = '';
-            getSolidDataset(documentURL.href, session ? { fetch: session.fetch } : undefined)
+            getSolidDataset(documentURL.href, session ? { fetch: session.fetch } : this.session)
                 .then(resolve)
                 .catch((ex: FetchError) => {
                     if (ex.response.status === 404) {
@@ -449,11 +456,11 @@ export abstract class SolidService extends RemoteService {
         const containedDatasets = await Promise.all(
             containedResourceUrls.map(async (resourceUrl) => {
                 try {
-                    return await getSolidDataset(resourceUrl, session ? { fetch: session.fetch } : undefined);
+                    return await getSolidDataset(resourceUrl, session ? { fetch: session.fetch } : this.session);
                 } catch (e) {
                     // The Resource might not have been a SolidDataset;
                     // we can delete it directly:
-                    await deleteFile(resourceUrl, session ? { fetch: session.fetch } : undefined);
+                    await deleteFile(resourceUrl, session ? { fetch: session.fetch } : this.session);
                     return null;
                 }
             }),
@@ -466,7 +473,7 @@ export abstract class SolidService extends RemoteService {
                 return await this.deleteRecursively(session, containedDataset);
             }),
         );
-        return await deleteSolidDataset(dataset, session ? { fetch: session.fetch } : undefined);
+        return await deleteSolidDataset(dataset, session ? { fetch: session.fetch } : this.session);
     }
 
     /**
@@ -477,7 +484,7 @@ export abstract class SolidService extends RemoteService {
      */
     deleteDataset(session: SolidSession, uri: string): Promise<void> {
         return new Promise((resolve, reject) => {
-            deleteSolidDataset(uri, session ? { fetch: session.fetch } : undefined)
+            deleteSolidDataset(uri, session ? { fetch: session.fetch } : this.session)
                 .then(() => {
                     resolve();
                 })
@@ -500,7 +507,7 @@ export abstract class SolidService extends RemoteService {
         append?: boolean,
     ): Promise<SolidDataset | null> {
         return new Promise((resolve, reject) => {
-            const options = session ? { fetch: session.fetch } : undefined;
+            const options = session ? { fetch: session.fetch } : this.session;
             const documentURL = new URL(uri);
             documentURL.hash = '';
             const containerURL = new URL(documentURL.href);
@@ -547,7 +554,10 @@ export abstract class SolidService extends RemoteService {
                     sourceIri: documentURL.href,
                     ...(dataset as any).internal_resourceInfo,
                 };
-                (dataset as any).internal_resourceInfo = resourceInfo;
+                dataset = {
+                    ...dataset,
+                    internal_resourceInfo: resourceInfo,
+                } as SolidDataset;
                 saveSolidDatasetInContainer(containerURL.href, dataset, options).then(resolve).catch(reject);
             } else {
                 saveSolidDatasetAt(documentURL.href, dataset, options).then(resolve).catch(reject);
@@ -575,13 +585,13 @@ export abstract class SolidService extends RemoteService {
     /**
      * Set access control list for a specific object
      * @param {IriString} uri URI of the object
-     * @param {Partial<AccessModes>} acces Access modes
+     * @param {Partial<AccessModes & { default?: boolean, public?: boolean }>} access Access modes
      * @param {string} [webId] WebID to set access for
      * @param {SolidSession} [session] Session to use
      */
     setAccess(
         uri: IriString,
-        acces: Partial<AccessModes>,
+        access: Partial<AccessModes & { default?: boolean; public?: boolean }>,
         webId: string = foaf.Agent,
         session?: SolidSession,
     ): Promise<void> {
@@ -590,12 +600,62 @@ export abstract class SolidService extends RemoteService {
                 .setAgentAccess(
                     uri,
                     webId,
-                    acces,
+                    access,
                     session
                         ? {
                               fetch: session.fetch,
                           }
-                        : undefined,
+                        : this.session,
+                )
+                .then(() => {
+                    if (access.public) {
+                        // Set public access
+                        return this.setPublicAccess(uri, access, session);
+                    } else {
+                        resolve();
+                    }
+                })
+                .then(() => {
+                    if (access.default) {
+                        // Set default access
+                        // Get ACL dataset
+                        return getSolidDatasetWithAcl(uri, session ? { fetch: session.fetch } : this.session);
+                    } else {
+                        resolve();
+                    }
+                })
+                .then((dataset: SolidDataset & WithServerResourceInfo & WithAcl) => {
+                    if (hasAcl(dataset)) {
+                        let acl = getResourceAcl(dataset);
+                        acl = setAgentDefaultAccess(acl, webId, {
+                            read: access.read,
+                            append: access.append,
+                            write: access.write,
+                            control: access.controlWrite,
+                        });
+                        return saveAclFor(dataset as any, acl, session ? { fetch: session.fetch } : this.session);
+                    } else {
+                        resolve();
+                    }
+                })
+                .then(() => {
+                    resolve();
+                })
+                .catch(reject);
+        });
+    }
+
+    setPublicAccess(uri: IriString, access: Partial<AccessModes>, session?: SolidSession): Promise<void> {
+        return new Promise((resolve, reject) => {
+            universalAccess
+                .setPublicAccess(
+                    uri,
+                    access,
+                    session
+                        ? {
+                              fetch: session.fetch,
+                          }
+                        : this.session,
                 )
                 .then(() => {
                     resolve();

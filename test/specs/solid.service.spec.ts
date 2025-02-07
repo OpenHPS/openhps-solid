@@ -3,14 +3,43 @@ import { expect } from 'chai';
 import { SolidClientService, SolidSession } from '../../src';
 import { IriString } from '@openhps/rdf';
 import { ModelBuilder } from '@openhps/core';
+import { generate } from '../utils/secret';
+
 require('dotenv').config();
 
 describe('SolidService', () => {
     let service: SolidClientService;
+    let solidServices: SolidClientService[] = [];
     
     before((done) => {
         service = new SolidClientService(undefined);
-        done();
+        Promise.all([
+            generate('http://localhost:3000', 'test1', 'test1@test.com', 'test123'),
+            generate('http://localhost:3001', 'test2', 'test2@test.com', 'test123'),
+            generate('http://localhost:3002', 'test3', 'test3@test.com', 'test123'),
+        ])
+            .then((secrets) => {
+                solidServices = secrets.map((secret, i) => {
+                    const oidcIssuer = `http://localhost:${3000 + i}`;
+                    return new SolidClientService({
+                        clientId: secret.id,
+                        clientSecret: secret.secret,
+                        clientName: 'OpenHPS',
+                        defaultOidcIssuer: oidcIssuer,
+                        autoLogin: true,
+                    });
+                });
+                return Promise.all(
+                    solidServices.map((service, i) => {
+                        return ModelBuilder.create()
+                            .addService(service) // Solid service
+                            .withLogger(console.log)
+                            .build();
+                    }),
+                );
+            }).then(() => {
+                done();
+            }).catch(done);
     });
 
     after(() => {
@@ -32,20 +61,6 @@ describe('SolidService', () => {
             done();
         });
     });
-
-    it('should get a legacy dataset subscription', (done) => {
-        service.getDatasetSubscription(undefined, `https://maximvdw.solidweb.org/properties/position.ttl`).then(listener => {
-            listener.close();
-            done();
-        }).catch(done);
-    }).timeout(100000000);
-
-    it('should get a websocket2023 dataset subscription', (done) => {
-        service.getDatasetSubscription(undefined, `https://solid.maximvdw.be/profile/card`).then(listener => {
-            listener.close();
-            done();
-        }).catch(done);
-    }).timeout(100000000);
 
     it('should support webids with a subdomain', async () => {
         let webId = "https://maximvdw.solidweb.org/profile/card#me";
@@ -137,5 +152,64 @@ describe('SolidService', () => {
                 done();
             }).catch(done);
         });
+
+        it('should create append access rights for a container', (done) => {
+            // Create a new container
+            const service = solidServices[0];
+            const session = service.session;
+            let containerURL: IriString = "http://localhost:3000/test1/abc/";
+            service.createContainer(session, containerURL).then(() => {
+                // Set access rights
+                return service.setAccess(containerURL, {
+                    append: true,
+                    read: true,
+                    default: true,
+                    public: true
+                });
+            }).then(() => {
+                // Create a new resource using session 2
+                const service2 = solidServices[1];
+                const session2 = service2.session;
+                return service2.saveDataset(session2, containerURL, service2.createDataset(), true);
+            }).then(() => {
+                done();
+            }).catch(done);
+        });
+    });
+
+    describe('dataset subscription', () => {
+        it('should get a legacy dataset subscription', (done) => {
+            service.getDatasetSubscription(undefined, `https://maximvdw.solidweb.org/properties/position.ttl`).then(listener => {
+                listener.close();
+                done();
+            }).catch(done);
+        }).timeout(100000000);
+    
+        it('should get a websocket2023 dataset subscription (message)', (done) => {
+            const service = solidServices[0];
+            const session = service.session;
+            let containerURL: IriString = "http://localhost:3000/test1/abc/";
+            service.getDatasetSubscription(undefined, containerURL).then(listener => {
+                listener.on('message', (msg) => {
+                    listener.close();
+                    done();
+                });
+                return service.saveDataset(session, containerURL, service.createDataset(), true);
+            }).catch(done);
+        }).timeout(100000000);
+
+        it('should get a websocket2023 dataset subscription (activity)', (done) => {
+            const service = solidServices[0];
+            const session = service.session;
+            let containerURL: IriString = "http://localhost:3000/test1/abc/";
+            service.getDatasetSubscription(undefined, containerURL).then(listener => {
+                listener.on('activity', (msg) => {
+                    console.log(msg);
+                    listener.close();
+                    done();
+                });
+                return service.saveDataset(session, containerURL, service.createDataset(), true);
+            }).catch(done);
+        }).timeout(100000000);
     });
 });

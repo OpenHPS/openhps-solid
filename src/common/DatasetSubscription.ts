@@ -1,5 +1,7 @@
+import { RDFSerializer } from '@openhps/rdf';
 import { EventEmitter } from 'events';
 import WebSocket from 'isomorphic-ws';
+import { Activity } from '../models';
 
 /**
  * Solid Dataset subscription
@@ -24,9 +26,17 @@ export class DatasetSubscription extends EventEmitter {
                 resolve(subscription);
             };
 
-            subscription._ws.onmessage = (msg: any) => {
-                if (msg.data && msg.data.slice(0, 3) === 'pub') {
-                    subscription.emit('update', msg.data.substring(3));
+            subscription._ws.onmessage = (msg: MessageEvent) => {
+                subscription.emit('message', msg.data);
+                try {
+                    // Deserialize message (activity stream)
+                    // const activity = RDFSerializer.deserializeFromString(undefined, msg.data, 'application/ld+json');
+                    // if (activity) {
+                    //     subscription.emit('activity', activity);
+                    // }
+                    subscription.emit('activity', JSON.parse(msg.data));
+                } catch (error) {
+                    subscription.emit('error', error);
                 }
             };
 
@@ -51,5 +61,17 @@ export class DatasetSubscription extends EventEmitter {
         if (this._ws) {
             this._ws.close();
         }
+    }
+
+    /**
+     * Listen to raw message events
+     * @param event 
+     * @param listener 
+     * @returns 
+     */
+    on(event: 'message', listener: (msg: any) => void): this;
+    on(event: 'activity', listener: (activity: Activity) => void): this;
+    on(event: string, listener: (msg: any) => void): this {
+        return super.on(event, listener);
     }
 }
