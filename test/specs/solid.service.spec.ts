@@ -208,6 +208,9 @@ describe('SolidService', () => {
                     listener.close();
                     done();
                 });
+                listener.once('error', (error) => {
+                    done(error);
+                });
                 return service.saveDataset(session, containerURL, service.createDataset(), true);
             }).catch(done);
         }).timeout(100000000);

@@ -1,7 +1,8 @@
 import { RDFSerializer } from '@openhps/rdf';
 import { EventEmitter } from 'events';
 import WebSocket from 'isomorphic-ws';
-import { Activity } from '../models';
+import { Activity, ActivityAdd } from '../models';
+import { IriString } from '@inrupt/solid-client';
 
 /**
  * Solid Dataset subscription
@@ -16,9 +17,10 @@ export class DatasetSubscription extends EventEmitter {
     /**
      * Create a new dataset subscription
      * @param {string} websocketUri  Websocket URI
+     * @param {IriString} [channelType]  Channel type
      * @returns {Promise<DatasetSubscription>}      Dataset subscription
      */
-    static create(websocketUri: string): Promise<DatasetSubscription> {
+    static create(websocketUri: string, channelType?: IriString): Promise<DatasetSubscription> {
         return new Promise((resolve) => {
             const subscription = new DatasetSubscription();
             subscription._ws = new WebSocket(websocketUri, ['solid-0.1']);
@@ -26,19 +28,36 @@ export class DatasetSubscription extends EventEmitter {
                 resolve(subscription);
             };
 
-            subscription._ws.onmessage = (msg: MessageEvent) => {
-                subscription.emit('message', msg.data);
-                try {
-                    // Deserialize message (activity stream)
-                    // const activity = RDFSerializer.deserializeFromString(undefined, msg.data, 'application/ld+json');
-                    // if (activity) {
-                    //     subscription.emit('activity', activity);
-                    // }
-                    subscription.emit('activity', JSON.parse(msg.data));
-                } catch (error) {
-                    subscription.emit('error', error);
-                }
-            };
+            if (channelType) {
+                subscription._ws.onmessage = (msg: MessageEvent) => {
+                    subscription.emit('message', msg.data);
+                    try {
+                        // Deserialize message (activity stream)
+                        RDFSerializer.deserializeFromJSONLD(undefined, JSON.parse(msg.data))
+                            .then((activity) => {
+                                if (activity) {
+                                    subscription.emit('activity', activity);
+                                } else {
+                                    subscription.emit('error', new Error('Failed to deserialize activity stream'));
+                                }
+                            })
+                            .catch((error) => {
+                                subscription.emit('error', error);
+                            });
+                    } catch (error) {
+                        subscription.emit('error', error);
+                    }
+                };
+            } else {
+                // Legacy
+                subscription._ws.onmessage = (msg: any) => {
+                    if (msg.data && msg.data.slice(0, 3) === 'pub') {
+                        const activity = new ActivityAdd();
+                        activity.object = msg.data.substring(3);
+                        subscription.emit('activity', activity);
+                    }
+                };
+            }
 
             subscription._ws.onerror = (e: any) => {
                 subscription.emit('error', e);
@@ -65,9 +84,9 @@ export class DatasetSubscription extends EventEmitter {
 
     /**
      * Listen to raw message events
-     * @param event 
-     * @param listener 
-     * @returns 
+     * @param event
+     * @param listener
+     * @returns
      */
     on(event: 'message', listener: (msg: any) => void): this;
     on(event: 'activity', listener: (activity: Activity) => void): this;

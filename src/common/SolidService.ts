@@ -148,6 +148,11 @@ export abstract class SolidService extends RemoteService {
     protected _session: SolidSession;
     protected _clientAuthentication: ClientAuthentication;
 
+    static {
+        // Register context for 'https://www.w3.org/ns/solid/notification/v1'
+        RDFSerializer.getDocumentLoader().addContext('https://www.w3.org/ns/solid/notification/v1', {});
+    }
+
     constructor(options?: SolidDataServiceOptions) {
         super();
         this.options = options || {};
@@ -341,10 +346,11 @@ export abstract class SolidService extends RemoteService {
         /**
          *
          * @param uri
+         * @param channelType
          */
-        function createSubscription(uri: IriString): Promise<DatasetSubscription> {
+        function createSubscription(uri: IriString, channelType?: IriString): Promise<DatasetSubscription> {
             return new Promise((resolve, reject) => {
-                DatasetSubscription.create(uri)
+                DatasetSubscription.create(uri, channelType)
                     .then((subscription) => {
                         subscription.subscribe(uri);
                         resolve(subscription);
@@ -357,11 +363,11 @@ export abstract class SolidService extends RemoteService {
             legacySubscription()
                 .then((uri) => {
                     if (uri) {
-                        createSubscription(uri).then(resolve).catch(reject);
+                        createSubscription(uri, undefined).then(resolve).catch(reject);
                     } else {
                         newSubscription()
                             .then((uri) => {
-                                return createSubscription(uri);
+                                return createSubscription(uri, ChannelType.WebSocketChannel2023);
                             })
                             .then(resolve)
                             .catch(reject);
