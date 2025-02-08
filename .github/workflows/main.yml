@@ -97,6 +97,7 @@ jobs:
           clientId: ${{ secrets.SOLID_CLIENT_ID }}
           clientSecret: ${{ secrets.SOLID_CLIENT_SECRET }}
         run: |
+          docker compose up -d
           npm run cover:ci
 
   documentation:
