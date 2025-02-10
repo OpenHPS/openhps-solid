@@ -511,7 +511,7 @@ export abstract class SolidService extends RemoteService {
         uri: string,
         dataset?: SolidDataset | (Store & RDFChangeLog) | (Store & RDFChangeLog & SolidDataset) | Store,
         append?: boolean,
-    ): Promise<SolidDataset | null> {
+    ): Promise<(SolidDataset & WithResourceInfo) | null> {
         return new Promise((resolve, reject) => {
             const options = session ? { fetch: session.fetch } : this.session;
             const documentURL = new URL(uri);
@@ -519,7 +519,6 @@ export abstract class SolidService extends RemoteService {
             const containerURL = new URL(documentURL.href);
             // Remove path resource so it ends with a /
             containerURL.pathname = containerURL.pathname.replace(/\/[^/]+$/, '/');
-
             if (dataset instanceof Store) {
                 let additions = [];
                 let deletions = [];
@@ -564,6 +563,7 @@ export abstract class SolidService extends RemoteService {
                     ...dataset,
                     internal_resourceInfo: resourceInfo,
                 } as SolidDataset;
+                console.log((dataset as any).internal_changeLog.additions);
                 saveSolidDatasetInContainer(containerURL.href, dataset, options).then(resolve).catch(reject);
             } else {
                 saveSolidDatasetAt(documentURL.href, dataset, options).then(resolve).catch(reject);

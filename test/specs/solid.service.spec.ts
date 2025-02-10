@@ -1,9 +1,10 @@
 import 'mocha';
 import { expect } from 'chai';
 import { SolidClientService, SolidSession } from '../../src';
-import { IriString } from '@openhps/rdf';
+import { IriString, RDFSerializer } from '@openhps/rdf';
 import { ModelBuilder } from '@openhps/core';
 import { generate } from '../utils/secret';
+import { SerializableThing } from '@openhps/rdf';
 
 require('dotenv').config();
 
@@ -170,8 +171,17 @@ describe('SolidService', () => {
                 // Create a new resource using session 2
                 const service2 = solidServices[1];
                 const session2 = service2.session;
-                return service2.saveDataset(session2, containerURL, service2.createDataset(), true);
-            }).then(() => {
+                const obj = new SerializableThing(`http://localhost:3000/test1/abc/${new Date().getTime()}.ttl`);
+                obj.label = "Hello World";
+                const store = RDFSerializer.serializeToStore(obj);
+                return service2.saveDataset(session2, `http://localhost:3000/test1/abc/${new Date().getTime()}.ttl`, store, true);
+            }).then((dataset) => {
+                const uri = dataset.internal_resourceInfo.sourceIri;
+                // Verify that the item has content
+                return service.getDatasetStore(session, uri);
+            }).then((store) => {
+                expect(store).to.not.be.undefined;
+                expect(store.size).to.be.greaterThan(0);
                 done();
             }).catch(done);
         });
