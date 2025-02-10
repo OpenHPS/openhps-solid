@@ -43,6 +43,13 @@ import {
     hasAcl,
     saveAclFor,
     WithAcl,
+    setAgentResourceAccess,
+    setGroupDefaultAccess,
+    setGroupResourceAccess,
+    createAcl,
+    AclDataset,
+    setPublicResourceAccess,
+    setPublicDefaultAccess,
 } from '@inrupt/solid-client';
 import { fetch } from 'cross-fetch';
 import {
@@ -563,7 +570,6 @@ export abstract class SolidService extends RemoteService {
                     ...dataset,
                     internal_resourceInfo: resourceInfo,
                 } as SolidDataset;
-                console.log((dataset as any).internal_changeLog.additions);
                 saveSolidDatasetInContainer(containerURL.href, dataset, options).then(resolve).catch(reject);
             } else {
                 saveSolidDatasetAt(documentURL.href, dataset, options).then(resolve).catch(reject);
@@ -591,78 +597,83 @@ export abstract class SolidService extends RemoteService {
     /**
      * Set access control list for a specific object
      * @param {IriString} uri URI of the object
-     * @param {Partial<AccessModes & { default?: boolean, public?: boolean }>} access Access modes
+     * @param {Partial<AccessModes & { default?: boolean, public?: boolean, group?: boolean }>} access Access modes
      * @param {string} [webId] WebID to set access for
      * @param {SolidSession} [session] Session to use
      */
     setAccess(
         uri: IriString,
-        access: Partial<AccessModes & { default?: boolean; public?: boolean }>,
+        access: Partial<AccessModes & { default?: boolean; public?: boolean; group?: boolean }>,
         webId: string = foaf.Agent,
         session?: SolidSession,
     ): Promise<void> {
         return new Promise((resolve, reject) => {
-            universalAccess
-                .setAgentAccess(
-                    uri,
-                    webId,
-                    access,
-                    session
-                        ? {
-                              fetch: session.fetch,
-                          }
-                        : this.session,
-                )
-                .then(() => {
-                    if (access.public) {
-                        // Set public access
-                        return this.setPublicAccess(uri, access, session);
-                    } else {
-                        resolve();
-                    }
-                })
-                .then(() => {
-                    if (access.default) {
-                        // Set default access
-                        // Get ACL dataset
-                        return getSolidDatasetWithAcl(uri, session ? { fetch: session.fetch } : this.session);
-                    } else {
-                        resolve();
-                    }
-                })
+            getSolidDatasetWithAcl(uri, session ? { fetch: session.fetch } : this.session)
                 .then((dataset: SolidDataset & WithServerResourceInfo & WithAcl) => {
-                    if (hasAcl(dataset)) {
-                        let acl = getResourceAcl(dataset);
+                    let acl: AclDataset;
+                    // Get or access Acl
+                    if (!hasAcl(dataset)) {
+                        acl = getResourceAcl(dataset);
+                    } else {
+                        acl = createAcl(dataset as any);
+                    }
+
+                    access.group = access.group || webId === foaf.Agent || webId === 'public';
+
+                    // Resource access
+                    if (access.group) {
+                        acl = setGroupResourceAccess(acl, webId, {
+                            read: access.read,
+                            append: access.append,
+                            write: access.write,
+                            control: access.controlWrite,
+                        });
+                    } else {
+                        acl = setAgentResourceAccess(acl, webId, {
+                            read: access.read,
+                            append: access.append,
+                            write: access.write,
+                            control: access.controlWrite,
+                        });
+                    }
+
+                    // Set public access
+                    if (access.public) {
+                        acl = setPublicResourceAccess(acl, {
+                            read: access.read,
+                            append: access.append,
+                            write: access.write,
+                            control: access.controlWrite,
+                        });
+                    }
+                    if (access.public && access.default) {
+                        acl = setPublicDefaultAccess(acl, {
+                            read: access.read,
+                            append: access.append,
+                            write: access.write,
+                            control: access.controlWrite,
+                        });
+                    }
+
+                    // Set default group access
+                    if (access.group && access.default) {
+                        acl = setGroupDefaultAccess(acl, webId, {
+                            read: access.read,
+                            append: access.append,
+                            write: access.write,
+                            control: access.controlWrite,
+                        });
+                    } else if (access.default) {
                         acl = setAgentDefaultAccess(acl, webId, {
                             read: access.read,
                             append: access.append,
                             write: access.write,
                             control: access.controlWrite,
                         });
-                        return saveAclFor(dataset as any, acl, session ? { fetch: session.fetch } : this.session);
-                    } else {
-                        resolve();
                     }
-                })
-                .then(() => {
-                    resolve();
-                })
-                .catch(reject);
-        });
-    }
 
-    setPublicAccess(uri: IriString, access: Partial<AccessModes>, session?: SolidSession): Promise<void> {
-        return new Promise((resolve, reject) => {
-            universalAccess
-                .setPublicAccess(
-                    uri,
-                    access,
-                    session
-                        ? {
-                              fetch: session.fetch,
-                          }
-                        : this.session,
-                )
+                    return saveAclFor(dataset as any, acl, session ? { fetch: session.fetch } : this.session);
+                })
                 .then(() => {
                     resolve();
                 })

@@ -159,6 +159,7 @@ describe('SolidService', () => {
             const service = solidServices[0];
             const session = service.session;
             let containerURL: IriString = "http://localhost:3000/test1/abc/";
+            let uri = "";
             service.createContainer(session, containerURL).then(() => {
                 // Set access rights
                 return service.setAccess(containerURL, {
@@ -176,9 +177,17 @@ describe('SolidService', () => {
                 const store = RDFSerializer.serializeToStore(obj);
                 return service2.saveDataset(session2, `http://localhost:3000/test1/abc/${new Date().getTime()}.ttl`, store, true);
             }).then((dataset) => {
-                const uri = dataset.internal_resourceInfo.sourceIri;
+                uri = dataset.internal_resourceInfo.sourceIri;
                 // Verify that the item has content
                 return service.getDatasetStore(session, uri);
+            }).then((store) => {
+                expect(store).to.not.be.undefined;
+                expect(store.size).to.be.greaterThan(0);
+                // Service 2 should be able to read the content
+                // Verify that the item has content
+                const service2 = solidServices[1];
+                const session2 = service2.session;
+                return service2.getDatasetStore(session2, uri);
             }).then((store) => {
                 expect(store).to.not.be.undefined;
                 expect(store.size).to.be.greaterThan(0);
