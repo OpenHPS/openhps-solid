@@ -624,6 +624,12 @@ export abstract class SolidService extends RemoteService {
                             write: true,
                             control: true,
                         });
+                        acl = setAgentResourceAccess(acl, session.info.webId, {
+                            read: true,
+                            append: true,
+                            write: true,
+                            control: true,
+                        });
                     }
 
                     access.group = access.group || webId === foaf.Agent || webId === 'public';
