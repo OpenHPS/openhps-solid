@@ -616,6 +616,13 @@ export abstract class SolidService extends RemoteService {
                         acl = getResourceAcl(dataset);
                     } else {
                         acl = createAcl(dataset as any);
+                        // Set owner permissions
+                        acl = setAgentDefaultAccess(acl, session.info.webId, {
+                            read: true,
+                            append: true,
+                            write: true,
+                            control: true,
+                        });
                     }
 
                     access.group = access.group || webId === foaf.Agent || webId === 'public';
