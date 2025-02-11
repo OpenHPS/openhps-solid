@@ -608,7 +608,8 @@ export abstract class SolidService extends RemoteService {
         session?: SolidSession,
     ): Promise<void> {
         return new Promise((resolve, reject) => {
-            getSolidDatasetWithAcl(uri, session ? { fetch: session.fetch } : this.session)
+            session = session ?? this.session;
+            getSolidDatasetWithAcl(uri, session ? { fetch: session.fetch } : undefined)
                 .then((dataset: SolidDataset & WithServerResourceInfo & WithAcl) => {
                     let acl: AclDataset;
                     // Get or access Acl
