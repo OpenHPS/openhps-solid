@@ -34,8 +34,13 @@ function defaultFilter(node: Node): boolean {
 }
 
 /**
- * Solid property service
- * @see {@link https://woutslabbinck.github.io/LDESinLDP/}
+ * Solid property service. This is a service that allows you to store *observations* in a Solid Pod.
+ * The service will handle the creation of the necessary containers and resources to store the observations.
+ * Behind the scenes, LDES is used to fragment the data over multiple containers (based on LDESinLDP).
+ *
+ * Please note that this service is still experimental.
+ * @see {@link https://openhps.org/publications/2022/ipin2022/ Properties and observations to Solid}
+ * @see {@link https://woutslabbinck.github.io/LDESinLDP/ LDES structuring in LDP containers}
  */
 export class SolidPropertyService extends DataService<string, any> {
     protected driver: SolidDataDriver<any>;
@@ -69,6 +74,8 @@ export class SolidPropertyService extends DataService<string, any> {
 
     /**
      * Fetch all properties linked to a profile
+     *  This function will return an array of properties that are linked to the profile
+     *  using the `ssn:hasProperty` predicate.
      * @param {SolidSession} session Solid session
      * @param {SolidProfileObject} profile Profile object
      * @returns {Promise<Property[]>} Property promise
@@ -106,10 +113,10 @@ export class SolidPropertyService extends DataService<string, any> {
     }
 
     /**
-     * Create a new property
-     * @param {SolidSession} session
-     * @param {Property} property
-     * @returns
+     * Create a new property on the profile
+     * @param {SolidSession} session Solid session
+     * @param {Property} property Property to create
+     * @returns {Promise<IriString>} Property URL
      */
     createProperty(session: SolidSession, property: Property): Promise<IriString> {
         return new Promise((resolve, reject) => {
@@ -239,7 +246,7 @@ export class SolidPropertyService extends DataService<string, any> {
     }
 
     /**
-     * Find the root node of a property
+     * Find the root TREE node of a property.
      * @param session Solid session
      * @param property Property
      * @returns {Promise<Node>} Root node
@@ -295,7 +302,7 @@ export class SolidPropertyService extends DataService<string, any> {
 
     /**
      * Add an observation to a property
-     * @param session
+     * @param {SolidSession} session Solid session to get the data from
      * @param property
      * @param observation
      * @returns

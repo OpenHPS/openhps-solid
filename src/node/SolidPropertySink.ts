@@ -4,6 +4,29 @@ import { SolidPropertyService, SolidSession } from '../common';
 
 /**
  * Solid property sink is a sink node that writes data to a Solid pod.
+ *  This sink node is used together with [[SolidPropertyService]] to initialize and
+ *  store data in a Solid pod.
+ * 
+ * ## Usage
+ * 
+ * ```typescript
+        ModelBuilder.create()
+            .addService(new SolidPropertyService((node) => {
+                return node.collection ? node.collection.members.length < 50 : true;
+            }))
+            .addService(new SolidClientService({
+                clientName: "OpenHPS",
+                defaultOidcIssuer: "https://.../",
+                clientId: process.env.clientId,
+                clientSecret: process.env.clientSecret,
+                autoLogin: true
+            }))
+            .from()
+            .to(new SolidPropertySink({
+                properties: [PropertyType.POSITION]
+            }))
+            .build();
+ * ```
  */
 export class SolidPropertySink<Out extends DataFrame> extends SinkNode<Out> {
     protected options: SolidPropertySinkOptions;
