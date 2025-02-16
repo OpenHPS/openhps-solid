@@ -1,9 +1,11 @@
 import { DataFrame, PushOptions, SinkNode, SinkNodeOptions } from '@openhps/core';
 import { FeatureOfInterest, IriString, ObservableProperty, Observation, Property } from '@openhps/rdf';
-import { SolidPropertyService, SolidSession } from '../common';
+import { SolidPropertyService } from './SolidPropertyService';
+import { SolidSession } from './SolidService';
 
 /**
  * Solid property sink is a sink node that writes data to a Solid pod.
+ * It is used together with the [[SolidPropertyService]].
  */
 export class SolidPropertySink<Out extends DataFrame> extends SinkNode<Out> {
     protected options: SolidPropertySinkOptions;
