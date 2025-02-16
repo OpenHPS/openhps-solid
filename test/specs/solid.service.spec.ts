@@ -1,7 +1,7 @@
 import 'mocha';
 import { expect } from 'chai';
 import { SolidClientService, SolidSession } from '../../src';
-import { IriString, RDFSerializer } from '@openhps/rdf';
+import { DataFactory, IriString, Quad, RDFSerializer, Store } from '@openhps/rdf';
 import { ModelBuilder } from '@openhps/core';
 import { generate } from '../utils/secret';
 import { SerializableThing } from '@openhps/rdf';
@@ -233,5 +233,62 @@ describe('SolidService', () => {
                 return service.saveDataset(session, containerURL, service.createDataset(), true);
             }).catch(done);
         }).timeout(100000000);
+    });
+
+    describe('caching', () => {
+
+        before((done) => {
+            // Delete all test documents
+            const service = solidServices[0];
+            const session = service.session;
+            service.getDatasetStore(session, "http://localhost:3000/test1/abc/test.ttl").then(store => {
+                if (store.size > 0) {
+                    return service.deleteDataset(session, "http://localhost:3000/test1/abc/test.ttl");
+                } else {
+                    return Promise.resolve();
+                }
+            }).then(() => {
+                done();
+            }).catch(done);
+        });
+
+        it('should not cache a document', (done) => {
+            const service = solidServices[0];
+            const service2 = solidServices[1];
+            const session = service.session;
+            const session2 = service2.session;
+            let url: IriString = "http://localhost:3000/test1/abc/test.ttl";
+            const store = new Store();
+            store.add(new Quad(DataFactory.namedNode("https://test.com/subject"), DataFactory.namedNode("https://test.com/predicate"), DataFactory.namedNode("https://test.com/object"), DataFactory.defaultGraph()));
+            service.saveDataset(session, url, store, false).then(() => {
+                // Set access rights
+                return service.setAccess(url, {
+                    append: true,
+                    read: true,
+                    default: true,
+                    public: true
+                });
+            }).then(() => {
+                return service.getDatasetStore(session, url);
+            }).then(store => {
+                expect(store).to.not.be.undefined;
+                expect(store.size).to.be.greaterThan(0);
+                // Fetch document 1st time
+                return service2.getDatasetStore(session2, url);
+            }).then(store => {
+                expect(store).to.not.be.undefined;
+                expect(store.size).to.be.greaterThan(0);
+                // Update doucment
+                store.add(new Quad(DataFactory.namedNode("https://test.com/subject"), DataFactory.namedNode("https://test.com/predicate"), DataFactory.namedNode("https://test.com/object2"), DataFactory.defaultGraph()));
+                return service.saveDataset(session, url, store, false);
+            }).then(() => {
+                // Fetch document 2nd time
+                return service2.getDatasetStore(session2, url);
+            }).then(store => {
+                expect(store).to.not.be.undefined;
+                expect(store.size).to.be.greaterThan(1);
+                done();
+            }).catch(done);
+        });
     });
 });

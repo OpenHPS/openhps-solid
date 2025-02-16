@@ -385,22 +385,27 @@ export class SolidPropertyService extends DataService<string, any> {
      * Fetch all observations for a property
      * @param session
      * @param property
-     * @param after
+     * @param options Observation fetch options
      * @returns
      */
-    fetchObservations(session: SolidSession, property: Property, after?: Date): Promise<Observation[]> {
+    fetchObservations(
+        session: SolidSession,
+        property: Property,
+        options: ObservationFetchOptions = {},
+    ): Promise<Observation[]> {
         return new Promise((resolve, reject) => {
             this.findAll(
                 {
                     query: {
-                        ...(after
+                        ...(options.after
                             ? {
                                   resultTime: {
-                                      $gte: after,
+                                      $gte: options.after,
                                   },
                               }
                             : {}),
                     },
+                    limit: options.limit,
                     uri: property.id,
                     webId: session.info.webId,
                 } as SolidFilterQuery<Observation>,
@@ -414,4 +419,9 @@ export class SolidPropertyService extends DataService<string, any> {
                 .catch(reject);
         });
     }
+}
+
+export interface ObservationFetchOptions {
+    after?: Date;
+    limit?: number;
 }

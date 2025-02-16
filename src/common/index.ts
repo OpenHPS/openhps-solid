@@ -6,4 +6,7 @@ export * from './SolidProfileObject';
 export * from './SolidDataDriver';
 export * from './SolidPropertyService';
 export * from './DatasetSubscription';
+export * from './SolidPropertySink';
+export * from './SolidPropertySource';
+
 export const DefaultEngine: ActorInitQueryBase = require('./engine-default')(); // eslint-disable-line
