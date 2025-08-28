@@ -33,7 +33,7 @@ export const amount: Property = 'https://w3id.org/ldes#amount';
 /**
  * point in time
  * 
- * After this point in time members are kept.
+ * Only after this point in time, members are kept.
  *
  * https://w3id.org/ldes#pointInTime
  */
@@ -51,7 +51,7 @@ export const versionKey: Property = 'https://w3id.org/ldes#versionKey';
 /**
  * versionOf Path
  * 
- * SHACL property path to the non-versioned identifier of the entity.
+ * SHACL property path to the non-versioned IRI of the entity.
  *
  * https://w3id.org/ldes#versionOfPath
  */
@@ -60,7 +60,7 @@ export const versionOfPath: Property = 'https://w3id.org/ldes#versionOfPath';
 /**
  * Timestamp Path
  * 
- * SHACL property path to the timestamp when the version object entered the event stream.
+ * SHACL property path to the xsd:dateTime literal in each member that defines the order of the event stream.
  *
  * https://w3id.org/ldes#timestampPath
  */
@@ -92,6 +92,15 @@ export const versionMaterializationUntil: Property = 'https://w3id.org/ldes#vers
  * https://w3id.org/ldes#EventStream
  */
 export const EventStream: Class = 'https://w3id.org/ldes#EventStream';
+
+/**
+ * Event Source
+ * 
+ * A data service that provides the source other views should synchronize with
+ *
+ * https://w3id.org/ldes#EventSource
+ */
+export const EventSource: Class = 'https://w3id.org/ldes#EventSource';
 
 /**
  * Retention Policy
