@@ -57,7 +57,7 @@
         "config/**/*"
     ],
     "scripts": {
-        "prepare": "husky && node ./src/fix/install.js && cross-env npm-run-all --parallel prepare:terms prepare:comunica",
+        "prepare": "husky && node ./src/fix/install.js && npm run prepare:comunica",
         "prepare:comunica": "comunica-compile-config config/config.json > src/common/engine-default.js",
         "prepare:terms": "openhps-rdf -d ./src/terms -n ldes:https://w3id.org/ldes# -n ldp:http://www.w3.org/ns/ldp# -n tree:https://w3id.org/tree# -n activitystreams:https://www.w3.org/ns/activitystreams# -m https://www.w3.org/ns/activitystreams# https://raw.githubusercontent.com/w3c/activitystreams/refs/heads/main/vocabulary/activitystreams2.owl",
         "update": "ncu -u -x eslint,chai",
