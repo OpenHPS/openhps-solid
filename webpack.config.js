@@ -54,7 +54,7 @@ const bundle = (env, module, entry = 'index', suffix = '') => {
   const filename = `${PROJECT_NAME}${suffix}${module ? ".es" : ""}${env.prod ? ".min" : ""}`;
   return {
     name: PROJECT_NAME,
-    entry: `./dist/esm5/${entry}.js`,
+    entry: `./dist/esm/${entry}.js`,
     output: {
       path: path.resolve(__dirname, 'dist'),
       filename: `web/${filename}.js`,

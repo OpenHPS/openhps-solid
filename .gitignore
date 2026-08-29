@@ -7,3 +7,8 @@ artifacts/
 test-results.xml
 .env
 src/**/engine-default.js
+
+# OpenHPS baseline
+.cache/
+xunit.xml
+.DS_Store

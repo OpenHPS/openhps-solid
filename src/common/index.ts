@@ -9,4 +9,4 @@ export * from './DatasetSubscription';
 export * from './SolidPropertySink';
 export * from './SolidPropertySource';
 
-export const DefaultEngine: ActorInitQueryBase = require('./engine-default')(); // eslint-disable-line
+export const DefaultEngine: ActorInitQueryBase = require('./engine-default')();

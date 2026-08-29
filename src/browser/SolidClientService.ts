@@ -187,7 +187,8 @@ export class SolidClientService extends SolidService {
                 );
                 if (tokensString) {
                     const tokens = JSON.parse(tokensString);
-                    const authFetch = await buildAuthenticatedFetch(fetch, tokens.accessToken, {
+                    const authFetch = await buildAuthenticatedFetch(tokens.accessToken, {
+                        fetch,
                         dpopKey: tokens.dpopKey,
                         refreshOptions: undefined,
                         eventEmitter: undefined,
@@ -265,7 +266,8 @@ export class SolidClientService extends SolidService {
                     expirationDate,
                 }),
             );
-            const authFetch = await buildAuthenticatedFetch(fetch, tokens.accessToken, {
+            const authFetch = await buildAuthenticatedFetch(tokens.accessToken, {
+                fetch,
                 dpopKey: tokens.dpopKey as any,
                 refreshOptions: undefined,
                 eventEmitter: undefined,

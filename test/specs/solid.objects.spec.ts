@@ -1,19 +1,31 @@
+import { requireCredentials } from '../requireCredentials';
 import { SolidClientService, SolidDataDriver } from '../../src';
-import { Accelerometer, DataFrame, DataFrameService, DataObject, DataObjectService, Model, ModelBuilder } from '@openhps/core';
+import {
+    Accelerometer,
+    DataFrame,
+    DataFrameService,
+    DataObject,
+    DataObjectService,
+    Model,
+    ModelBuilder,
+} from '@openhps/core';
 require('dotenv').config();
 
 describe('SolidDataDriver', () => {
     let model: Model<any>;
 
-    before(async () => {
+    before(async function () {
+        if (!requireCredentials(this)) return;
         model = await ModelBuilder.create()
-            .addService(new SolidClientService({
-                clientName: "OpenHPS",
-                clientId: process.env.clientId,
-                clientSecret: process.env.clientSecret,
-                defaultOidcIssuer: "https://solid.maximvdw.be/",
-                autoLogin: true
-            }))
+            .addService(
+                new SolidClientService({
+                    clientName: 'OpenHPS',
+                    clientId: process.env.clientId,
+                    clientSecret: process.env.clientSecret,
+                    defaultOidcIssuer: 'https://solid.maximvdw.be/',
+                    autoLogin: true,
+                }),
+            )
             .addService(new DataObjectService(new SolidDataDriver(DataObject)))
             .addService(new DataFrameService(new SolidDataDriver(DataFrame)))
             .from()
@@ -22,28 +34,32 @@ describe('SolidDataDriver', () => {
     });
 
     after(() => {
+        // `before` skips without credentials, so there may be nothing to tear down.
+        if (!model) return;
         model.emit('destroy');
     });
 
     describe('insert', () => {
-
         it('should insert objects that contain a webId', (done) => {
             const session = model.findService(SolidClientService).session;
 
-            const sensor = new Accelerometer("mysensor");
+            const sensor = new Accelerometer('mysensor');
             sensor.frequency = 50;
             sensor.webId = session.info.webId;
             sensor.rdf = {
                 path: `sensors/test2.ttl` as any,
             };
-            model.findDataService(DataObject)
-                .insert(sensor.uid, sensor).then(result => {
+            model
+                .findDataService(DataObject)
+                .insert(sensor.uid, sensor)
+                .then((result) => {
                     // Delete again to make Inrupt happy <3
                     return model.findDataService(DataObject).delete(sensor.uid);
-                }).then(() => {
+                })
+                .then(() => {
                     done();
-                }).catch(done);
+                })
+                .catch(done);
         });
-
     });
 });
