@@ -93,7 +93,7 @@
         "@inrupt/oidc-client-ext": "^3.1.0",
         "@inrupt/solid-client": "^2.1.2",
         "@inrupt/solid-client-authn-browser": "^3.1.0",
-        "@inrupt/solid-client-authn-node": "^3.1.0",
+        "@inrupt/solid-client-authn-node": "^5.0.0",
         "@inrupt/solid-client-notifications": "^3.0.1",
         "@solid-notifications/discovery": "^0.1.2",
         "@solid-notifications/subscription": "^0.1.2",
