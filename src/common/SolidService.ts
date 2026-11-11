@@ -286,7 +286,8 @@ export abstract class SolidService extends RemoteService {
      * @returns {Promise<SolidDataset>} Promise of a solid dataset
      */
     getDataset(session: SolidSession, uri: string): Promise<SolidDataset> {
-        return new Promise(async (resolve, reject) => { // eslint-disable-line
+        return new Promise(async (resolve, reject) => {
+            // eslint-disable-line
             const documentURL = uri.startsWith('http') ? new URL(uri) : await this.getDocumentURL(session, uri);
             documentURL.hash = '';
             getSolidDataset(documentURL.href, session ? { fetch: session.fetch } : this.session)
@@ -527,7 +528,7 @@ export abstract class SolidService extends RemoteService {
             // Remove path resource so it ends with a /
             containerURL.pathname = containerURL.pathname.replace(/\/[^/]+$/, '/');
             if (dataset instanceof Store) {
-                let additions = [];
+                let additions: any[];
                 let deletions = [];
 
                 if (dataset['additions'] && dataset['deletions']) {

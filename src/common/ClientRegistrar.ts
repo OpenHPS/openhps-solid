@@ -55,7 +55,7 @@ export class ClientRegistrar implements IClientRegistrar {
             });
             return registeredClient;
         } catch (error) {
-            throw new Error(`Client registration failed: [${error}]`);
+            throw new Error(`Client registration failed: [${error}]`, { cause: error });
         }
     }
 }
