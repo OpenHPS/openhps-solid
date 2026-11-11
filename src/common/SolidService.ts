@@ -29,7 +29,6 @@ import {
     setThing,
     SolidDataset,
     createSolidDataset,
-    FetchError,
     getPodUrlAll,
     deleteContainer,
     universalAccess,
@@ -285,22 +284,18 @@ export abstract class SolidService extends RemoteService {
      * @param {string} uri URI of the thing in the Solid Pod
      * @returns {Promise<SolidDataset>} Promise of a solid dataset
      */
-    getDataset(session: SolidSession, uri: string): Promise<SolidDataset> {
-        return new Promise(async (resolve, reject) => {
-            // eslint-disable-line
-            const documentURL = uri.startsWith('http') ? new URL(uri) : await this.getDocumentURL(session, uri);
-            documentURL.hash = '';
-            getSolidDataset(documentURL.href, session ? { fetch: session.fetch } : this.session)
-                .then(resolve)
-                .catch((ex: FetchError) => {
-                    if (ex.response.status === 404) {
-                        // Create dataset when 404 (not found)
-                        resolve(undefined);
-                    } else {
-                        reject(ex);
-                    }
-                });
-        });
+    async getDataset(session: SolidSession, uri: string): Promise<SolidDataset> {
+        const documentURL = uri.startsWith('http') ? new URL(uri) : await this.getDocumentURL(session, uri);
+        documentURL.hash = '';
+        try {
+            return await getSolidDataset(documentURL.href, session ? { fetch: session.fetch } : this.session);
+        } catch (ex) {
+            if (ex.response.status === 404) {
+                // Create dataset when 404 (not found)
+                return undefined;
+            }
+            throw ex;
+        }
     }
 
     /**
