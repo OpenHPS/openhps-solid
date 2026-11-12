@@ -29,7 +29,7 @@ In a normal positioning system the developer is meant to store the position to a
     <img src="./docs/media/images/centralized.svg" alt="Conventional positioning database">
 </p>
 
-Solid is a specification that lets people store their data securely in decentralized data stores called Pods. Pods are like secure personal web servers for your data. OpenHPS leverages Solid to store ```DataObject```s and ```DataFrame``s that contain private position information and other sensor data. Any data objects belonging to a certain person will be stored in the decentralized Pod owned by that user.
+Solid is a specification that lets people store their data securely in decentralized data stores called Pods. Pods are like secure personal web servers for your data. OpenHPS leverages Solid to store `DataObject`s and ```DataFrame``s that contain private position information and other sensor data. Any data objects belonging to a certain person will be stored in the decentralized Pod owned by that user.
 
 <p align="center">
     <img src="./docs/media/images/decentralized1.svg" alt="Decentralized over a single positioning system">
@@ -48,7 +48,9 @@ These two features combined not only offer more awareness for users on how they 
 </p>
 
 ## Getting Started
+
 If you have [npm installed](https://www.npmjs.com/get-npm), start using @openhps/solid with the following command.
+
 ```bash
 npm install @openhps/solid --save
 ```
@@ -56,64 +58,70 @@ npm install @openhps/solid --save
 ## Usage
 
 ### WebID
-@openhps/solid adds a new typed parameter to ```DataObject```s and ```DataFrame```s for the [WebID](https://solidproject.org/faqs#what-is-a-webid) of a user.
 
-**```DataObject```**
+@openhps/solid adds a new typed parameter to `DataObject`s and `DataFrame`s for the [WebID](https://solidproject.org/faqs#what-is-a-webid) of a user.
+
+**`DataObject`**
+
 ```typescript
 import { DataObject } from '@openhps/core';
 
-const phone = new DataObject("myphone");
-phone.webId = "https://maximvdw.solidweb.org/profile/card#me";
+const phone = new DataObject('myphone');
+phone.webId = 'https://maximvdw.solidweb.org/profile/card#me';
 ```
 
 The WebID identifies that this object or data frame is owned by a particular user or organization and should be stored in their Pod.
 
-**```Dataframe```**
+**`Dataframe`**
+
 ```typescript
 import { DataFrame } from '@openhps/core';
 
 const frame = new DataFrame();
-frame.webId = "https://maximvdw.solidweb.org/profile/card#me";
+frame.webId = 'https://maximvdw.solidweb.org/profile/card#me';
 ```
 
 ### Authentication
+
 Regardless if you are implementing the positioning system on a client or server, the system will be a client for whatever Pod server a user is using. Before information can be modified or created, the user needs to be authenticated.
 
-- **Browser to Browser Authentication**: The user authenticates through the front-end application. After log in the redirect is handled by the front-end application through the ```window.location.href``` URL. The session remains stored on the browser and no server is involved.
+- **Browser to Browser Authentication**: The user authenticates through the front-end application. After log in the redirect is handled by the front-end application through the `window.location.href` URL. The session remains stored on the browser and no server is involved.
 - **Browser to Server Authentication**: The user authenticates through the front-end application but the response is captured by a server instead of the front-end application. This allows the server to store multiple sessions.
 - **Server Authentication**: The user authenticates by going to a specific path on the server. They will be prompted to log in after which the server continues the authentication and captures the response from the Pod Issuer.
 
 #### Node.js
+
 ```typescript
 ModelBuilder.create()
-    .addService(new SolidClientService({
-        loginPath: "/login",
-        redirectPath: "/redirect",
-        redirectUrl: "http://localhost:3030/redirect",
-        authServer: {
-            port: 3030
-        },
-        loginSuccessCallback: (req: express.Request, res: express.Response, sessionInfo: any) => {
-            res.send("OK " + JSON.stringify(sessionInfo));
-        },
-        loginErrorCallback: (req: express.Request, res: express.Response, sessionInfo: any, reason: any) => {
-            res.send("error: " + reason);
-        }
-    }))
+    .addService(
+        new SolidClientService({
+            loginPath: '/login',
+            redirectPath: '/redirect',
+            redirectUrl: 'http://localhost:3030/redirect',
+            authServer: {
+                port: 3030,
+            },
+            loginSuccessCallback: (req: express.Request, res: express.Response, sessionInfo: any) => {
+                res.send('OK ' + JSON.stringify(sessionInfo));
+            },
+            loginErrorCallback: (req: express.Request, res: express.Response, sessionInfo: any, reason: any) => {
+                res.send('error: ' + reason);
+            },
+        }),
+    )
     .from()
     .to()
     .build();
 ```
 
 ### Storage
-Data objects and data frames of generic or specific types can be stored using the ```SolidDataDriver```. This driver uses the
-```SolidDataClient```.
+
+Data objects and data frames of generic or specific types can be stored using the `SolidDataDriver`. This driver uses the
+`SolidDataClient`.
 
 ```typescript
 ModelBuilder.create()
-    .addService(new SolidClientService({
-        /* ... */
-    }))
+    .addService(new SolidClientService({/* ... */}))
     .addService(new DataObjectService(new SolidDataDriver(DataObject)))
     .addService(new DataFrameService(new SolidDataDriver(DataFrame)))
     .from()
@@ -122,14 +130,15 @@ ModelBuilder.create()
 ```
 
 ## Contributors
-The framework is open source and is mainly developed by PhD Student Maxim Van de Wynckel as part of his research towards *Interoperable and Discoverable Indoor Positioning Systems* under the supervision of Prof. Dr. Beat Signer.
 
-Maintained by [MVdW-Software](https://mvdw-software.com).
+The framework is open source and was developed as part of the PhD of Maxim Van de Wynckel under the supervision of Prof. Dr. Beat Signer. It is currently maintained by [MVdW-Software](https://mvdw-software.com).
 
 ## Contributing
+
 Use of OpenHPS, contributions and feedback is highly appreciated. Please read our [contributing guidelines](https://github.com/OpenHPS/.github/blob/HEAD/CONTRIBUTING.md) for more information.
 
 ## License
+
 Copyright (C) 2019-2024 Maxim Van de Wynckel & Vrije Universiteit Brussel
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
