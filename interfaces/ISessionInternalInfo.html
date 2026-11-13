@@ -12,7 +12,7 @@
 <h1>Interface ISessionInternalInfo</h1></div>
 <div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">ISessionInternalInfo</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#clientappsecret">clientAppSecret</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#issuer">issuer</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#redirecturl">redirectUrl</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#refreshtoken">refreshToken</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#tokentype">tokenType</a><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">&quot;DPoP&quot;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;Bearer&quot;</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/OpenHPS/openhps-solid/blob/6347120508247e564819033105eff9dd16f40c70/src/common/SolidService.ts#L1103">src/common/SolidService.ts:1103</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/OpenHPS/openhps-solid/blob/c20132083f111efd9033eb6237bd40426d158dc1/src/common/SolidService.ts#L1128">src/common/SolidService.ts:1128</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -36,35 +36,35 @@
 WebIDs, the client secret is still required at the token endpoint.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/OpenHPS/openhps-solid/blob/6347120508247e564819033105eff9dd16f40c70/src/common/SolidService.ts#L1120">src/common/SolidService.ts:1120</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/OpenHPS/openhps-solid/blob/c20132083f111efd9033eb6237bd40426d158dc1/src/common/SolidService.ts#L1145">src/common/SolidService.ts:1145</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="issuer"><code class="tsd-tag">Optional</code><span>issuer</span><a href="#issuer" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">issuer</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>The OIDC issuer that issued the tokens authenticating the session.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/OpenHPS/openhps-solid/blob/6347120508247e564819033105eff9dd16f40c70/src/common/SolidService.ts#L1111">src/common/SolidService.ts:1111</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/OpenHPS/openhps-solid/blob/c20132083f111efd9033eb6237bd40426d158dc1/src/common/SolidService.ts#L1136">src/common/SolidService.ts:1136</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="redirecturl"><code class="tsd-tag">Optional</code><span>redirect<wbr/>Url</span><a href="#redirecturl" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">redirectUrl</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>The redirect URL registered when initially logging the session in.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/OpenHPS/openhps-solid/blob/6347120508247e564819033105eff9dd16f40c70/src/common/SolidService.ts#L1115">src/common/SolidService.ts:1115</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/OpenHPS/openhps-solid/blob/c20132083f111efd9033eb6237bd40426d158dc1/src/common/SolidService.ts#L1140">src/common/SolidService.ts:1140</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="refreshtoken"><code class="tsd-tag">Optional</code><span>refresh<wbr/>Token</span><a href="#refreshtoken" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">refreshToken</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">string</span></div>
 <div class="tsd-comment tsd-typography"><p>The refresh token associated with the session (if any).</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/OpenHPS/openhps-solid/blob/6347120508247e564819033105eff9dd16f40c70/src/common/SolidService.ts#L1107">src/common/SolidService.ts:1107</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/OpenHPS/openhps-solid/blob/c20132083f111efd9033eb6237bd40426d158dc1/src/common/SolidService.ts#L1132">src/common/SolidService.ts:1132</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="tokentype"><code class="tsd-tag">Optional</code><span>token<wbr/>Type</span><a href="#tokentype" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">tokenType</span><span class="tsd-signature-symbol">?:</span> <span class="tsd-signature-type">&quot;DPoP&quot;</span> <span class="tsd-signature-symbol">|</span> <span class="tsd-signature-type">&quot;Bearer&quot;</span></div>
 <div class="tsd-comment tsd-typography"><p>The token type used by the session</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/OpenHPS/openhps-solid/blob/6347120508247e564819033105eff9dd16f40c70/src/common/SolidService.ts#L1124">src/common/SolidService.ts:1124</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/OpenHPS/openhps-solid/blob/c20132083f111efd9033eb6237bd40426d158dc1/src/common/SolidService.ts#L1149">src/common/SolidService.ts:1149</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
