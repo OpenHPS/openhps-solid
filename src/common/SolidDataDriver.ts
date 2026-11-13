@@ -27,8 +27,8 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
         }
         this.options.lenient = true;
         this.options.uriPrefix = this.options.uriPrefix || '/openhps';
-        this.options.serialize = defaultThingSerializer;
-        this.options.deserialize = defaultThingDeserializer;
+        this.options.serialize = this.options.serialize ?? defaultThingSerializer;
+        this.options.deserialize = this.options.deserialize ?? defaultThingDeserializer;
 
         this.once('build', this._initService.bind(this));
     }
@@ -87,7 +87,7 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
         });
     }
 
-    findOne(query: SolidFilterQuery<T>, options: FindOptions = {}): Promise<T> {
+    private getQueryStore(query: SolidFilterQuery<T>): Promise<Store | undefined> {
         return this.service
             .findSessionByWebId(query.webId)
             .then((session) => {
@@ -99,58 +99,50 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
                 }
                 const subjects = Object.values(dataset.graphs.default);
                 const quads = RDFSerializer.subjectsToQuads(subjects);
-                const store = new Store(quads);
-                return super.findOne(query.query, options, {
-                    sources: [store],
-                    lenient: true,
-                });
+                return new Store(quads);
             });
+    }
+
+    findOne(query: SolidFilterQuery<T>, options: FindOptions = {}): Promise<T> {
+        return this.getQueryStore(query).then((store) => {
+            if (!store) {
+                return undefined;
+            }
+            return super.findOne(query.query, options, {
+                sources: [store],
+                lenient: true,
+            });
+        });
     }
 
     findAll(query: SolidFilterQuery<T>, options: FindOptions = {}): Promise<T[]> {
-        return this.service
-            .findSessionByWebId(query.webId)
-            .then((session) => {
-                return this.service.getDataset(session, query.uri);
-            })
-            .then((dataset) => {
-                if (!dataset) {
-                    return [];
-                }
-                const subjects = Object.values(dataset.graphs.default);
-                const quads = RDFSerializer.subjectsToQuads(subjects);
-                const store = new Store(quads);
-                return super.findAll(
-                    query.query,
-                    {
-                        ...options,
-                    },
-                    {
-                        sources: [store],
-                        lenient: true,
-                    },
-                );
-            });
+        return this.getQueryStore(query).then((store) => {
+            if (!store) {
+                return [];
+            }
+            return super.findAll(
+                query.query,
+                {
+                    ...options,
+                },
+                {
+                    sources: [store],
+                    lenient: true,
+                },
+            );
+        });
     }
 
     count(query: SolidFilterQuery<T>): Promise<number> {
-        return this.service
-            .findSessionByWebId(query.webId)
-            .then((session) => {
-                return this.service.getDataset(session, query.uri);
-            })
-            .then((dataset) => {
-                if (!dataset) {
-                    return 0;
-                }
-                const subjects = Object.values(dataset.graphs.default);
-                const quads = RDFSerializer.subjectsToQuads(subjects);
-                const store = new Store(quads);
-                return super.count(query.query, {
-                    sources: [store],
-                    lenient: true,
-                });
+        return this.getQueryStore(query).then((store) => {
+            if (!store) {
+                return 0;
+            }
+            return super.count(query.query, {
+                sources: [store],
+                lenient: true,
             });
+        });
     }
 
     insert(_, object: T): Promise<T> {
@@ -174,7 +166,7 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
                         return;
                     }
                     // Link the object
-                    this.service.linkSession(object, session.info.sessionId, this.dataType);
+                    await this.service.linkSession(object, session.info.sessionId, this.dataType);
                     const podURL = await this.service.getPodUrl(session);
                     const items: Thing[] = this.options.serialize(object, podURL);
                     if (items.length === 0) {
@@ -232,7 +224,7 @@ export class SolidDataDriver<T extends DataObject | DataFrame> extends SPARQLDat
                     currentSession = session as SolidSession;
                     uri = await this.findObjectURI(id, session, this.dataType);
                     // Unlink the object
-                    this.service.unlinkSession(id, this.dataType);
+                    await this.service.unlinkSession(id, this.dataType);
                     await this.unlinkObjectFromSession(id, session, this.dataType);
                     // Delete from Pod
                     return getSolidDataset(uri, {

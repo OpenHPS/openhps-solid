@@ -86,8 +86,7 @@ export class SolidProfileObject extends DataObject {
             const profileDocumentUrl = new URL(this.webId);
             profileDocumentUrl.hash = '';
             return profileDocumentUrl;
-        } catch (error) {
-            console.error(error);
+        } catch {
             return undefined;
         }
     }

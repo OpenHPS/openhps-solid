@@ -290,7 +290,7 @@ export abstract class SolidService extends RemoteService {
         try {
             return await getSolidDataset(documentURL.href, session ? { fetch: session.fetch } : this.session);
         } catch (ex) {
-            if (ex.response.status === 404) {
+            if (ex?.response?.status === 404) {
                 // Create dataset when 404 (not found)
                 return undefined;
             }
@@ -583,6 +583,10 @@ export abstract class SolidService extends RemoteService {
         return new Promise((resolve, reject) => {
             this.getDataset(session, uri)
                 .then((dataset) => {
+                    if (!dataset) {
+                        resolve(undefined);
+                        return;
+                    }
                     const thing = getThing(dataset, uri);
                     resolve(thing);
                 })
@@ -609,7 +613,7 @@ export abstract class SolidService extends RemoteService {
                 .then((dataset: SolidDataset & WithServerResourceInfo & WithAcl) => {
                     let acl: AclDataset;
                     // Get or access Acl
-                    if (!hasAcl(dataset)) {
+                    if (hasAcl(dataset)) {
                         acl = getResourceAcl(dataset);
                     } else {
                         acl = createAcl(dataset as any);
@@ -628,10 +632,10 @@ export abstract class SolidService extends RemoteService {
                         });
                     }
 
-                    access.group = access.group || webId === foaf.Agent || webId === 'public';
+                    const group = access.group || webId === foaf.Agent || webId === 'public';
 
                     // Resource access
-                    if (access.group) {
+                    if (group) {
                         acl = setGroupResourceAccess(acl, webId, {
                             read: access.read,
                             append: access.append,
@@ -666,7 +670,7 @@ export abstract class SolidService extends RemoteService {
                     }
 
                     // Set default group access
-                    if (access.group && access.default) {
+                    if (group && access.default) {
                         acl = setGroupDefaultAccess(acl, webId, {
                             read: access.read,
                             append: access.append,
@@ -712,6 +716,26 @@ export abstract class SolidService extends RemoteService {
                 )
                 .then((access) => {
                     resolve(access);
+                })
+                .catch(reject);
+        });
+    }
+
+    /**
+     * Logout a Solid user
+     * @param {SolidSession} session Solid session to logout from
+     * @returns {Promise<void>} Promise of logging out
+     */
+    logout(session: SolidSession): Promise<void> {
+        return new Promise((resolve, reject) => {
+            session
+                .logout()
+                .then(() => {
+                    this.session = undefined;
+                    return this.storage.delete('currentSession');
+                })
+                .then(() => {
+                    resolve();
                 })
                 .catch(reject);
         });
@@ -792,8 +816,7 @@ export abstract class SolidService extends RemoteService {
         if (this._isObject(target) && this._isObject(source)) {
             Object.keys(source).forEach((key) => {
                 if (Array.isArray(source[key])) {
-                    output[key] = source[key];
-                    output[key].push(...(target[key] || []));
+                    output[key] = [...source[key], ...(target[key] ?? [])];
                 } else if (this._isObject(source[key])) {
                     if (!(key in target)) Object.assign(output, { [key]: source[key] });
                     else output[key] = this._mergeDeep(target[key], source[key]);
@@ -887,12 +910,14 @@ export abstract class SolidService extends RemoteService {
     storeProfile(object: SolidProfileObject): Promise<SolidProfileObject> {
         return new Promise((resolve, reject) => {
             const key = `${SolidService.PREFIX}:webId:${object.webId}`;
+            let session: SolidSession;
             this.storage
                 .set(key, object.sessionId)
                 .then(() => {
                     return this.findSessionByWebId(object.webId);
                 })
-                .then((session) => {
+                .then((value) => {
+                    session = value;
                     const profileDocumentUrl = object.profileDocumentUrl;
                     if (!profileDocumentUrl) {
                         resolve(undefined);
@@ -909,7 +934,11 @@ export abstract class SolidService extends RemoteService {
                 })
                 .then((dataset) => {
                     const profile = getThing(dataset, object.webId);
-                    setStringNoLocale(profile, vcard.fn, object.displayName);
+                    const updatedProfile = setStringNoLocale(profile, vcard.fn, object.displayName);
+                    const updatedDataset = setThing(dataset, updatedProfile);
+                    return this.saveDataset(session, updatedProfile.url, updatedDataset);
+                })
+                .then(() => {
                     resolve(object);
                 })
                 .catch(reject);

@@ -48,21 +48,6 @@ export class SolidClientService extends SolidService {
         });
     }
 
-    logout(session: SolidSession): Promise<void> {
-        return new Promise((resolve, reject) => {
-            session
-                .logout()
-                .then(() => {
-                    this.session = undefined;
-                    return this.storage.delete('currentSession');
-                })
-                .then(() => {
-                    resolve();
-                })
-                .catch(reject);
-        });
-    }
-
     /**
      * Login a Solid browser user
      * @param {string} oidcIssuer OpenID Issuer
@@ -154,7 +139,6 @@ export class SolidClientService extends SolidService {
                 .then(async (sessionInfo) => {
                     if (sessionInfo && sessionInfo.isLoggedIn) {
                         this.session = session;
-                        console.log(sessionInfo, session);
                         await this.storage.set('currentSession', sessionInfo.sessionId);
                         const object = new SolidProfileObject(sessionInfo.webId);
                         object.sessionId = sessionInfo.sessionId;
@@ -162,7 +146,9 @@ export class SolidClientService extends SolidService {
                     } else {
                         // Session is not logged in
                         await this.storage.delete('currentSession');
-                        reject(new Error(`Unable to log in to Solid Pod!`));
+                        // Throw so the next `then` (which emits `login`) is skipped and the
+                        // trailing `catch` settles the promise
+                        throw new Error(`Unable to log in to Solid Pod!`);
                     }
                 })
                 .then(() => {

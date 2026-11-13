@@ -8,9 +8,7 @@ import type {
 import { registerClient } from '@inrupt/oidc-client-ext';
 
 export class ClientRegistrar implements IClientRegistrar {
-    constructor(private storageUtility: IStorageUtility) {
-        this.storageUtility = storageUtility;
-    }
+    constructor(private storageUtility: IStorageUtility) {}
 
     async getClient(options: IClientRegistrarOptions, issuerConfig: IIssuerConfig): Promise<IClient> {
         // If client secret and/or client id are stored in storage, use those.

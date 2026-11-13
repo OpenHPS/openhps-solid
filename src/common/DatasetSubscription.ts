@@ -21,10 +21,12 @@ export class DatasetSubscription extends EventEmitter {
      * @returns {Promise<DatasetSubscription>}      Dataset subscription
      */
     static create(websocketUri: string, channelType?: IriString): Promise<DatasetSubscription> {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             const subscription = new DatasetSubscription();
+            let opened = false;
             subscription._ws = new WebSocket(websocketUri, ['solid-0.1']);
             subscription._ws.onopen = () => {
+                opened = true;
                 resolve(subscription);
             };
 
@@ -60,6 +62,11 @@ export class DatasetSubscription extends EventEmitter {
             }
 
             subscription._ws.onerror = (e: any) => {
+                if (!opened) {
+                    // The websocket could not be opened; reject the create promise
+                    reject(e);
+                    return;
+                }
                 subscription.emit('error', e);
             };
         });

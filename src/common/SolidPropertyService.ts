@@ -99,11 +99,9 @@ export class SolidPropertyService extends DataService<string, any> {
                     bindings.forEach((binding) => {
                         const url = binding.get('property').value as IriString;
                         const name = binding.has('name') ? binding.get('name').value : undefined;
-                        const description = binding.has('description') ? binding.get('description').value : undefined;
                         const property = new Property();
                         property.id = url;
                         property.label = name;
-                        property.description = description;
                         properties.push(property);
                     });
                     resolve(properties);

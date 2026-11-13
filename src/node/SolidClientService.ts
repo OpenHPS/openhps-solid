@@ -1,7 +1,7 @@
 import express from 'express';
 const cookieSession = require('cookie-session'); // eslint-disable-line
 import { Session, ISessionInfo, ISessionOptions } from '@inrupt/solid-client-authn-node';
-import { SolidDataServiceOptions, SolidService, SolidSession } from '../common/SolidService';
+import { SolidDataServiceOptions, SolidService } from '../common/SolidService';
 import { SolidProfileObject } from '../common';
 import { interactiveLogin } from 'solid-node-interactive-auth';
 
@@ -28,11 +28,24 @@ export class SolidClientService extends SolidService {
                     this.express = this.options.authServer as express.Express;
                 } else {
                     const authOptions = this.options.authServer as SolidAuthServerOptions;
+                    // The cookie signing keys must never be hardcoded; take them from the auth
+                    // server options or the SOLID_SESSION_SECRET environment variable (comma-separated).
+                    const sessionKeys =
+                        authOptions.cookies?.keys ??
+                        (process.env.SOLID_SESSION_SECRET ? process.env.SOLID_SESSION_SECRET.split(',') : undefined);
+                    if (!sessionKeys || sessionKeys.length === 0) {
+                        reject(
+                            new Error(
+                                'Session cookie signing keys are missing! Configure authServer.cookies.keys or set the SOLID_SESSION_SECRET environment variable.',
+                            ),
+                        );
+                        return;
+                    }
                     this.express = express();
                     this.express.use(
                         cookieSession({
                             name: 'session',
-                            keys: authOptions.cookies ? authOptions.cookies.keys : ['test', 'test2'],
+                            keys: sessionKeys,
                             maxAge: authOptions.cookies ? authOptions.cookies.maxAge : 24 * 60 * 60 * 1000,
                         }),
                     );
@@ -49,21 +62,6 @@ export class SolidClientService extends SolidService {
             } else {
                 resolve();
             }
-        });
-    }
-
-    logout(session: SolidSession): Promise<void> {
-        return new Promise((resolve, reject) => {
-            session
-                .logout()
-                .then(() => {
-                    this.session = undefined;
-                    return this.storage.delete('currentSession');
-                })
-                .then(() => {
-                    resolve();
-                })
-                .catch(reject);
         });
     }
 
@@ -95,6 +93,9 @@ export class SolidClientService extends SolidService {
                         return this.storage.get(`solidClientAuthenticationUser:${session.info.sessionId}`);
                     })
                     .then((data) => {
+                        if (!data) {
+                            return;
+                        }
                         const sessionData = JSON.parse(data);
                         sessionData.webId = session.info.webId;
                         sessionData.issuer = oidcIssuer;
@@ -137,7 +138,7 @@ export class SolidClientService extends SolidService {
                 handleRedirect: (redirectUrl) => res.redirect(redirectUrl),
             })
             .catch((reason) => {
-                this.options.loginErrorCallback(req, res, session.info, reason);
+                this.options.loginErrorCallback?.(req, res, session.info, reason);
             });
     }
 
@@ -153,13 +154,13 @@ export class SolidClientService extends SolidService {
             })
             .then(([info]) => {
                 if (info.isLoggedIn) {
-                    this.options.loginSuccessCallback(req, res, info);
+                    this.options.loginSuccessCallback?.(req, res, info);
                 } else {
-                    this.options.loginErrorCallback(req, res, info, 'Not logged in after redirect');
+                    this.options.loginErrorCallback?.(req, res, info, 'Not logged in after redirect');
                 }
             })
             .catch((reason) => {
-                this.options.loginErrorCallback(req, res, req.session!.sessionId, reason);
+                this.options.loginErrorCallback?.(req, res, req.session!.sessionId, reason);
             });
     }
 
