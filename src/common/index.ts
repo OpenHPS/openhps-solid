@@ -1,4 +1,5 @@
 import type { ActorInitQueryBase } from '@comunica/actor-init-query';
+import engineFactory from './engine-default';
 
 import './types';
 export * from './SolidService';
@@ -9,4 +10,4 @@ export * from './DatasetSubscription';
 export * from './SolidPropertySink';
 export * from './SolidPropertySource';
 
-export const DefaultEngine: ActorInitQueryBase = require('./engine-default')();
+export const DefaultEngine: ActorInitQueryBase = engineFactory();
